@@ -27,7 +27,13 @@ import { toast } from 'sonner';
 import { useApp } from '../../context/AppContext';
 import { useSoundManager } from '../../hooks/useSoundManager';
 import PhaseHeader from './_shared/PhaseHeader';
-import { supabase } from '../../lib/supabase';
+import { apiPost, getPhaseState, runPhase, updatePhaseState, updatePhasesAfterState } from '../../lib/api';
+
+/** Adapta PhaseStateDto (camelCase) al shape snake_case que usaba la fila de Supabase. */
+async function readRawPhaseState(projectId: string, phaseNumber: number) {
+  const s = await getPhaseState(projectId, phaseNumber);
+  return { estado_visual: s.estadoVisual, datos_consolidados: s.datosConsolidados, updated_at: s.updatedAt };
+}
 import { ApproveModal } from './guia-metodologica/ApproveModal';
 import { DocumentRenderer } from './guia-metodologica/DocumentRenderer';
 import { GuideSidebar } from './guia-metodologica/GuideSidebar';
@@ -225,24 +231,18 @@ export default function GuiaMetodologicaView() {
         pollTimeoutStartRef.current = retryStartedAt;
 
         try {
-          await supabase
-            .from('fases_estado')
-            .update({ estado_visual: 'procesando', datos_consolidados: null, updated_at: new Date().toISOString() })
-            .eq('proyecto_id', projectId)
-            .eq('numero_fase', 7);
+          await updatePhaseState(projectId, 7, { estadoVisual: 'procesando', datosConsolidados: null });
 
           updatePhaseStatus(projectId, 7, 'procesando');
           guideFinishedRef.current = false;
           setView('processing');
           setProcessingStep(1);
 
-          const { data: retryData, error: retryError } = await supabase.functions.invoke('pmo-agent', {
-            body: { projectId, phaseNumber: 7, ...lastAgentRequestRef.current },
-          });
-          if (retryError) throw new Error(retryError.message);
+          const retryData = await runPhase(projectId, 7, { ...lastAgentRequestRef.current });
+          if (retryData?.success === false) throw new Error(retryData.error);
 
-          const retryPayload = (retryData as any)?.data ?? (retryData as any)?.diagnosis;
-          if (retryPayload && !(retryData as any)?.inProgress && finishGuideGeneration(retryPayload, 'disponible')) return;
+          const retryPayload = retryData?.data;
+          if (retryPayload && !retryData?.inProgress && finishGuideGeneration(retryPayload, 'disponible')) return;
           startPolling(retryStartedAt, true);
         } catch (retryErr: any) {
           setIsAdjusting(false);
@@ -263,17 +263,11 @@ export default function GuiaMetodologicaView() {
       try {
         const request = lastAgentRequestRef.current ?? { iteration: 1, comments: null };
         logPhase7('trigger_stage', { projectId, stage, runId, queueSignature, iteration: request.iteration });
-        const { error } = await supabase.functions.invoke('pmo-agent', {
-          body: {
-            projectId,
-            phaseNumber: 7,
-            phase7Stage: stage,
-            runId,
-            iteration: request.iteration,
-            comments: request.comments,
-          },
-        });
-        if (error) throw new Error(error.message);
+        // Nota: el backend actual no implementa el flujo dividido en sub-partes (phase7Stage);
+        // esta funcion queda como no-operativa porque las condiciones que la disparan
+        // (phase7Data.stage === 'part_1_queued', etc.) nunca ocurren con el backend nuevo.
+        const result = await runPhase(projectId, 7, { iteration: request.iteration, comments: request.comments });
+        if (result?.success === false) throw new Error(result.error);
         logPhase7('trigger_stage_response_ok', { projectId, stage, runId, queueSignature });
       } catch (err) {
         delete stageTriggerRef.current[key];
@@ -292,21 +286,16 @@ export default function GuiaMetodologicaView() {
         setErrorMessage(message);
         setView(chapters.length > 0 ? 'results' : 'error');
         updatePhaseStatus(projectId, 7, 'error');
-        await supabase
-          .from('fases_estado')
-          .update({
-            estado_visual: 'error',
-            datos_consolidados: {
-              _error: true,
-              message,
-              phaseNumber: 7,
-              stage: 'frontend_poll_timeout',
-              timestamp: new Date().toISOString(),
-            },
-            updated_at: new Date().toISOString(),
-          })
-          .eq('proyecto_id', projectId)
-          .eq('numero_fase', 7);
+        await updatePhaseState(projectId, 7, {
+          estadoVisual: 'error',
+          datosConsolidados: {
+            _error: true,
+            message,
+            phaseNumber: 7,
+            stage: 'frontend_poll_timeout',
+            timestamp: new Date().toISOString(),
+          },
+        });
         toast.error('El Agente 7 tardo demasiado en responder.', {
           description: 'La fase quedo marcada con error para reintentar sin dejar marcadores viejos.',
           duration: 9000,
@@ -314,14 +303,12 @@ export default function GuiaMetodologicaView() {
         return;
       }
 
-      const { data, error } = await supabase
-        .from('fases_estado')
-        .select('datos_consolidados, estado_visual, updated_at')
-        .eq('proyecto_id', projectId)
-        .eq('numero_fase', 7)
-        .single();
-
-      if (error) return;
+      let data;
+      try {
+        data = await readRawPhaseState(projectId, 7);
+      } catch {
+        return;
+      }
       // Removed: if (data?.updated_at && new Date(data.updated_at).getTime() < pollStartRef.current) return;
 
       const phase7Data = data?.datos_consolidados as any;
@@ -381,23 +368,18 @@ export default function GuiaMetodologicaView() {
         setErrorMessage(message);
         setView('error');
         updatePhaseStatus(projectId, 7, 'error');
-        await supabase
-          .from('fases_estado')
-          .update({
-            estado_visual: 'error',
-            datos_consolidados: {
-              _error: true,
-              message,
-              phaseNumber: 7,
-              stage: phase7Data?.stage ?? 'stale_processing',
-              _run_id: phase7Data?._run_id ?? null,
-              _parts: phase7Data?._parts ?? {},
-              timestamp: new Date().toISOString(),
-            },
-            updated_at: new Date().toISOString(),
-          })
-          .eq('proyecto_id', projectId)
-          .eq('numero_fase', 7);
+        await updatePhaseState(projectId, 7, {
+          estadoVisual: 'error',
+          datosConsolidados: {
+            _error: true,
+            message,
+            phaseNumber: 7,
+            stage: phase7Data?.stage ?? 'stale_processing',
+            _run_id: phase7Data?._run_id ?? null,
+            _parts: phase7Data?._parts ?? {},
+            timestamp: new Date().toISOString(),
+          },
+        });
         toast.error('La ejecucion anterior del Agente 7 quedo sin actividad.', {
           description: 'La fase quedo marcada con error para que puedas reintentar limpiamente.',
           duration: 9000,
@@ -485,11 +467,7 @@ export default function GuiaMetodologicaView() {
     // Also clear datos_consolidados to remove any stale _processing markers from
     // previous failed/timed-out runs — otherwise the edge function sees _processing:true
     // and returns inProgress:true without actually starting a new run.
-    await supabase
-      .from('fases_estado')
-      .update({ estado_visual: 'procesando', datos_consolidados: null, updated_at: new Date().toISOString() })
-      .eq('proyecto_id', projectId)
-      .eq('numero_fase', 7);
+    await updatePhaseState(projectId, 7, { estadoVisual: 'procesando', datosConsolidados: null });
     logPhase7('invoke_marked_processing', { projectId, iteration });
 
     updatePhaseStatus(projectId, 7, 'procesando');
@@ -498,19 +476,17 @@ export default function GuiaMetodologicaView() {
     setPhase7Progress(getPhase7Progress(null));
     startPolling(startedAt, true);
     try {
-      const { data, error } = await supabase.functions.invoke('pmo-agent', {
-        body: { projectId, phaseNumber: 7, iteration, comments },
-      });
-      if (error) throw new Error(error.message);
+      const data = await runPhase(projectId, 7, { iteration, comments });
+      if (data?.success === false) throw new Error(data.error);
       logPhase7('invoke_response', {
         projectId,
         iteration,
-        inProgress: Boolean((data as any)?.inProgress),
-        stage: (data as any)?.stage ?? null,
-        cached: Boolean((data as any)?.cached),
+        inProgress: Boolean(data?.inProgress),
+        stage: data?.stage ?? null,
+        cached: Boolean(data?.cached),
       });
-      const agentPayload = (data as any)?.data ?? (data as any)?.diagnosis;
-      if (agentPayload && !(data as any)?.inProgress && finishGuideGeneration(agentPayload, 'disponible')) return;
+      const agentPayload = data?.data ?? data?.diagnosis;
+      if (agentPayload && !data?.inProgress && finishGuideGeneration(agentPayload, 'disponible')) return;
       startPolling(startedAt, true);
     } catch (err: any) {
       logPhase7('invoke_error', { projectId, iteration, message: err?.message ?? String(err) });
@@ -519,12 +495,7 @@ export default function GuiaMetodologicaView() {
         startPolling(startedAt, true);
         return;
       }
-      const { data: stateAfterError } = await supabase
-        .from('fases_estado')
-        .select('estado_visual, datos_consolidados')
-        .eq('proyecto_id', projectId)
-        .eq('numero_fase', 7)
-        .single();
+      const stateAfterError = await readRawPhaseState(projectId, 7);
 
       if (stateAfterError?.datos_consolidados && stateAfterError.estado_visual !== 'error') {
         if (finishGuideGeneration(stateAfterError.datos_consolidados, stateAfterError.estado_visual === 'completado' ? 'completado' : 'disponible')) return;
@@ -726,38 +697,28 @@ export default function GuiaMetodologicaView() {
     try {
       // 1. Bloquear fases posteriores sin borrar la guía actual.
       // El backend usa el payload previo para conservar el historial de versiones.
-      await supabase
-        .from('fases_estado')
-        .update({ estado_visual: 'bloqueado', datos_consolidados: null, updated_at: new Date().toISOString() })
-        .eq('proyecto_id', projectId!)
-        .gt('numero_fase', 7);
+      await updatePhasesAfterState(projectId!, 7, { estadoVisual: 'bloqueado', datosConsolidados: null });
       logPhase7('manual_reprocess_later_phases_blocked', { projectId });
 
       // 2. Update DB to 'procesando' BEFORE invoking so cancellation check passes.
       // Also clear datos_consolidados to remove stale _processing markers.
-      await supabase
-        .from('fases_estado')
-        .update({ estado_visual: 'procesando', datos_consolidados: null, updated_at: new Date().toISOString() })
-        .eq('proyecto_id', projectId)
-        .eq('numero_fase', 7);
+      await updatePhaseState(projectId!, 7, { estadoVisual: 'procesando', datosConsolidados: null });
       logPhase7('manual_reprocess_marked_processing', { projectId, iteration: nextIteration });
 
       updatePhaseStatus(projectId!, 7, 'procesando');
       startPolling(startedAt, true);
 
       // 3. Invoke the agent; polling will detect completion
-      const { data, error } = await supabase.functions.invoke('pmo-agent', {
-        body: { projectId, phaseNumber: 7, iteration: nextIteration, comments: comment },
-      });
-      if (error) throw new Error((data as any)?.error || error.message);
+      const data = await runPhase(projectId!, 7, { iteration: nextIteration, comments: comment });
+      if (data?.success === false) throw new Error(data.error);
       logPhase7('manual_reprocess_invoke_response', {
         projectId,
         iteration: nextIteration,
-        inProgress: Boolean((data as any)?.inProgress),
-        stage: (data as any)?.stage ?? null,
+        inProgress: Boolean(data?.inProgress),
+        stage: data?.stage ?? null,
       });
-      const agentPayload = (data as any)?.data ?? (data as any)?.diagnosis;
-      if (agentPayload && !(data as any)?.inProgress && finishGuideGeneration(agentPayload, 'disponible')) return;
+      const agentPayload = data?.data ?? data?.diagnosis;
+      if (agentPayload && !data?.inProgress && finishGuideGeneration(agentPayload, 'disponible')) return;
 
       toast.info('Reprocesando guía metodológica…', {
         description: 'El Agente 7 está incorporando las instrucciones del consultor.',
@@ -769,12 +730,7 @@ export default function GuiaMetodologicaView() {
         startPolling(startedAt, true);
         return;
       }
-      const { data } = await supabase
-        .from('fases_estado')
-        .select('estado_visual')
-        .eq('proyecto_id', projectId)
-        .eq('numero_fase', 7)
-        .single();
+      const data = await readRawPhaseState(projectId!, 7);
 
       if (data?.estado_visual === 'procesando') {
         toast.info('El Agente 7 ya quedó en ejecución.', {
@@ -800,9 +756,8 @@ export default function GuiaMetodologicaView() {
     try {
       // Invocamos el Agente 8 para que empiece a procesar los artefactos en background
       updatePhaseStatus(projectId!, 8, 'procesando');
-      supabase.functions.invoke('pmo-agent-artefactos', {
-        body: { projectId }
-      }).catch(e => console.error('[Phase7] Agent 8 trigger failed:', e));
+      apiPost(`/api/projects/${projectId}/artefactos/consolidar`)
+        .catch(e => console.error('[Phase7] Agent 8 trigger failed:', e));
 
       await new Promise(r => setTimeout(r, 700));
 

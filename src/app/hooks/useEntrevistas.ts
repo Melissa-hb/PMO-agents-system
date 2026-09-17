@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { supabase } from '../lib/supabase';
+import { apiDelete, apiGet, apiUpload, getPhaseState, runPhase } from '../lib/api';
 import { toast } from 'sonner';
 
 export interface EntrevistaLocal {
@@ -10,7 +10,7 @@ export interface EntrevistaLocal {
   notas: string;
   createdAt: string;
   dbId?: string;
-  file?: File;
+  file?: File | null;
   fileName?: string;
   storagePath?: string;
 }
@@ -189,6 +189,17 @@ export function normalizeEntrevistasDiagnosis(value: unknown): EntrevistasDiagno
   return hasMeaningfulContent ? candidate as EntrevistasDiagnosis : null;
 }
 
+interface EntrevistaApiDto {
+  id: string;
+  nombre: string;
+  cargo: string;
+  area: string;
+  notas: string;
+  fileName: string | null;
+  storagePath: string | null;
+  createdAt: string | null;
+}
+
 export function useEntrevistas(projectId: string) {
   const [entrevistas, setEntrevistas] = useState<EntrevistaLocal[]>([]);
   const [isLoadingData, setIsLoadingData] = useState(true);
@@ -200,11 +211,7 @@ export function useEntrevistas(projectId: string) {
     setIsLoadingData(true);
     try {
       // 1. Obtener entrevistas guardadas
-      const { data: entData } = await supabase
-        .from('entrevistas')
-        .select('*')
-        .eq('proyecto_id', projectId)
-        .order('created_at', { ascending: true });
+      const entData = await apiGet<EntrevistaApiDto[]>(`/api/projects/${projectId}/entrevistas`);
 
       if (entData) {
         setEntrevistas(
@@ -215,23 +222,18 @@ export function useEntrevistas(projectId: string) {
             cargo: e.cargo,
             area: e.area || '',
             notas: e.notas || '',
-            fileName: e.file_name,
-            storagePath: e.storage_path,
-            createdAt: new Date(e.created_at).toLocaleDateString('es-CO'),
+            fileName: e.fileName ?? undefined,
+            storagePath: e.storagePath ?? undefined,
+            createdAt: e.createdAt ? new Date(e.createdAt).toLocaleDateString('es-CO') : '',
           }))
         );
       }
 
       // 2. Obtener diagnóstico si la fase ya se corrió
-      const { data: faseData } = await supabase
-        .from('fases_estado')
-        .select('datos_consolidados')
-        .eq('proyecto_id', projectId)
-        .eq('numero_fase', 2)
-        .single();
+      const faseData = await getPhaseState(projectId, 2);
 
-      if (faseData?.datos_consolidados) {
-        const consolidated = faseData.datos_consolidados as Record<string, any>;
+      if (faseData?.datosConsolidados) {
+        const consolidated = faseData.datosConsolidados as Record<string, any>;
         const storedError = extractAgentError(consolidated);
         if (storedError) {
           setAgentError(storedError);
@@ -254,70 +256,23 @@ export function useEntrevistas(projectId: string) {
 
   const saveEntrevista = async (entrevista: EntrevistaLocal) => {
     try {
-      let finalStoragePath = entrevista.storagePath || null;
-      let finalFileName = entrevista.fileName || null;
+      const formData = new FormData();
+      formData.append('nombre', entrevista.nombre);
+      formData.append('cargo', entrevista.cargo);
+      formData.append('area', entrevista.area ?? '');
+      formData.append('notas', entrevista.notas ?? '');
 
-      // Handle explicit file removal
       if (entrevista.file === null) {
-        if (finalStoragePath) {
-          const pathMatch = finalStoragePath.match(/documentos-pmo\/(.+?)(?:\?token=|$)/);
-          const rawPath = pathMatch ? decodeURIComponent(pathMatch[1]) : finalStoragePath;
-          await supabase.storage.from('documentos-pmo').remove([rawPath]).catch(e => console.error(e));
-        }
-        finalStoragePath = null;
-        finalFileName = null;
-      }
-      // Upload file if attached (it's a new file selected by the user)
-      else if (entrevista.file) {
-        // Delete previous file if replacing
-        if (finalStoragePath) {
-          const pathMatch = finalStoragePath.match(/documentos-pmo\/(.+?)(?:\?token=|$)/);
-          const rawPath = pathMatch ? decodeURIComponent(pathMatch[1]) : finalStoragePath;
-          await supabase.storage.from('documentos-pmo').remove([rawPath]).catch(e => console.error(e));
-        }
-
-        const normalizePath = (str: string) => {
-          return str
-            .normalize("NFD")
-            .replace(/[\u0300-\u036f]/g, "") // Quitar tildes
-            .replace(/[^a-zA-Z0-9._-]/g, "_") // Reemplazar caracteres especiales por guiones bajos
-            .replace(/_{2,}/g, "_"); // Evitar guiones bajos duplicados
-        };
-        const safeName = normalizePath(entrevista.file.name);
-        const filePath = `entrevistas/${projectId}/${Date.now()}_${safeName}`;
-        const { error: uploadError } = await supabase.storage
-          .from('documentos-pmo')
-          .upload(filePath, entrevista.file, { cacheControl: '3600', upsert: false });
-        
-        if (uploadError) throw uploadError;
-
-        const { data: signedData } = await supabase.storage
-          .from('documentos-pmo')
-          .createSignedUrl(filePath, 3600);
-
-        finalStoragePath = signedData?.signedUrl ?? filePath;
-        finalFileName = entrevista.file.name;
+        formData.append('removeFile', 'true');
+      } else if (entrevista.file) {
+        formData.append('file', entrevista.file);
       }
 
-      const payload = {
-        proyecto_id: projectId,
-        nombre: entrevista.nombre,
-        cargo: entrevista.cargo,
-        area: entrevista.area,
-        notas: entrevista.notas,
-        storage_path: finalStoragePath,
-        file_name: finalFileName,
-      };
+      const saved = entrevista.dbId
+        ? await apiUpload<EntrevistaApiDto>(`/api/projects/${projectId}/entrevistas/${entrevista.dbId}`, formData, 'PUT')
+        : await apiUpload<EntrevistaApiDto>(`/api/projects/${projectId}/entrevistas`, formData, 'POST');
 
-      if (entrevista.dbId) {
-        const { error } = await supabase.from('entrevistas').update(payload).eq('id', entrevista.dbId);
-        if (error) throw error;
-        return { dbId: entrevista.dbId, storagePath: finalStoragePath, fileName: finalFileName };
-      } else {
-        const { data, error } = await supabase.from('entrevistas').insert(payload).select('id').single();
-        if (error) throw error;
-        return { dbId: data.id, storagePath: finalStoragePath, fileName: finalFileName };
-      }
+      return { dbId: saved.id, storagePath: saved.storagePath ?? undefined, fileName: saved.fileName ?? undefined };
     } catch (err) {
       console.error('Error guardando entrevista', err);
       throw err;
@@ -327,31 +282,9 @@ export function useEntrevistas(projectId: string) {
   const deleteEntrevista = async (entrevista: EntrevistaLocal) => {
     try {
       if (entrevista.dbId) {
-        // 1. Eliminar del Storage si tiene archivo
-        if (entrevista.storagePath) {
-          // Extraer ruta relativa del storage
-          const pathMatch = entrevista.storagePath.match(/documentos-pmo\/(.+?)(?:\?token=|$)/);
-          const rawPath = pathMatch ? decodeURIComponent(pathMatch[1]) : entrevista.storagePath;
-
-          const { error: storageError } = await supabase.storage
-            .from('documentos-pmo')
-            .remove([rawPath]);
-          
-          if (storageError) {
-            console.warn('Error eliminando archivo de storage:', storageError.message);
-          }
-        }
-
-        // 2. Eliminar de la base de datos
-        const { error: dbError } = await supabase
-          .from('entrevistas')
-          .delete()
-          .eq('id', entrevista.dbId);
-        
-        if (dbError) throw dbError;
+        await apiDelete(`/api/projects/${projectId}/entrevistas/${entrevista.dbId}`);
       }
 
-      // 3. Actualizar estado local
       setEntrevistas((prev) => prev.filter((e) => e.id !== entrevista.id));
       toast.success('Entrevista eliminada correctamente');
     } catch (err) {
@@ -366,28 +299,9 @@ export function useEntrevistas(projectId: string) {
     setDiagnosis(null);
     setAgentError(null);
     try {
-      const { data: { session } } = await supabase.auth.getSession();
+      const result = await runPhase(projectId, 2, { iteration: 1, comments: null });
 
-      const response = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL.replace('/rest/v1', '')}/functions/v1/pmo-agent`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${session?.access_token ?? import.meta.env.VITE_SUPABASE_ANON_KEY}`,
-          },
-          body: JSON.stringify({
-            projectId,
-            phaseNumber: 2,
-            iteration: 1,
-            comments: null,
-          }),
-        }
-      );
-
-      const result = await response.json();
-
-      if (!response.ok || result.success === false) {
+      if (result?.success === false) {
         throw new Error(result.error ?? 'Error desconocido en el agente');
       }
 

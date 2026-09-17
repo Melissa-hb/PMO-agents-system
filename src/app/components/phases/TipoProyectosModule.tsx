@@ -16,7 +16,7 @@
 
 import { useState, useEffect, useRef, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router';
-import { supabase } from '../../lib/supabase';
+import { getPhaseState, runPhase, updatePhaseState, updatePhasesAfterState } from '../../lib/api';
 import { motion, AnimatePresence } from 'motion/react';
 import {
   Loader2, CheckCircle2, Brain, Zap,
@@ -145,16 +145,14 @@ export default function TipoProyectosModule() {
 
     let isActive = true;
     (async () => {
-      const { data, error } = await supabase
-        .from('fases_estado')
-        .select('datos_consolidados')
-        .eq('proyecto_id', projectId)
-        .eq('numero_fase', 3)
-        .maybeSingle();
-
-      if (!isActive || error) return;
-      if (data?.datos_consolidados) {
-        setFreshPhase3AgentData(data.datos_consolidados);
+      try {
+        const data = await getPhaseState(projectId, 3);
+        if (!isActive) return;
+        if (data?.datosConsolidados) {
+          setFreshPhase3AgentData(data.datosConsolidados);
+        }
+      } catch {
+        // no critico: se usara el dato de AppContext si existe
       }
     })();
 
@@ -244,19 +242,14 @@ export default function TipoProyectosModule() {
   const keepProcessingIfAgentStarted = async () => {
     if (!projectId) return false;
 
-    const { data } = await supabase
-      .from('fases_estado')
-      .select('estado_visual, datos_consolidados')
-      .eq('proyecto_id', projectId)
-      .eq('numero_fase', 4)
-      .single();
+    const data = await getPhaseState(projectId, 4);
 
-    if (data?.estado_visual === 'procesando') {
+    if (data?.estadoVisual === 'procesando') {
       setView('processing');
       return true;
     }
 
-    if (data?.estado_visual === 'disponible' && !parseDiagnosisPayload(data?.datos_consolidados) && Date.now() < processingGuardUntilRef.current) {
+    if (data?.estadoVisual === 'disponible' && !parseDiagnosisPayload(data?.datosConsolidados) && Date.now() < processingGuardUntilRef.current) {
       setView('processing');
       return true;
     }
@@ -300,22 +293,16 @@ export default function TipoProyectosModule() {
     if (!projectId) return;
 
     (async () => {
-      const { data, error } = await supabase
-        .from('fases_estado')
-        .select('datos_consolidados, estado_visual')
-        .eq('proyecto_id', projectId)
-        .eq('numero_fase', 4)
-        .single();
-
-      if (error || !data) return;
+      const data = await getPhaseState(projectId, 4);
+      if (!data) return;
 
       // If there is data (regardless of status being 'completado' or 'disponible')
-      if (data.datos_consolidados) {
-        const parsed = parseDiagnosisPayload(data.datos_consolidados);
+      if (data.datosConsolidados) {
+        const parsed = parseDiagnosisPayload(data.datosConsolidados);
         if (parsed) {
           setDiagnosis(parsed);
           // If phase context says 'approved', keep it; otherwise show diagnosis for review
-          if (data.estado_visual === 'completado' || phase?.status === 'completado') {
+          if (data.estadoVisual === 'completado' || phase?.status === 'completado') {
             setView('approved');
           } else {
             setView('diagnosis');
@@ -325,16 +312,16 @@ export default function TipoProyectosModule() {
         }
       }
 
-      // If it's already processing (edge auto-trigger in progress), just go to polling
-      if (data.estado_visual === 'procesando') {
+      // If it's already processing (auto-trigger en progreso), just go to polling
+      if (data.estadoVisual === 'procesando') {
         processingGuardUntilRef.current = Date.now() + 15000;
         setView('processing');
         autoTriggered.current = true; // don't double-trigger
         return;
       }
 
-      // Explicitly handle 'error' state from DB on mount
-      if (data.estado_visual === 'error') {
+      // Explicitly handle 'error' state on mount
+      if (data.estadoVisual === 'error') {
         setView('error');
         autoTriggered.current = true;
         return;
@@ -348,16 +335,11 @@ export default function TipoProyectosModule() {
     if (view === 'auto-trigger') {
       autoTriggered.current = true;
       (async () => {
-        // Check DB one more time to avoid double-trigger if edge already started
-        const { data: check } = await supabase
-          .from('fases_estado')
-          .select('estado_visual, datos_consolidados')
-          .eq('proyecto_id', projectId)
-          .eq('numero_fase', 4)
-          .single();
+        // Check DB one more time to avoid double-trigger si ya se inicio
+        const check = await getPhaseState(projectId, 4);
 
-        if (check?.estado_visual === 'completado' && check?.datos_consolidados) {
-          const parsed = parseDiagnosisPayload(check.datos_consolidados);
+        if (check?.estadoVisual === 'completado' && check?.datosConsolidados) {
+          const parsed = parseDiagnosisPayload(check.datosConsolidados);
           if (parsed) {
             setDiagnosis(parsed);
             setView('diagnosis');
@@ -365,18 +347,15 @@ export default function TipoProyectosModule() {
             return;
           }
         }
-        if (check?.estado_visual === 'procesando') {
+        if (check?.estadoVisual === 'procesando') {
           setView('processing');
           return;
         }
 
         setView('processing');
-        supabase.functions.invoke('pmo-agent', {
-          body: { projectId, phaseNumber: 4, iteration: 1 }
-        }).then(({ data, error }) => {
-          if (error) {
-            const detail = (data as any)?.error || error.message;
-            handlePhase4InvokeError('Edge function error', new Error(detail));
+        runPhase(projectId, 4, { iteration: 1 }).then((result) => {
+          if (result?.success === false) {
+            handlePhase4InvokeError('backend error', new Error(result.error));
           }
         }).catch(e => handlePhase4InvokeError('invoke failed', e));
       })();
@@ -392,20 +371,16 @@ export default function TipoProyectosModule() {
 
     const fetchDiagnosis = async () => {
       if (!isMounted) return;
-      const { data, error } = await supabase
-        .from('fases_estado')
-        .select('datos_consolidados, estado_visual')
-        .eq('proyecto_id', projectId)
-        .eq('numero_fase', 4)
-        .single();
-
-      if (error) { console.error('[Phase4 poll] error:', error); return; }
+      let data;
+      try {
+        data = await getPhaseState(projectId!, 4);
+      } catch (error) { console.error('[Phase4 poll] error:', error); return; }
 
       if (!isMounted) return;
 
       // Success: agent completed and saved diagnosis (may be 'completado' OR 'disponible' with data)
-      if (data?.datos_consolidados && (data?.estado_visual === 'completado' || data?.estado_visual === 'disponible')) {
-        const parsed = parseDiagnosisPayload(data.datos_consolidados);
+      if (data?.datosConsolidados && (data?.estadoVisual === 'completado' || data?.estadoVisual === 'disponible')) {
+        const parsed = parseDiagnosisPayload(data.datosConsolidados);
         if (parsed) {
           setDiagnosis(parsed);
           setIsReprocessing(false);
@@ -418,11 +393,11 @@ export default function TipoProyectosModule() {
         }
       }
 
-      if (data?.estado_visual === 'error') {
+      if (data?.estadoVisual === 'error') {
         setIsReprocessing(false);
         setView('error');
         playProcessError();
-        const errorMessage = (data?.datos_consolidados as any)?.message;
+        const errorMessage = (data?.datosConsolidados as any)?.message;
         toast.error('El Agente 4 encontró un error al procesar.', {
           description: errorMessage,
           duration: 8000,
@@ -430,12 +405,12 @@ export default function TipoProyectosModule() {
         return;
       }
 
-      if (data?.estado_visual === 'disponible' && !parseDiagnosisPayload(data?.datos_consolidados) && Date.now() < processingGuardUntilRef.current) {
+      if (data?.estadoVisual === 'disponible' && !parseDiagnosisPayload(data?.datosConsolidados) && Date.now() < processingGuardUntilRef.current) {
         return;
       }
 
       // If reverted to disponible WITHOUT data, the agent truly failed
-      if (data?.estado_visual === 'disponible' && !parseDiagnosisPayload(data?.datos_consolidados)) {
+      if (data?.estadoVisual === 'disponible' && !parseDiagnosisPayload(data?.datosConsolidados)) {
         setIsReprocessing(false);
         updatePhaseStatus(projectId!, 4, 'disponible');
         setView('error');
@@ -475,11 +450,9 @@ export default function TipoProyectosModule() {
     autoTriggered.current = true;
     processingGuardUntilRef.current = Date.now() + 15000;
     setView('processing');
-    supabase.functions.invoke('pmo-agent', {
-      body: { projectId, phaseNumber: 4, iteration: 1 }
-    }).then(({ error }) => {
-      if (error) {
-        handlePhase4InvokeError('manual trigger error', error);
+    runPhase(projectId!, 4, { iteration: 1 }).then((result) => {
+      if (result?.success === false) {
+        handlePhase4InvokeError('manual trigger error', new Error(result.error));
       }
     }).catch(e => handlePhase4InvokeError('invoke failed', e));
   };
@@ -490,29 +463,19 @@ export default function TipoProyectosModule() {
     if (!comment.trim()) { toast.error('Escriba un comentario antes de guardar.'); return; }
     setIsSavingComment(true);
     try {
-      // Guardar comentario en fases_estado como parte de los datos consolidados
-      const { data: currentData } = await supabase
-        .from('fases_estado')
-        .select('datos_consolidados')
-        .eq('proyecto_id', projectId)
-        .eq('numero_fase', 4)
-        .single();
+      // Guardar comentario como parte de los datos consolidados de la fase
+      const currentData = await getPhaseState(projectId!, 4);
 
-      const existing = (currentData?.datos_consolidados as any) || {};
+      const existing = (currentData?.datosConsolidados as any) || {};
       const comments_history = existing._comments_history || [];
       comments_history.push({
         text: comment,
         timestamp: new Date().toISOString(),
       });
 
-      await supabase
-        .from('fases_estado')
-        .update({
-          datos_consolidados: { ...existing, _comments_history: comments_history, _last_comment: comment },
-          updated_at: new Date().toISOString(),
-        })
-        .eq('proyecto_id', projectId)
-        .eq('numero_fase', 4);
+      await updatePhaseState(projectId!, 4, {
+        datosConsolidados: { ...existing, _comments_history: comments_history, _last_comment: comment },
+      });
 
       setSavedComment(comment);
       toast.success('Comentario guardado', { description: 'El comentario quedará asociado al diagnóstico.' });
@@ -542,11 +505,9 @@ export default function TipoProyectosModule() {
       setView('processing');
 
       // 2. Fire-and-forget: the polling effect will detect when the agent finishes
-      supabase.functions.invoke('pmo-agent', {
-        body: { projectId, phaseNumber: 4, iteration: nextIteration, comments: reprocessComment }
-      }).then(({ error }) => {
-        if (error) {
-          handlePhase4InvokeError('Reprocess edge error', error);
+      runPhase(projectId!, 4, { iteration: nextIteration, comments: reprocessComment }).then((result) => {
+        if (result?.success === false) {
+          handlePhase4InvokeError('Reprocess backend error', new Error(result.error));
         }
       }).catch(e => handlePhase4InvokeError('Reprocess invoke failed', e));
 
@@ -750,29 +711,19 @@ export default function TipoProyectosModule() {
           setIsReprocessing(true);
           const nextIteration = (diagnosis?.iteration || 1) + 1;
 
-          // 2. Block downstream phases (5, 6, 7…) in DB
-          await supabase
-            .from('fases_estado')
-            .update({ estado_visual: 'bloqueado', datos_consolidados: null, updated_at: new Date().toISOString() })
-            .eq('proyecto_id', projectId!)
-            .gt('numero_fase', 4);
+          // 2. Block downstream phases (5, 6, 7…) en backend
+          await updatePhasesAfterState(projectId!, 4, { estadoVisual: 'bloqueado', datosConsolidados: null });
 
-          // 3. Clear this phase without marking it as processing; the edge function must create the run marker.
-          await supabase
-            .from('fases_estado')
-            .update({ estado_visual: 'disponible', datos_consolidados: null, updated_at: new Date().toISOString() })
-            .eq('proyecto_id', projectId!)
-            .eq('numero_fase', 4);
+          // 3. Clear this phase without marking it as processing; el backend debe crear el marcador de run.
+          await updatePhaseState(projectId!, 4, { estadoVisual: 'disponible', datosConsolidados: null });
 
-          // 4. Switch to the local loading view while the edge function starts.
+          // 4. Switch to the local loading view while the agent starts.
           processingGuardUntilRef.current = Date.now() + 15000;
           setView('processing');
 
           // 5. Fire-and-forget the agent call
-          supabase.functions.invoke('pmo-agent', {
-            body: { projectId, phaseNumber: 4, iteration: nextIteration }
-          }).then(({ error }) => {
-            if (error) handlePhase4InvokeError('Reprocess (header) error', error);
+          runPhase(projectId!, 4, { iteration: nextIteration }).then((result) => {
+            if (result?.success === false) handlePhase4InvokeError('Reprocess (header) error', new Error(result.error));
           }).catch(e => handlePhase4InvokeError('Reprocess invoke failed', e));
         }}
       />

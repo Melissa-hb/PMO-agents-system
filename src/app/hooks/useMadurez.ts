@@ -1,11 +1,31 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
-import { supabase } from '../lib/supabase';
+import { apiDelete, apiGet, apiPost, apiUpload } from '../lib/api';
 import { EncuestaResponse } from './useIdoneidad';
+
+interface EncuestaRespuestaApiDto {
+  id: string;
+  nombreEncuestado: string;
+  cargoEncuestado: string;
+  areaEncuestado: string;
+  respuestas: any;
+  createdAt: string | null;
+}
+
+function mapRespuesta(r: EncuestaRespuestaApiDto): EncuestaResponse {
+  return {
+    id: r.id,
+    nombre_encuestado: r.nombreEncuestado,
+    cargo_encuestado: r.cargoEncuestado,
+    area_encuestado: r.areaEncuestado,
+    respuestas: Array.isArray(r.respuestas) ? r.respuestas : [],
+    created_at: r.createdAt ?? '',
+  };
+}
 
 const sanitizeUploadFileName = (fileName: string) =>
   fileName
     .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[̀-ͯ]/g, '')
     .replace(/[^a-zA-Z0-9._-]/g, '_')
     .replace(/_+/g, '_')
     .replace(/^_+|_+$/g, '') || 'encuesta.csv';
@@ -27,51 +47,29 @@ export function useMadurez(projectId: string | undefined, tipoEncuesta: 'predict
   const [existingFiles, setExistingFiles] = useState<{name: string, url: string}[]>([]);
   const deletedFilesRef = useRef<Set<string>>(new Set());
 
+  const filePrefix = `f5_${tipoEncuesta}_`;
+
   const fetchInitialData = useCallback(async (isSilent = false) => {
     if (!projectId) return;
     if (!isSilent) setIsLoadingData(true);
     try {
-      const { data: linkData } = await supabase
-        .from('encuestas_links')
-        .select('token')
-        .eq('proyecto_id', projectId)
-        .eq('activo', true)
-        .eq('tipo_encuesta', tipoEncuesta)
-        .order('created_at', { ascending: false })
-        .limit(1)
-        .single();
+      const linkData = await apiGet<{ token: string | null }>(`/api/projects/${projectId}/encuestas/${tipoEncuesta}/link`);
+      setActiveLink(linkData?.token ?? null);
 
-      if (linkData) setActiveLink(linkData.token);
-      else setActiveLink(null);
+      const respData = await apiGet<EncuestaRespuestaApiDto[]>(`/api/projects/${projectId}/encuestas/${tipoEncuesta}/respuestas`);
+      setResponses((respData ?? []).map(mapRespuesta));
 
-      const { data: respData } = await supabase
-        .from('encuestas_respuestas')
-        .select('*')
-        .eq('proyecto_id', projectId)
-        .eq('tipo_encuesta', tipoEncuesta)
-        .order('created_at', { ascending: false });
-        
-      setResponses(respData || []);
-
-      const { data: files } = await supabase.storage.from('documentos-pmo').list(`proyectos/${projectId}`);
-      const prefix = `f5_${tipoEncuesta}_`;
-      const f5Files = files?.filter(f => f.name.startsWith(prefix)) || [];
-      if (f5Files.length > 0) {
-        f5Files.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
-        const validFiles = f5Files.filter(f => !deletedFilesRef.current.has(f.name));
-        const dedupedFiles = Array.from(
-          validFiles.reduce((acc, file) => {
-            const key = normalizeStoredFileName(file.name);
-            if (!acc.has(key)) acc.set(key, file);
-            return acc;
-          }, new Map<string, (typeof validFiles)[number]>()).values()
-        );
+      const files = await apiGet<{ name: string; url: string }[]>(`/api/projects/${projectId}/files?prefix=${filePrefix}`);
+      const validFiles = (files ?? []).filter(f => !deletedFilesRef.current.has(f.name));
+      if (validFiles.length > 0) {
+        const dedupedByKey = new Map<string, { name: string; url: string }>();
+        for (const file of validFiles) {
+          const key = normalizeStoredFileName(file.name);
+          if (!dedupedByKey.has(key)) dedupedByKey.set(key, file);
+        }
+        const dedupedFiles = Array.from(dedupedByKey.values());
         const uploadedFileNames = new Set(dedupedFiles.map(file => normalizeStoredFileName(file.name)));
-        const fileObjects = await Promise.all(dedupedFiles.map(async (file) => {
-          const { data: signedData } = await supabase.storage.from('documentos-pmo').createSignedUrl(`proyectos/${projectId}/${file.name}`, 3600);
-          return { name: file.name, url: signedData?.signedUrl || '' };
-        }));
-        setExistingFiles(fileObjects);
+        setExistingFiles(dedupedFiles);
         setExternalFiles(prev => prev.filter(file => !uploadedFileNames.has(normalizeLocalFileName(file.name))));
       } else {
         setExistingFiles([]);
@@ -81,26 +79,18 @@ export function useMadurez(projectId: string | undefined, tipoEncuesta: 'predict
     } finally {
       if (!isSilent) setIsLoadingData(false);
     }
-  }, [projectId, tipoEncuesta]);
+  }, [projectId, tipoEncuesta, filePrefix]);
 
   useEffect(() => {
     if (!projectId) return;
     fetchInitialData();
-    const channel = supabase
-      .channel(`realtime_${tipoEncuesta}_${projectId}`)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'encuestas_respuestas', filter: `proyecto_id=eq.${projectId}` }, () => {
-        fetchInitialData(true);
-      })
-      .subscribe();
     const interval = setInterval(() => fetchInitialData(true), 5000);
-    return () => { supabase.removeChannel(channel); clearInterval(interval); };
+    return () => clearInterval(interval);
   }, [projectId, tipoEncuesta, fetchInitialData]);
 
   const generateLink = async () => {
     if (!projectId) return null;
-    await supabase.from('encuestas_links').update({ activo: false }).eq('proyecto_id', projectId).eq('tipo_encuesta', tipoEncuesta).eq('activo', true);
-    const { data, error } = await supabase.from('encuestas_links').insert({ proyecto_id: projectId, activo: true, tipo_encuesta: tipoEncuesta }).select('token').single();
-    if (error) throw error;
+    const data = await apiPost<{ token: string }>(`/api/projects/${projectId}/encuestas/${tipoEncuesta}/link`);
     setActiveLink(data.token);
     return data.token;
   };
@@ -108,37 +98,39 @@ export function useMadurez(projectId: string | undefined, tipoEncuesta: 'predict
   const deleteExistingFile = async (fileName: string) => {
     if (!projectId) return;
     const targetName = normalizeStoredFileName(fileName);
-    const prefix = `f5_${tipoEncuesta}_`;
-    const { data: files } = await supabase.storage.from('documentos-pmo').list(`proyectos/${projectId}`);
-    const fileNamesToDelete = (files || [])
-      .filter(file => file.name.startsWith(prefix) && normalizeStoredFileName(file.name) === targetName)
-      .map(file => file.name);
-    const namesToDelete = fileNamesToDelete.length > 0 ? fileNamesToDelete : [fileName];
+    const files = await apiGet<{ name: string; url: string }[]>(`/api/projects/${projectId}/files?prefix=${filePrefix}`);
+    const namesToDelete = (files ?? [])
+      .filter(f => normalizeStoredFileName(f.name) === targetName)
+      .map(f => f.name);
+    const finalNames = namesToDelete.length > 0 ? namesToDelete : [fileName];
 
-    namesToDelete.forEach(name => deletedFilesRef.current.add(name));
+    finalNames.forEach(name => deletedFilesRef.current.add(name));
     setExistingFiles(prev => prev.filter(f => normalizeStoredFileName(f.name) !== targetName));
-    const { error } = await supabase.storage.from('documentos-pmo').remove(
-      namesToDelete.map(name => `proyectos/${projectId}/${name}`)
-    );
-    if (error) console.error("Error deleting file:", error);
+
+    for (const name of finalNames) {
+      try {
+        await apiDelete(`/api/projects/${projectId}/files/${encodeURIComponent(name)}`);
+      } catch (error) {
+        console.error('Error deleting file:', error);
+      }
+    }
   };
 
   const uploadFileIfAny = async (): Promise<string[]> => {
     if (!projectId) return [];
     if (externalFiles.length === 0) return existingFiles.map(f => f.url).filter(Boolean);
-    
+
     const uploadedUrls: string[] = [...existingFiles.map(f => f.url)];
     const filesToUpload = [...externalFiles];
-    
-    for (const [index, file] of filesToUpload.entries()) {
-      const safeFileName = sanitizeUploadFileName(file.name);
-      const path = `proyectos/${projectId}/f5_${tipoEncuesta}_${Date.now()}_${index}_${safeFileName}`;
-      const { error } = await supabase.storage.from('documentos-pmo').upload(path, file);
-      if (error) throw error;
-      const { data } = await supabase.storage.from('documentos-pmo').createSignedUrl(path, 3600);
-      if (data?.signedUrl) {
-         uploadedUrls.push(data.signedUrl);
-      }
+
+    for (const file of filesToUpload) {
+      const formData = new FormData();
+      formData.append('file', file);
+      const uploaded = await apiUpload<{ name: string; url: string }>(
+        `/api/projects/${projectId}/files?prefix=${filePrefix}`,
+        formData
+      );
+      if (uploaded?.url) uploadedUrls.push(uploaded.url);
     }
     const uploadedKeys = new Set(filesToUpload.map(fileIdentity));
     setExternalFiles(prev => prev.filter(file => !uploadedKeys.has(fileIdentity(file))));
@@ -159,10 +151,9 @@ export function useMadurez(projectId: string | undefined, tipoEncuesta: 'predict
 
   const downloadCSV = () => {
     if (!responses.length) return;
-    
+
     const allQuestions = new Map<string, string>();
-    
-    // Identificar todas las preguntas únicas en las respuestas
+
     responses.forEach(r => {
       if (Array.isArray(r.respuestas)) {
         r.respuestas.forEach((ans, idx) => {
@@ -174,44 +165,43 @@ export function useMadurez(projectId: string | undefined, tipoEncuesta: 'predict
         Object.keys(r.respuestas).forEach(k => allQuestions.set(k, k));
       }
     });
-    
+
     const questionKeys = Array.from(allQuestions.keys());
     const header = ['Fecha', 'ID Respuesta', 'Nombre', 'Cargo', 'Área', ...questionKeys.map(k => `"${(allQuestions.get(k) || k).replace(/"/g, '""')}"`)].join(',');
-    
+
     const rows = responses.map(r => {
       const date = `"${new Date(r.created_at).toLocaleString('es-CO')}"`;
       const resId = `"${r.id || 'Anónimo'}"`;
-      
+
       const nombre = `"${(r.nombre_encuestado || 'N/A').replace(/"/g, '""')}"`;
       const cargo = `"${(r.cargo_encuestado || 'N/A').replace(/"/g, '""')}"`;
       const area = `"${(r.area_encuestado || 'N/A').replace(/"/g, '""')}"`;
-      
+
       const answers = questionKeys.map(k => {
         let val: any = '';
         if (Array.isArray(r.respuestas)) {
-          const ansObj = r.respuestas.find((a, idx) => 
+          const ansObj = r.respuestas.find((a, idx) =>
             (a.id || a.codigo || `Pregunta_${idx + 1}`) === k
           );
           if (ansObj) {
             val = ansObj.valor !== undefined ? ansObj.valor : ansObj.respuesta !== undefined ? ansObj.respuesta : '';
             if (val === '' && typeof ansObj === 'object') {
-                // Fallback si no encontramos la llave clásica
                 val = Object.values(ansObj).find(v => typeof v === 'number' || typeof v === 'string') || '';
             }
           }
         } else if (r.respuestas && typeof r.respuestas === 'object') {
           val = r.respuestas[k];
         }
-        
+
         if (val !== null && typeof val === 'object') val = JSON.stringify(val);
         return `"${String(val ?? '').replace(/"/g, '""')}"`;
       });
-      
+
       return [date, resId, nombre, cargo, area, ...answers].join(',');
     });
-    
-    const csvContent = '\uFEFF' + [header, ...rows].join('\n');
-    
+
+    const csvContent = '﻿' + [header, ...rows].join('\n');
+
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');

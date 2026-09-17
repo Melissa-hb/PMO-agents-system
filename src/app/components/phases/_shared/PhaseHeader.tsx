@@ -1,7 +1,7 @@
 import { ReactNode, useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router';
 import { ArrowLeft, X, Square, Loader2, RotateCcw, Download, ChevronDown, FileText } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence } from 'motion/react';
 import { toast } from 'sonner';
 import { useApp } from '../../../context/AppContext';
 import { useCancelAgent } from '../../../hooks/useCancelAgent';

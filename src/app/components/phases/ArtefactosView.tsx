@@ -8,7 +8,7 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useApp } from '../../context/AppContext';
-import { supabase } from '../../lib/supabase';
+import { apiPost, getPhaseState } from '../../lib/api';
 import NextPhaseButton from './_shared/NextPhaseButton';
 import PhaseHeader from './_shared/PhaseHeader';
 import { LoadingRouteState, MissingProjectState } from '../layout/RouteState';
@@ -518,24 +518,19 @@ export default function ArtefactosView() {
     setHasLoadedArtifacts(false);
     if (pollRef.current) clearInterval(pollRef.current);
     pollRef.current = setInterval(async () => {
-      const { data } = await supabase
-        .from('fases_estado')
-        .select('datos_consolidados, estado_visual')
-        .eq('proyecto_id', projectId)
-        .eq('numero_fase', 8)
-        .single();
+      const data = await getPhaseState(projectId!, 8);
 
-      if (data?.estado_visual === 'disponible' && data.datos_consolidados) {
-        if (!hasUsableAgent8Result(data.datos_consolidados)) return;
+      if (data?.estadoVisual === 'disponible' && data.datosConsolidados) {
+        if (!hasUsableAgent8Result(data.datosConsolidados)) return;
         clearInterval(pollRef.current!);
         pollRef.current = null;
-        const res = data.datos_consolidados as any;
+        const res = data.datosConsolidados as any;
         setRealArtifacts(mapArtifactsFromAgentData(res));
         setHasLoadedArtifacts(true);
         setIsReprocessing(false);
         updatePhaseStatus(projectId!, 8, 'disponible');
         toast.success('¡Catálogo de artefactos listo!', { description: 'El Agente 8 ha finalizado las recomendaciones.' });
-      } else if (data?.estado_visual === 'error') {
+      } else if (data?.estadoVisual === 'error') {
         clearInterval(pollRef.current!);
         pollRef.current = null;
         setHasLoadedArtifacts(true);
@@ -549,14 +544,9 @@ export default function ArtefactosView() {
   const loadPhase8State = useCallback(async () => {
     if (!projectId) return;
 
-    const { data } = await supabase
-      .from('fases_estado')
-      .select('datos_consolidados, estado_visual')
-      .eq('proyecto_id', projectId)
-      .eq('numero_fase', 8)
-      .single();
+    const data = await getPhaseState(projectId, 8);
 
-    if (data?.estado_visual === 'procesando') {
+    if (data?.estadoVisual === 'procesando') {
       updatePhaseStatus(projectId, 8, 'procesando');
       setHasLoadedArtifacts(false);
       setRealArtifacts([]);
@@ -564,10 +554,10 @@ export default function ArtefactosView() {
       return;
     }
 
-    if (data?.datos_consolidados && data.estado_visual !== 'error' && hasUsableAgent8Result(data.datos_consolidados)) {
-      setRealArtifacts(mapArtifactsFromAgentData(data.datos_consolidados));
+    if (data?.datosConsolidados && data.estadoVisual !== 'error' && hasUsableAgent8Result(data.datosConsolidados)) {
+      setRealArtifacts(mapArtifactsFromAgentData(data.datosConsolidados));
       setHasLoadedArtifacts(true);
-      updatePhaseStatus(projectId, 8, data.estado_visual === 'completado' ? 'completado' : 'disponible');
+      updatePhaseStatus(projectId, 8, data.estadoVisual === 'completado' ? 'completado' : 'disponible');
       return;
     }
 
@@ -585,24 +575,13 @@ export default function ArtefactosView() {
     startPolling();
 
     try {
-      const { data, error } = await supabase.functions.invoke('pmo-agent-artefactos', {
-        body: { projectId },
-      });
+      const data = await apiPost<any>(`/api/projects/${projectId}/artefactos/consolidar`);
 
-      if (error) {
+      if (data?.data) {
+        if (!hasUsableAgent8Result(data.data)) return;
         if (pollRef.current) clearInterval(pollRef.current);
         pollRef.current = null;
-        setIsReprocessing(false);
-        updatePhaseStatus(projectId, 8, 'disponible');
-        toast.error('No se pudo iniciar el Agente 8', { description: error.message });
-        return;
-      }
-
-      if ((data as any)?.data) {
-        if (!hasUsableAgent8Result((data as any).data)) return;
-        if (pollRef.current) clearInterval(pollRef.current);
-        pollRef.current = null;
-        setRealArtifacts(mapArtifactsFromAgentData((data as any).data));
+        setRealArtifacts(mapArtifactsFromAgentData(data.data));
         setIsReprocessing(false);
         setHasLoadedArtifacts(true);
         updatePhaseStatus(projectId, 8, 'disponible');

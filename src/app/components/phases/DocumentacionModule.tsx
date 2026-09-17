@@ -12,7 +12,7 @@ import {
   type DocumentoLocal,
 } from '../../hooks/useDocumentacion';
 import { useSoundManager } from '../../hooks/useSoundManager';
-import { supabase } from '../../lib/supabase';
+import { getPhaseState, runPhase, updatePhaseState } from '../../lib/api';
 import PhaseHeader from './_shared/PhaseHeader';
 import NextPhaseButton from './_shared/NextPhaseButton';
 import type { DocCategory } from './documentacion/documentCategories';
@@ -104,17 +104,12 @@ export default function DocumentacionModule() {
 
   const keepProcessingIfAgentStarted = useCallback(async () => {
     if (!projectId) return false;
-    const { data } = await supabase
-      .from('fases_estado')
-      .select('estado_visual')
-      .eq('proyecto_id', projectId)
-      .eq('numero_fase', 1)
-      .single();
+    const data = await getPhaseState(projectId, 1);
 
-    if (data?.estado_visual === 'procesando') {
+    if (data?.estadoVisual === 'procesando') {
       setIsSending(false);
       toast.info('El Agente 1 sigue en ejecucion.', {
-        description: 'Seguiremos esperando el resultado guardado en Supabase.',
+        description: 'Seguiremos esperando el resultado guardado en el backend.',
       });
       return true;
     }
@@ -137,13 +132,8 @@ export default function DocumentacionModule() {
     agent9TriggerInFlightRef.current = true;
     setAgent9Status('processing');
     try {
-      await supabase.from('fases_estado').upsert(
-        { proyecto_id: projectId, numero_fase: 9, estado_visual: 'procesando', datos_consolidados: null, updated_at: new Date().toISOString() },
-        { onConflict: 'proyecto_id,numero_fase' }
-      );
-      supabase.functions.invoke('pmo-agent', {
-        body: { projectId, phaseNumber: 9, iteration: 1 }
-      }).catch(e => {
+      await updatePhaseState(projectId, 9, { estadoVisual: 'procesando', datosConsolidados: null });
+      runPhase(projectId, 9, { iteration: 1 }).catch(e => {
         agent9TriggerInFlightRef.current = false;
         console.error('[Agent9] invoke error:', e);
         setAgent9Status('error');
@@ -159,20 +149,16 @@ export default function DocumentacionModule() {
     if (!projectId || (!isCompleted && !visibleDiagnosis)) return;
 
     const pollAgent9 = async () => {
-      const { data, error } = await supabase
-        .from('fases_estado')
-        .select('datos_consolidados, estado_visual, updated_at')
-        .eq('proyecto_id', projectId)
-        .eq('numero_fase', 9)
-        .maybeSingle();
-
-      if (error) {
+      let data;
+      try {
+        data = await getPhaseState(projectId, 9);
+      } catch (error) {
         console.error('[Agent9] poll error:', error);
         return;
       }
 
-      if (data?.datos_consolidados) {
-        const dc = data.datos_consolidados as any;
+      if (data?.datosConsolidados) {
+        const dc = data.datosConsolidados as any;
         if (dc?._error) {
           agent9TriggerInFlightRef.current = false;
           setAgent9Status('error');
@@ -189,25 +175,22 @@ export default function DocumentacionModule() {
         }
       }
 
-      if (data?.estado_visual === 'error') {
+      if (data?.estadoVisual === 'error') {
         agent9TriggerInFlightRef.current = false;
         setAgent9Status('error');
         if (agent9PollRef.current) clearInterval(agent9PollRef.current);
-      } else if (data?.estado_visual === 'procesando') {
-        const updatedAt = data?.updated_at ? new Date(data.updated_at).getTime() : 0;
+      } else if (data?.estadoVisual === 'procesando') {
+        const updatedAt = data?.updatedAt ? new Date(data.updatedAt).getTime() : 0;
         const minutesElapsed = (Date.now() - updatedAt) / 1000 / 60;
         if (minutesElapsed > 12) {
           console.warn('[Agent9] Estado procesando > 3 min sin resultado — se considera timeout. Reintentando.');
           agent9TriggerInFlightRef.current = false;
-          await supabase.from('fases_estado').upsert(
-            { proyecto_id: projectId, numero_fase: 9, estado_visual: 'disponible', datos_consolidados: null, updated_at: new Date().toISOString() },
-            { onConflict: 'proyecto_id,numero_fase' }
-          );
+          await updatePhaseState(projectId, 9, { estadoVisual: 'disponible', datosConsolidados: null });
           triggerAgent9();
         } else {
           setAgent9Status('processing');
         }
-      } else if (!data || !data?.datos_consolidados) {
+      } else if (!data || !data?.datosConsolidados) {
         triggerAgent9();
       }
     };

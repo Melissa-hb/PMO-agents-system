@@ -1,14 +1,14 @@
 /**
  * useCancelAgent
- * 
+ *
  * Hook reutilizable para cancelar un agente en ejecución.
- * Revierte la fase de 'procesando' → 'disponible' en Supabase y en el estado local.
- * El edge function, al terminar, detectará que ya no está en 'procesando' y descartará el resultado.
+ * Revierte la fase de 'procesando' → 'disponible' en el backend y en el estado local.
+ * El backend, al terminar, detectará que ya no está en 'procesando' y descartará el resultado.
  */
 
 import { useState, useCallback } from 'react';
 import { toast } from 'sonner';
-import { supabase } from '../lib/supabase';
+import { apiPost } from '../lib/api';
 import { useApp } from '../context/AppContext';
 
 export function useCancelAgent(projectId: string, phaseNumber: number) {
@@ -20,17 +20,8 @@ export function useCancelAgent(projectId: string, phaseNumber: number) {
     setIsCancelling(true);
 
     try {
-      // 1. Actualizar DB — esto es lo que el edge function revisa antes de guardar
-      const { error } = await supabase
-        .from('fases_estado')
-        .update({
-          estado_visual: 'disponible',
-          updated_at: new Date().toISOString(),
-        })
-        .eq('proyecto_id', projectId)
-        .eq('numero_fase', phaseNumber);
-
-      if (error) throw error;
+      // 1. Actualizar el backend — esto es lo que revisa antes de guardar el resultado del agente
+      await apiPost(`/api/projects/${projectId}/phases/${phaseNumber}/cancel`);
 
       // 2. Actualizar estado local (optimistic UI)
       updatePhaseStatus(projectId, phaseNumber, 'disponible');
@@ -39,7 +30,6 @@ export function useCancelAgent(projectId: string, phaseNumber: number) {
         description: `El Agente ${phaseNumber} fue detenido. Los datos no fueron guardados.`,
       });
 
-      // Devolver true para que el componente sepa que debe cambiar su vista
       return true;
     } catch (err: any) {
       toast.error('No se pudo cancelar', { description: err.message });

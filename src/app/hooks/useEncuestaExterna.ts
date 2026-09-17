@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { supabase } from '../lib/supabase';
+import { apiGet, apiPost } from '../lib/api';
 
 export interface BancoPregunta {
   id: string;
@@ -9,11 +9,14 @@ export interface BancoPregunta {
 }
 
 export interface EncuestaLink {
-  id: string;
   proyecto_id: string;
-  token: string;
-  activo: boolean;
   tipo_encuesta: string;
+}
+
+interface PublicSurveyApiDto {
+  proyectoId: string;
+  tipoEncuesta: string;
+  preguntas: { id: string; codigo: string; categoria: string; textoPregunta: string }[];
 }
 
 export function useEncuestaExterna(token: string) {
@@ -29,37 +32,20 @@ export function useEncuestaExterna(token: string) {
         setIsLoading(false);
         return;
       }
-      
+
       try {
-        // 1. Validar el token
-        const { data: linkData, error: linkError } = await supabase
-          .from('encuestas_links')
-          .select('*')
-          .eq('token', token)
-          .eq('activo', true)
-          .single();
+        const data = await apiGet<PublicSurveyApiDto>(`/api/public/encuestas/${token}`);
 
-        if (linkError || !linkData) {
-          setError('El enlace de la encuesta es inválido o ha expirado.');
-          setIsLoading(false);
-          return;
-        }
-
-        setLinkInfo(linkData);
-
-        // 2. Cargar preguntas del banco
-        const { data: qData, error: qError } = await supabase
-          .from('banco_preguntas')
-          .select('id, codigo, categoria, texto_pregunta')
-          .eq('tipo_encuesta', linkData.tipo_encuesta)
-          .order('codigo', { ascending: true });
-
-        if (qError) throw qError;
-        setPreguntas(qData || []);
-
+        setLinkInfo({ proyecto_id: data.proyectoId, tipo_encuesta: data.tipoEncuesta });
+        setPreguntas((data.preguntas ?? []).map(p => ({
+          id: p.id,
+          codigo: p.codigo,
+          categoria: p.categoria,
+          texto_pregunta: p.textoPregunta,
+        })));
       } catch (err) {
         console.error(err);
-        setError('Error al cargar la encuesta. Inténtalo más tarde.');
+        setError('El enlace de la encuesta es inválido o ha expirado.');
       } finally {
         setIsLoading(false);
       }
@@ -74,31 +60,7 @@ export function useEncuestaExterna(token: string) {
     area: string,
     respuestas: Record<string, number>
   ) => {
-    if (!linkInfo) throw new Error('No hay link info');
-
-    // Convert Record<string, number> to array of objects
-    const respuestasArray = Object.entries(respuestas).map(([qId, valor]) => {
-      const p = preguntas.find((x) => x.id === qId);
-      return {
-        pregunta_id: qId,
-        codigo: p?.codigo,
-        valor
-      };
-    });
-
-    const { error: insertError } = await supabase
-      .from('encuestas_respuestas')
-      .insert({
-        proyecto_id: linkInfo.proyecto_id,
-        link_id: linkInfo.id,
-        nombre_encuestado: nombre,
-        cargo_encuestado: cargo,
-        area_encuestado: area,
-        tipo_encuesta: linkInfo.tipo_encuesta,
-        respuestas: respuestasArray
-      });
-
-    if (insertError) throw insertError;
+    await apiPost(`/api/public/encuestas/${token}/respuestas`, { nombre, cargo, area, respuestas });
     return true;
   };
 

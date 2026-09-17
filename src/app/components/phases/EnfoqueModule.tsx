@@ -14,7 +14,13 @@ import { useApp } from '../../context/AppContext';
 import { useSoundManager } from '../../hooks/useSoundManager';
 import PhaseHeader from './_shared/PhaseHeader';
 import NextPhaseButton from './_shared/NextPhaseButton';
-import { supabase } from '../../lib/supabase';
+import { getPhaseState, runPhase, updatePhaseState } from '../../lib/api';
+
+/** Adapta PhaseStateDto (camelCase) al shape snake_case que usaba la fila de Supabase. */
+async function readRawPhaseState(projectId: string, phaseNumber: number) {
+  const s = await getPhaseState(projectId, phaseNumber);
+  return { estado_visual: s.estadoVisual, datos_consolidados: s.datosConsolidados, updated_at: s.updatedAt };
+}
 import EnfoqueDiagnosisView from './enfoque/EnfoqueDiagnosisView';
 import { LoadingRouteState, MissingProjectState } from '../layout/RouteState';
 
@@ -97,30 +103,6 @@ function isPhase6ProcessingMarker(datos: any): boolean {
     !Array.isArray(datos) &&
     datos._processing === true
   );
-}
-
-async function getInvokeErrorMessage(response: any, fallback = 'La Edge Function no pudo iniciar el Agente 6.') {
-  const direct = response?.data?.error || response?.data?.message;
-  if (direct) return String(direct);
-
-  const context = response?.error?.context;
-  if (context && typeof context.clone === 'function') {
-    try {
-      const text = await context.clone().text();
-      if (text) {
-        try {
-          const parsed = JSON.parse(text);
-          return String(parsed?.error || parsed?.message || text);
-        } catch {
-          return text;
-        }
-      }
-    } catch {
-      // Keep the Supabase error below if the response body cannot be read.
-    }
-  }
-
-  return String(response?.error?.message || fallback);
 }
 
 function formatJsonScalar(value: any): string {
@@ -544,18 +526,10 @@ export default function EnfoqueModule() {
     setResult(mapped);
     setView(status === 'completado' ? 'approved' : 'results');
     updatePhaseStatus(projectId!, 6, status === 'completado' ? 'completado' : 'disponible');
-    supabase
-      .from('fases_estado')
-      .update({
-        estado_visual: status === 'completado' ? 'completado' : 'disponible',
-        datos_consolidados: rawData,
-        updated_at: new Date().toISOString(),
-      })
-      .eq('proyecto_id', projectId!)
-      .eq('numero_fase', 6)
-      .then(({ error }) => {
-        if (error) console.error('[Phase6] Error persistiendo resultado recibido:', error);
-      });
+    updatePhaseState(projectId!, 6, {
+      estadoVisual: status === 'completado' ? 'completado' : 'disponible',
+      datosConsolidados: rawData,
+    }).catch(error => console.error('[Phase6] Error persistiendo resultado recibido:', error));
     playAgentSuccess();
     toast.success('Agente 6 definio el enfoque metodologico', { description: mapped.enfoque.tipo });
     return true;
@@ -563,12 +537,12 @@ export default function EnfoqueModule() {
 
   const readPhase6State = useCallback(async () => {
     if (!projectId) return { data: null as any, error: null as any };
-    return supabase
-      .from('fases_estado')
-      .select('datos_consolidados, estado_visual, updated_at')
-      .eq('proyecto_id', projectId)
-      .eq('numero_fase', 6)
-      .single();
+    try {
+      const data = await readRawPhaseState(projectId, 6);
+      return { data, error: null as any };
+    } catch (error) {
+      return { data: null as any, error };
+    }
   }, [projectId]);
 
   const failPhase6 = useCallback(async (
@@ -584,20 +558,15 @@ export default function EnfoqueModule() {
     setView('error');
 
     if (options.persistPayload && projectId) {
-      await supabase
-        .from('fases_estado')
-        .update({
-          estado_visual: 'error',
-          datos_consolidados: {
-            _error: true,
-            message,
-            phaseNumber: 6,
-            timestamp: new Date().toISOString(),
-          },
-          updated_at: new Date().toISOString(),
-        })
-        .eq('proyecto_id', projectId)
-        .eq('numero_fase', 6);
+      await updatePhaseState(projectId, 6, {
+        estadoVisual: 'error',
+        datosConsolidados: {
+          _error: true,
+          message,
+          phaseNumber: 6,
+          timestamp: new Date().toISOString(),
+        },
+      });
     }
 
     if (projectId) {
@@ -651,14 +620,7 @@ export default function EnfoqueModule() {
           setView(data.estado_visual === 'completado' ? 'approved' : 'results');
           updatePhaseStatus(projectId!, 6, data.estado_visual === 'completado' ? 'completado' : 'disponible');
           if (data.estado_visual === 'procesando') {
-            await supabase
-              .from('fases_estado')
-              .update({
-                estado_visual: 'disponible',
-                updated_at: new Date().toISOString(),
-              })
-              .eq('proyecto_id', projectId!)
-              .eq('numero_fase', 6);
+            await updatePhaseState(projectId!, 6, { estadoVisual: 'disponible' });
           }
           playAgentSuccess();
           toast.success('Agente 6 definió el enfoque metodológico', { description: mapped.enfoque.tipo });
@@ -694,12 +656,7 @@ export default function EnfoqueModule() {
     setHasCheckedExistingResult(false);
     (async () => {
       try {
-        const { data } = await supabase
-          .from('fases_estado')
-          .select('datos_consolidados, estado_visual, updated_at')
-          .eq('proyecto_id', projectId)
-          .eq('numero_fase', 6)
-          .single();
+        const data = await readRawPhaseState(projectId, 6);
         if (!isActive) return;
         if (data?.datos_consolidados) {
           const mapped = mapAgentResultV2(data.datos_consolidados);
@@ -712,14 +669,7 @@ export default function EnfoqueModule() {
             setView(data.estado_visual === 'completado' ? 'approved' : 'results');
             updatePhaseStatus(projectId, 6, data.estado_visual === 'completado' ? 'completado' : 'disponible');
             if (data.estado_visual === 'procesando') {
-              await supabase
-                .from('fases_estado')
-                .update({
-                  estado_visual: 'disponible',
-                  updated_at: new Date().toISOString(),
-                })
-                .eq('proyecto_id', projectId)
-                .eq('numero_fase', 6);
+              await updatePhaseState(projectId, 6, { estadoVisual: 'disponible' });
             }
           } else if (data.estado_visual !== 'procesando') {
             const errorData = data.datos_consolidados as any;
@@ -820,19 +770,8 @@ export default function EnfoqueModule() {
   useEffect(() => {
     if (!projectId || view !== 'approved' || phase7UnlockEnsured.current) return;
     phase7UnlockEnsured.current = true;
+    // updatePhaseStatus ya desbloquea la Fase 7 en el backend (ver ProyectoService.updatePhaseStatus).
     updatePhaseStatus(projectId, 7, 'disponible');
-    supabase
-      .from('fases_estado')
-      .update({
-        estado_visual: 'disponible',
-        updated_at: new Date().toISOString(),
-      })
-      .eq('proyecto_id', projectId)
-      .eq('numero_fase', 7)
-      .eq('estado_visual', 'bloqueado')
-      .then(({ error }) => {
-        if (error) console.error('[Phase6] Error desbloqueando Fase 7:', error);
-      });
   }, [projectId, updatePhaseStatus, view]);
 
   useEffect(() => {
@@ -885,18 +824,11 @@ export default function EnfoqueModule() {
         processingGuardUntilRef.current = Date.now() + 15000;
         startPolling(ts);
 
-        supabase.functions.invoke('pmo-agent', {
-          body: { projectId, phaseNumber: 6, iteration: 1 }
-        }).then(async (response) => {
-          if (response.error) {
-            const edgeMessage = await getInvokeErrorMessage(response);
-            // Edge function returned non-2xx — check DB before deciding what to do
-            const { data } = await supabase
-              .from('fases_estado')
-              .select('datos_consolidados, estado_visual')
-              .eq('proyecto_id', projectId)
-              .eq('numero_fase', 6)
-              .single();
+        runPhase(projectId, 6, { iteration: 1 }).then(async (result) => {
+          if (result?.success === false) {
+            const backendMessage = result.error || 'El backend no pudo iniciar el Agente 6.';
+            // Verificar estado antes de decidir que hacer
+            const data = await readRawPhaseState(projectId, 6);
             // Agent is still running in the background — let polling handle it
             if (data?.estado_visual === 'procesando' && isPhase6ProcessingMarker(data?.datos_consolidados)) return;
             // Agent actually finished and saved results — use them
@@ -905,10 +837,10 @@ export default function EnfoqueModule() {
               return;
             }
             // Genuine failure — show error but do NOT reset autoTriggered to prevent loop
-            await failPhase6(edgeMessage, { persistPayload: true });
+            await failPhase6(backendMessage, { persistPayload: true });
             return;
           }
-          if (!(response.data as any)?.inProgress && (response.data as any)?.data) applyAgentResult((response.data as any).data);
+          if (!result?.inProgress && result?.data) applyAgentResult(result.data);
         }).catch(async (err: any) => {
           // Network or unexpected error — do NOT reset autoTriggered to prevent loop
           const { data } = await readPhase6State();
@@ -949,15 +881,7 @@ export default function EnfoqueModule() {
     setErrorMessage('');
     setResult(null);
 
-    await supabase
-      .from('fases_estado')
-      .update({
-        estado_visual: 'disponible',
-        datos_consolidados: null,
-        updated_at: new Date().toISOString(),
-      })
-      .eq('proyecto_id', projectId)
-      .eq('numero_fase', 6);
+    await updatePhaseState(projectId, 6, { estadoVisual: 'disponible', datosConsolidados: null });
 
     updatePhaseStatus(projectId, 6, 'disponible');
     setView('auto-trigger');
@@ -980,26 +904,19 @@ export default function EnfoqueModule() {
       processingGuardUntilRef.current = Date.now() + 15000;
       startPolling(ts);
 
-      supabase.functions.invoke('pmo-agent', {
-        body: { projectId, phaseNumber: 6, iteration: 2, comments: reprocessComment }
-      }).then(async (response) => {
-        if (response.error) {
-          const edgeMessage = await getInvokeErrorMessage(response);
-          const { data } = await supabase
-            .from('fases_estado')
-            .select('datos_consolidados, estado_visual')
-            .eq('proyecto_id', projectId)
-            .eq('numero_fase', 6)
-            .single();
+      runPhase(projectId!, 6, { iteration: 2, comments: reprocessComment }).then(async (result) => {
+        if (result?.success === false) {
+          const backendMessage = result.error || 'El backend no pudo re-procesar el Agente 6.';
+          const data = await readRawPhaseState(projectId!, 6);
           if (data?.estado_visual === 'procesando' && isPhase6ProcessingMarker(data?.datos_consolidados)) return;
           if (data?.datos_consolidados && hasUsablePhase6Data(data.datos_consolidados)) {
             applyAgentResult(data.datos_consolidados, data.estado_visual);
             return;
           }
-          await failPhase6(edgeMessage, { persistPayload: true });
+          await failPhase6(backendMessage, { persistPayload: true });
           return;
         }
-        if (!(response.data as any)?.inProgress && (response.data as any)?.data) applyAgentResult((response.data as any).data);
+        if (!result?.inProgress && result?.data) applyAgentResult(result.data);
       }).catch(async (err: any) => {
         const { data } = await readPhase6State();
         if (data?.estado_visual === 'procesando' && isPhase6ProcessingMarker(data?.datos_consolidados)) return;
@@ -1027,33 +944,13 @@ export default function EnfoqueModule() {
     setIsApproving(true);
     try {
       logPhase6('approve_phase6_db_start', { projectId });
-      const { error: approveError } = await supabase
-        .from('fases_estado')
-        .update({
-          estado_visual: 'completado',
-          updated_at: new Date().toISOString(),
-        })
-        .eq('proyecto_id', projectId!)
-        .eq('numero_fase', 6);
-      if (approveError) throw approveError;
+      await updatePhaseState(projectId!, 6, { estadoVisual: 'completado' });
       logPhase6('approve_phase6_db_ok', { projectId });
-
-      logPhase6('unlock_phase7_db_start', { projectId });
-      const { error: unlockError } = await supabase
-        .from('fases_estado')
-        .update({
-          estado_visual: 'disponible',
-          updated_at: new Date().toISOString(),
-        })
-        .eq('proyecto_id', projectId!)
-        .eq('numero_fase', 7)
-        .eq('estado_visual', 'bloqueado');
-      if (unlockError) throw unlockError;
-      logPhase6('unlock_phase7_db_ok', { projectId });
+      // El desbloqueo de la Fase 7 lo hace el backend dentro de updatePhaseStatus(6, 'completado') mas abajo.
     } catch (err: any) {
       logPhase6('approve_error', { projectId, message: err?.message ?? String(err) });
       toast.error('No se pudo aprobar la Fase 6', {
-        description: err?.message ?? 'Revise la conexion con Supabase e intente nuevamente.',
+        description: err?.message ?? 'Revise la conexion con el backend e intente nuevamente.',
       });
       setIsApproving(false);
       return;
@@ -1121,22 +1018,20 @@ export default function EnfoqueModule() {
             processingGuardUntilRef.current = Date.now() + 15000;
             startPolling(ts);
 
-            supabase.functions.invoke('pmo-agent', {
-              body: { projectId, phaseNumber: 6, iteration: nextIteration, comments: null }
-            }).then(async (response) => {
-              if (response.error) {
-                const edgeMessage = await getInvokeErrorMessage(response);
+            runPhase(projectId!, 6, { iteration: nextIteration, comments: null }).then(async (result) => {
+              if (result?.success === false) {
+                const backendMessage = result.error || 'El backend no pudo re-procesar el Agente 6.';
                 const { data } = await readPhase6State();
                 if (data?.estado_visual === 'procesando' && isPhase6ProcessingMarker(data?.datos_consolidados)) return;
                 if (data?.datos_consolidados && hasUsablePhase6Data(data.datos_consolidados)) {
                   applyAgentResult(data.datos_consolidados, data.estado_visual);
                   return;
                 }
-                await failPhase6(edgeMessage, { persistPayload: true });
+                await failPhase6(backendMessage, { persistPayload: true });
                 return;
               }
-              if (!(response.data as any)?.inProgress && (response.data as any)?.data) {
-                applyAgentResult((response.data as any).data);
+              if (!result?.inProgress && result?.data) {
+                applyAgentResult(result.data);
               }
             }).catch(async (err: any) => {
               const { data } = await readPhase6State();

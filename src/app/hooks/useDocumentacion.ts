@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { supabase } from '../lib/supabase';
+import { apiDelete, apiGet, apiPut, apiUpload, getPhaseState, runPhase } from '../lib/api';
 import { toast } from 'sonner';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -13,7 +13,6 @@ export interface DocumentoLocal {
   category: string;
   customCategory: string;
   file?: File;
-  // Después de subir a Supabase Storage:
   storagePath?: string;
   dbId?: string;
 }
@@ -221,10 +220,15 @@ export function normalizeDocumentacionDiagnosis(value: unknown): AgentDiagnosis 
   return hasMeaningfulContent ? candidate as AgentDiagnosis : null;
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// NOMBRE DEL BUCKET EN SUPABASE STORAGE
-// ─────────────────────────────────────────────────────────────────────────────
-const STORAGE_BUCKET = 'documentos-pmo';
+interface DocumentoApiDto {
+  id: string;
+  name: string;
+  size: number;
+  type: string;
+  category: string;
+  customCategory: string;
+  storagePath: string | null;
+}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // HOOK PRINCIPAL
@@ -245,38 +249,26 @@ export function useDocumentacion(projectId: string) {
     setIsLoadingData(true);
     try {
       // 1. Obtener documentos
-      const { data: docsData } = await supabase
-        .from('documentos')
-        .select('*')
-        .eq('proyecto_id', projectId);
+      const docsData = await apiGet<DocumentoApiDto[]>(`/api/projects/${projectId}/documentos`);
 
       if (docsData) {
-        setDocumentos(docsData.map(d => {
-          const isStandard = /^D(0[1-9]|1[0-1])$/.test(d.categoria);
-          return {
-            id: d.id,
-            name: d.nombre_personalizado || 'Documento',
-            size: (d.metadatos?.size_kb || 0) * 1024,
-            type: 'application/pdf',
-            category: isStandard ? d.categoria : 'D16',
-            customCategory: isStandard ? '' : d.categoria,
-            storagePath: d.storage_path,
-            dbId: d.id,
-          };
-        }));
+        setDocumentos(docsData.map(d => ({
+          id: d.id,
+          name: d.name,
+          size: d.size,
+          type: d.type,
+          category: d.category,
+          customCategory: d.customCategory,
+          storagePath: d.storagePath ?? undefined,
+          dbId: d.id,
+        })));
       }
 
       // 2. Obtener diagnóstico de la fase 1
-      const { data: faseData } = await supabase
-        .from('fases_estado')
-        .select('datos_consolidados')
-        .eq('proyecto_id', projectId)
-        .eq('numero_fase', 1)
-        .single();
+      const faseData = await getPhaseState(projectId, 1);
 
-      if (faseData?.datos_consolidados) {
-        // La BD guarda el envelope completo { metadata: {...}, diagnosis: {...} }
-        const consolidated = faseData.datos_consolidados as Record<string, any>;
+      if (faseData?.datosConsolidados) {
+        const consolidated = faseData.datosConsolidados as Record<string, any>;
         const storedError = extractAgentError(consolidated);
         if (storedError) {
           setAgentError(storedError);
@@ -298,8 +290,7 @@ export function useDocumentacion(projectId: string) {
   }, [projectId]);
 
   /**
-   * PASO 1: Sube los archivos a Supabase Storage y registra sus rutas en la tabla `documentos`.
-   * Retorna los documentos enriquecidos con sus paths y IDs de base de datos.
+   * PASO 1: Sube los archivos al backend (que a su vez los sube a Storage) y los registra.
    */
   const uploadDocuments = useCallback(async (documentos: DocumentoLocal[]): Promise<DocumentoLocal[]> => {
     setIsUploading(true);
@@ -307,11 +298,16 @@ export function useDocumentacion(projectId: string) {
 
     try {
       for (const doc of documentos) {
-        // Si ya fue subido antes (tiene storagePath), actualizamos su categoria en DB por si cambió y lo reutilizamos
+        // Si ya fue subido antes (tiene storagePath), solo actualizamos su categoria por si cambió
         if (doc.storagePath && doc.dbId) {
-          await supabase.from('documentos').update({
-            categoria: doc.category === 'D16' ? doc.customCategory : doc.category
-          }).eq('id', doc.dbId);
+          try {
+            await apiPut(`/api/projects/${projectId}/documentos/${doc.dbId}`, {
+              category: doc.category,
+              customCategory: doc.category === 'D16' ? doc.customCategory : '',
+            });
+          } catch {
+            // no crítico: si falla, seguimos con el documento existente
+          }
           enriched.push(doc);
           continue;
         }
@@ -323,58 +319,20 @@ export function useDocumentacion(projectId: string) {
 
         setUploadProgress(prev => ({ ...prev, [doc.id]: 'uploading' }));
 
-        // Función para limpiar el nombre del archivo para la ruta del storage
-        const safeName = doc.name
-          .normalize("NFD")
-          .replace(/[\u0300-\u036f]/g, "") // Quitar tildes
-          .replace(/[^a-zA-Z0-9._-]/g, "_") // Reemplazar caracteres especiales por guiones bajos
-          .replace(/_+/g, "_") // Evitar guiones bajos duplicados
-          .replace(/^_+|_+$/g, ""); // Quitar guiones bajos al inicio/final
+        try {
+          const formData = new FormData();
+          formData.append('file', doc.file);
+          formData.append('category', doc.category);
+          formData.append('customCategory', doc.category === 'D16' ? doc.customCategory : '');
 
-        const storagePath = `proyectos/${projectId}/${Date.now()}_${safeName}`;
+          const created = await apiUpload<DocumentoApiDto>(`/api/projects/${projectId}/documentos`, formData);
 
-        // 1a. Subir el archivo al bucket de Supabase Storage
-        const { error: uploadError } = await supabase.storage
-          .from(STORAGE_BUCKET)
-          .upload(storagePath, doc.file, {
-            cacheControl: '3600',
-            upsert: false,
-          });
-
-        if (uploadError) {
+          setUploadProgress(prev => ({ ...prev, [doc.id]: 'done' }));
+          enriched.push({ ...doc, storagePath: created.storagePath ?? undefined, dbId: created.id });
+        } catch (err) {
           setUploadProgress(prev => ({ ...prev, [doc.id]: 'error' }));
-          toast.error(`Error subiendo ${doc.name}: ${uploadError.message}`);
-          continue;
+          toast.error(`Error subiendo ${doc.name}: ${err instanceof Error ? err.message : 'Error desconocido'}`);
         }
-
-        // 1b. Obtener URL firmada válida por 1 hora (que el agente usará para leer el PDF)
-        const { data: signedData } = await supabase.storage
-          .from(STORAGE_BUCKET)
-          .createSignedUrl(storagePath, 3600);
-
-        const signedUrl = signedData?.signedUrl ?? storagePath;
-
-        // 1c. Registrar en la tabla `documentos`
-        const { data: dbDoc, error: dbError } = await supabase
-          .from('documentos')
-          .insert({
-            proyecto_id: projectId,
-            storage_path: signedUrl,
-            categoria: doc.category === 'D16' ? doc.customCategory : doc.category,
-            nombre_personalizado: doc.name,
-            metadatos: { size_kb: Math.round(doc.size / 1024), original_name: doc.name },
-          })
-          .select('id')
-          .single();
-
-        if (dbError) {
-          setUploadProgress(prev => ({ ...prev, [doc.id]: 'error' }));
-          toast.error(`Error registrando ${doc.name} en DB: ${dbError.message}`);
-          continue;
-        }
-
-        setUploadProgress(prev => ({ ...prev, [doc.id]: 'done' }));
-        enriched.push({ ...doc, storagePath: signedUrl, dbId: dbDoc.id });
       }
 
       return enriched;
@@ -384,8 +342,7 @@ export function useDocumentacion(projectId: string) {
   }, [projectId]);
 
   /**
-   * PASO 2: Llama a la Edge Function `pmo-agent` con phaseNumber=1.
-   * La función recuperará los documentos de la DB y los enviará a Gemini con el prompt del Agente.
+   * PASO 2: Llama al backend para ejecutar la fase 1 (Agente 3 - Documentación).
    */
   const runAgent = useCallback(async (iteration = 1, comments: string | null = null) => {
     setIsAnalyzing(true);
@@ -393,32 +350,12 @@ export function useDocumentacion(projectId: string) {
     setAgentError(null);
 
     try {
-      const { data: { session } } = await supabase.auth.getSession();
+      const result = await runPhase(projectId, 1, { iteration, comments });
 
-      const response = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL.replace('/rest/v1', '')}/functions/v1/pmo-agent`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${session?.access_token ?? import.meta.env.VITE_SUPABASE_ANON_KEY}`,
-          },
-          body: JSON.stringify({
-            projectId,
-            phaseNumber: 1,
-            iteration,
-            comments,
-          }),
-        }
-      );
-
-      const result = await response.json();
-
-      if (!response.ok || result.success === false) {
+      if (result?.success === false) {
         throw new Error(result.error ?? 'Error desconocido en el agente');
       }
 
-      // El diagnóstico viene en result.data.diagnosis (estructura del Agente 3)
       const reportedError = extractAgentError(result.data);
       if (reportedError) {
         setAgentError(reportedError);
@@ -447,7 +384,6 @@ export function useDocumentacion(projectId: string) {
    * Flujo completo: Upload → DB → Agente
    */
   const processPhase = useCallback(async (documentos: DocumentoLocal[]) => {
-    // 1. Subir archivos y registrar en DB
     const enriched = await uploadDocuments(documentos);
 
     if (enriched.length === 0) {
@@ -457,43 +393,24 @@ export function useDocumentacion(projectId: string) {
 
     toast.success(`${enriched.length} documentos subidos correctamente.`);
 
-    // 2. Llamar al Agente 3 (Gemini)
     const result = await runAgent();
 
     return result;
   }, [uploadDocuments, runAgent]);
 
   /**
-   * ELIMINAR documento: borra del Storage, de la tabla documentos y del estado local.
+   * ELIMINAR documento
    */
   const deleteDocument = useCallback(async (doc: DocumentoLocal) => {
-    // 1. Si ya está en la DB, borrarlo
     if (doc.dbId) {
-      // 1a. Extraer la ruta raw del storage (sin el token de la signed URL)
-      const rawPath = doc.storagePath
-        ? doc.storagePath.match(/documentos-pmo\/(.+?)(?:\?token=|$)/)?.[1]
-        : null;
-
-      if (rawPath) {
-        const decodedPath = decodeURIComponent(rawPath);
-        const { error: storageError } = await supabase.storage
-          .from(STORAGE_BUCKET)
-          .remove([decodedPath]);
-        if (storageError) console.warn('Error borrando del storage:', storageError.message);
-      }
-
-      const { error: dbError } = await supabase
-        .from('documentos')
-        .delete()
-        .eq('id', doc.dbId);
-
-      if (dbError) {
-        toast.error(`Error eliminando ${doc.name}: ${dbError.message}`);
+      try {
+        await apiDelete(`/api/projects/${projectId}/documentos/${doc.dbId}`);
+      } catch (err) {
+        toast.error(`Error eliminando ${doc.name}: ${err instanceof Error ? err.message : 'Error desconocido'}`);
         return;
       }
     }
 
-    // 2. Quitar del estado local
     setDocumentos(prev => prev.filter(d => d.id !== doc.id));
     toast.success(`${doc.name} eliminado correctamente.`);
   }, [projectId]);

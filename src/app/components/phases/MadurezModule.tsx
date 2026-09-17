@@ -23,7 +23,7 @@ import PhaseHeader from './_shared/PhaseHeader';
 import NextPhaseButton from './_shared/NextPhaseButton';
 import { useSoundManager } from '../../hooks/useSoundManager';
 import { useMadurez } from '../../hooks/useMadurez';
-import { supabase } from '../../lib/supabase';
+import { getPhaseState, runPhase } from '../../lib/api';
 import MadurezDiagnosisView from './madurez/MadurezDiagnosisView';
 import { ApproveModal } from './madurez/module/ApproveModal';
 import { MadurezOverview } from './madurez/module/MadurezOverview';
@@ -50,14 +50,13 @@ export default function MadurezModule() {
   useEffect(() => {
     if (!projectId) return;
     (async () => {
-      const { data } = await supabase
-        .from('fases_estado')
-        .select('datos_consolidados')
-        .eq('proyecto_id', projectId)
-        .eq('numero_fase', 4)
-        .maybeSingle();
-      if (data?.datos_consolidados) {
-        setFreshPhase4Data(data.datos_consolidados);
+      try {
+        const data = await getPhaseState(projectId, 4);
+        if (data?.datosConsolidados) {
+          setFreshPhase4Data(data.datosConsolidados);
+        }
+      } catch {
+        // no critico
       }
     })();
   }, [projectId]);
@@ -102,14 +101,9 @@ export default function MadurezModule() {
   const keepProcessingAfterInvokeError = useCallback(async () => {
     if (!projectId) return false;
 
-    const { data } = await supabase
-      .from('fases_estado')
-      .select('estado_visual, datos_consolidados')
-      .eq('proyecto_id', projectId)
-      .eq('numero_fase', 5)
-      .single();
+    const data = await getPhaseState(projectId, 5);
 
-    if (data?.estado_visual === 'procesando') {
+    if (data?.estadoVisual === 'procesando') {
       setView('processing');
       return true;
     }
@@ -134,40 +128,39 @@ export default function MadurezModule() {
   useEffect(() => {
     if (!projectId) return;
     (async () => {
-      const { data, error } = await supabase
-        .from('fases_estado')
-        .select('datos_consolidados, estado_visual')
-        .eq('proyecto_id', projectId)
-        .eq('numero_fase', 5)
-        .single();
-
-      if (error || !data) return;
+      let data;
+      try {
+        data = await getPhaseState(projectId, 5);
+      } catch {
+        return;
+      }
+      if (!data) return;
 
       // Blocked = clean slate
-      if (data.estado_visual === 'bloqueado') {
+      if (data.estadoVisual === 'bloqueado') {
         setResults(null);
         setView('overview');
         return;
       }
 
       // Has data = show results or approved (same as Phase 4: disponible + data → diagnosis view)
-      if (data.datos_consolidados) {
-        if ((data.datos_consolidados as any)?._error) {
+      if (data.datosConsolidados) {
+        if ((data.datosConsolidados as any)?._error) {
           setResults(null);
           setView('overview');
           return;
         }
         // Processing marker = still running (agent writes this while processing)
-        if ((data.datos_consolidados as any)?._processing === true) {
+        if ((data.datosConsolidados as any)?._processing === true) {
           setView('processing');
           return;
         }
-        const parsed = parseAgentResults(data.datos_consolidados);
+        const parsed = parseAgentResults(data.datosConsolidados);
         if (parsed) {
           setResults(parsed);
-          if (data.estado_visual === 'completado') {
+          if (data.estadoVisual === 'completado') {
             setView('approved');
-          } else if (data.estado_visual === 'procesando') {
+          } else if (data.estadoVisual === 'procesando') {
             setView('processing');
           } else {
             // 'disponible' with data = agent finished, pending review
@@ -178,13 +171,13 @@ export default function MadurezModule() {
       }
 
       // disponible with no data = overview (hasn't been processed yet)
-      if (data.estado_visual === 'disponible' && !parseAgentResults(data.datos_consolidados)) {
+      if (data.estadoVisual === 'disponible' && !parseAgentResults(data.datosConsolidados)) {
         setResults(null);
         setView('overview');
       }
 
       // procesando with no data = still running
-      if (data.estado_visual === 'procesando') {
+      if (data.estadoVisual === 'procesando') {
         setView('processing');
       }
     })();
@@ -198,33 +191,32 @@ export default function MadurezModule() {
 
     const fetchResult = async () => {
       if (!isMounted || !projectId) return;
-      const { data, error } = await supabase
-        .from('fases_estado')
-        .select('datos_consolidados, estado_visual')
-        .eq('proyecto_id', projectId)
-        .eq('numero_fase', 5)
-        .single();
-
-      if (error || !isMounted) return;
+      let data;
+      try {
+        data = await getPhaseState(projectId, 5);
+      } catch {
+        return;
+      }
+      if (!isMounted || !data) return;
 
       // Agent finished successfully (completado OR disponible + data)
       // Skip processing markers — they are not real results
-      const isProcessingMarker = (data.datos_consolidados as any)?._processing === true;
-      if (data?.datos_consolidados && !isProcessingMarker && (data.estado_visual === 'completado' || data.estado_visual === 'disponible')) {
-        if ((data.datos_consolidados as any)?._error) {
-          const message = (data.datos_consolidados as any)?.message || 'Revise la configuración del agente e intente nuevamente.';
+      const isProcessingMarker = (data.datosConsolidados as any)?._processing === true;
+      if (data?.datosConsolidados && !isProcessingMarker && (data.estadoVisual === 'completado' || data.estadoVisual === 'disponible')) {
+        if ((data.datosConsolidados as any)?._error) {
+          const message = (data.datosConsolidados as any)?.message || 'Revise la configuración del agente e intente nuevamente.';
           setIsReprocessing(false);
           updatePhaseStatus(projectId!, 5, 'disponible');
           setView('overview');
           toast.error('El Agente 5 encontró un error.', { description: message, duration: 9000 });
           return;
         }
-        const parsed = parseAgentResults(data.datos_consolidados);
+        const parsed = parseAgentResults(data.datosConsolidados);
         if (parsed) {
           setResults(parsed);
           setIsReprocessing(false);
           setView('results');
-          updatePhaseStatus(projectId!, 5, data.estado_visual as any);
+          updatePhaseStatus(projectId!, 5, data.estadoVisual as any);
           playAgentSuccess();
           toast.success('Agente 5 completó el análisis de madurez', {
             description: `Nivel general: ${formatMaturityLabel(MATURITY_LEVELS[(parsed.overallLevel || 1) - 1]?.name, parsed.overallLevel || 1)} (${formatOneDecimal(parsed.overallScore)})`,
@@ -233,8 +225,8 @@ export default function MadurezModule() {
         }
       }
 
-      if (data?.estado_visual === 'error') {
-        const message = (data?.datos_consolidados as any)?.message || 'Revise la configuración del agente e intente nuevamente.';
+      if (data?.estadoVisual === 'error') {
+        const message = (data?.datosConsolidados as any)?.message || 'Revise la configuración del agente e intente nuevamente.';
         setIsReprocessing(false);
         updatePhaseStatus(projectId!, 5, 'disponible');
         setView('overview');
@@ -242,12 +234,12 @@ export default function MadurezModule() {
         return;
       }
 
-      if (data?.estado_visual === 'disponible' && !isProcessingMarker && !parseAgentResults(data?.datos_consolidados) && Date.now() < processingGuardUntilRef.current) {
+      if (data?.estadoVisual === 'disponible' && !isProcessingMarker && !parseAgentResults(data?.datosConsolidados) && Date.now() < processingGuardUntilRef.current) {
         return;
       }
 
       // Agent failed (reverted to disponible with no data)
-      if (data?.estado_visual === 'disponible' && !isProcessingMarker && !parseAgentResults(data?.datos_consolidados)) {
+      if (data?.estadoVisual === 'disponible' && !isProcessingMarker && !parseAgentResults(data?.datosConsolidados)) {
         setIsReprocessing(false);
         updatePhaseStatus(projectId!, 5, 'disponible');
         setView('overview');
@@ -294,17 +286,13 @@ export default function MadurezModule() {
       if (needsAgil) agilFileUrls = await agilManager.uploadFileIfAny() || [];
 
       didInvokeAgent = true;
-      const response = await supabase.functions.invoke('pmo-agent', {
-        body: {
-          projectId,
-          phaseNumber: 5,
-          iteration: 1,
-          pmoType,
-          ...(predictivaFileUrls.length > 0 && { predictivaFileUrls }),
-          ...(agilFileUrls.length > 0 && { agilFileUrls }),
-        }
+      const result = await runPhase(projectId!, 5, {
+        iteration: 1,
+        pmoType,
+        ...(predictivaFileUrls.length > 0 && { predictivaFileUrls }),
+        ...(agilFileUrls.length > 0 && { agilFileUrls }),
       });
-      if (response.error) throw new Error((response.data as any)?.error || response.error.message);
+      if (result?.success === false) throw new Error(result.error);
       // Polling is now driven by the useEffect(view==='processing') — nothing else needed
     } catch (err: any) {
       if (didInvokeAgent && await keepProcessingAfterInvokeError()) {
@@ -339,7 +327,7 @@ export default function MadurezModule() {
       // Bloquear fases posteriores y limpiar datos
       await reprocessPhase(projectId!, 5);
 
-      // Set view to processing AFTER supabase update so the polling useEffect picks it up
+      // Set view to processing AFTER reprocessPhase so the polling useEffect picks it up
       setView('processing');
 
       let predictivaFileUrls: string[] = [];
@@ -348,18 +336,14 @@ export default function MadurezModule() {
       if (needsAgil) agilFileUrls = await agilManager.uploadFileIfAny() || [];
 
       didInvokeAgent = true;
-      const response = await supabase.functions.invoke('pmo-agent', {
-        body: {
-          projectId,
-          phaseNumber: 5,
-          iteration: 2,
-          pmoType,
-          comentario_consultor: comment,
-          ...(predictivaFileUrls.length > 0 && { predictivaFileUrls }),
-          ...(agilFileUrls.length > 0 && { agilFileUrls }),
-        }
+      const result = await runPhase(projectId!, 5, {
+        iteration: 2,
+        pmoType,
+        comentarioConsultor: comment,
+        ...(predictivaFileUrls.length > 0 && { predictivaFileUrls }),
+        ...(agilFileUrls.length > 0 && { agilFileUrls }),
       });
-      if (response.error) throw new Error((response.data as any)?.error || response.error.message);
+      if (result?.success === false) throw new Error(result.error);
       setSavedComment(comment);
       setComment('');
     } catch (err: any) {

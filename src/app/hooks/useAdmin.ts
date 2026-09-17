@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { supabase } from '../lib/supabase';
+import { apiDelete, apiGet, apiPatch, apiPost, apiPut } from '../lib/api';
 import { toast } from 'sonner';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -7,22 +7,19 @@ import { toast } from 'sonner';
 // ─────────────────────────────────────────────────────────────────────────────
 export type QuestionType = 'abierta' | 'si_no' | 'multiple';
 export type UserRole = 'auditor' | 'admin' | 'usuario_externo';
-export type AiProvider = 'openai' | 'anthropic';
-export type AiModelId =
-  | 'gpt-5.5'
-  | 'gpt-5.4'
-  | 'gpt-5.4-mini'
-  | 'claude-sonnet-4-6'
-  | 'claude-haiku-4-5';
+
+/**
+ * Los modelos se sirven via OpenRouter (https://openrouter.ai): cualquier slug "vendor/modelo"
+ * es valido (ej. "openai/gpt-4o", "anthropic/claude-3.5-sonnet"). No es un enum cerrado.
+ */
+export type AiModelId = string;
 
 export interface AiModelSettings {
   id: 'global';
-  provider: AiProvider;
+  /** Vendor derivado del slug de selectedModel (ej. "openai"), solo informativo. */
+  provider: string;
   selectedModel: AiModelId;
-  openaiModel: AiModelId;
-  anthropicModel: AiModelId;
-  legacyGeminiHighModel: string;
-  legacyGeminiLowModel: string;
+  fallbackModel: AiModelId;
   updatedAt?: string;
 }
 
@@ -52,29 +49,13 @@ export interface BankQuestion {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// HOOK: Usuarios (tabla profiles)
+// HOOK: Modelo de IA activo (ai_model_settings via backend)
 // ─────────────────────────────────────────────────────────────────────────────
 const DEFAULT_AI_MODEL_SETTINGS: AiModelSettings = {
   id: 'global',
-  provider: 'openai',
-  selectedModel: 'gpt-5.4',
-  openaiModel: 'gpt-5.4',
-  anthropicModel: 'claude-sonnet-4-6',
-  legacyGeminiHighModel: 'gemini-3.1-pro-preview',
-  legacyGeminiLowModel: 'gemini-flash-lite-latest',
-};
-
-const OPENAI_MODEL_IDS: AiModelId[] = ['gpt-5.5', 'gpt-5.4', 'gpt-5.4-mini'];
-const ANTHROPIC_MODEL_IDS: AiModelId[] = ['claude-sonnet-4-6', 'claude-haiku-4-5'];
-const ALL_MODEL_IDS = new Set<AiModelId>([...OPENAI_MODEL_IDS, ...ANTHROPIC_MODEL_IDS]);
-
-const inferProviderFromModel = (model: unknown): AiProvider => (
-  String(model ?? '').startsWith('claude-') ? 'anthropic' : 'openai'
-);
-
-const normalizeModelId = (value: unknown, fallback: AiModelId): AiModelId => {
-  const model = String(value ?? '').trim() as AiModelId;
-  return ALL_MODEL_IDS.has(model) ? model : fallback;
+  provider: 'anthropic',
+  selectedModel: 'anthropic/claude-opus-5',
+  fallbackModel: 'openai/gpt-5.6-luna',
 };
 
 export function useAiModelSettings() {
@@ -82,28 +63,11 @@ export function useAiModelSettings() {
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
 
-  const mapSettings = (row: any): AiModelSettings => ({
-    id: 'global',
-    provider: row?.provider === 'anthropic' ? 'anthropic' : inferProviderFromModel(row?.selected_model),
-    selectedModel: normalizeModelId(row?.selected_model ?? row?.openai_model, DEFAULT_AI_MODEL_SETTINGS.selectedModel),
-    openaiModel: normalizeModelId(row?.openai_model, DEFAULT_AI_MODEL_SETTINGS.openaiModel),
-    anthropicModel: normalizeModelId(row?.anthropic_model, DEFAULT_AI_MODEL_SETTINGS.anthropicModel),
-    legacyGeminiHighModel: row?.high_model || DEFAULT_AI_MODEL_SETTINGS.legacyGeminiHighModel,
-    legacyGeminiLowModel: row?.low_model || DEFAULT_AI_MODEL_SETTINGS.legacyGeminiLowModel,
-    updatedAt: row?.updated_at,
-  });
-
   const fetchSettings = useCallback(async () => {
     setIsLoading(true);
     try {
-      const { data, error } = await supabase
-        .from('ai_model_settings')
-        .select('*')
-        .eq('id', 'global')
-        .maybeSingle();
-
-      if (error) throw error;
-      setSettings(mapSettings(data));
+      const data = await apiGet<AiModelSettings>('/api/ai-model-settings');
+      setSettings({ ...DEFAULT_AI_MODEL_SETTINGS, ...data });
     } catch (err) {
       console.error('[useAiModelSettings] Error:', err);
       toast.error('No se pudo cargar la configuración de modelos.');
@@ -115,35 +79,42 @@ export function useAiModelSettings() {
 
   useEffect(() => { fetchSettings(); }, [fetchSettings]);
 
-  const updateSelectedModel = useCallback(async (selectedModel: AiModelId) => {
+  const updateSelectedModel = useCallback(async (selectedModel: AiModelId, fallbackModel?: AiModelId) => {
     setIsSaving(true);
     try {
-      const provider = inferProviderFromModel(selectedModel);
-      const payload = {
-        id: 'global',
-        provider,
-        selected_model: selectedModel,
-        openai_model: provider === 'openai' ? selectedModel : settings.openaiModel,
-        anthropic_model: provider === 'anthropic' ? selectedModel : settings.anthropicModel,
-        high_model: settings.legacyGeminiHighModel || DEFAULT_AI_MODEL_SETTINGS.legacyGeminiHighModel,
-        low_model: settings.legacyGeminiLowModel || DEFAULT_AI_MODEL_SETTINGS.legacyGeminiLowModel,
-        updated_at: new Date().toISOString(),
-      };
-
-      const result = await supabase
-        .from('ai_model_settings')
-        .upsert(payload, { onConflict: 'id' })
-        .select('id, provider, selected_model, openai_model, anthropic_model, high_model, low_model, updated_at')
-        .single();
-
-      if (result.error) throw result.error;
-      setSettings(mapSettings(result.data));
+      const data = await apiPut<AiModelSettings>('/api/ai-model-settings', { selectedModel, fallbackModel });
+      setSettings({ ...DEFAULT_AI_MODEL_SETTINGS, ...data });
     } finally {
       setIsSaving(false);
     }
-  }, [settings.openaiModel, settings.anthropicModel, settings.legacyGeminiHighModel, settings.legacyGeminiLowModel]);
+  }, []);
 
   return { settings, isLoading, isSaving, fetchSettings, updateSelectedModel };
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// HOOK: Usuarios (tabla profiles vía /api/admin/users)
+// ─────────────────────────────────────────────────────────────────────────────
+interface AuditorUserApiDto {
+  id: string;
+  name: string;
+  email: string;
+  role: string;
+  updatedAt: string | null;
+  active: boolean;
+}
+
+function mapAuditorUser(u: AuditorUserApiDto): AuditorUser {
+  return {
+    id: u.id,
+    name: u.name ?? 'Sin nombre',
+    email: u.email ?? '',
+    role: (u.role as UserRole) ?? 'auditor',
+    lastAccess: u.updatedAt
+      ? new Date(u.updatedAt).toLocaleDateString('es-CO', { day: '2-digit', month: 'short', year: 'numeric' })
+      : 'Sin registro',
+    active: u.active !== false,
+  };
 }
 
 export function useAdminUsers() {
@@ -153,27 +124,8 @@ export function useAdminUsers() {
   const fetchUsers = useCallback(async () => {
     setIsLoading(true);
     try {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('id, full_name, email, role, updated_at, active')
-        .order('full_name');
-
-      if (error) throw error;
-
-      const mapped: AuditorUser[] = (data ?? []).map(p => ({
-        id: p.id,
-        name: p.full_name ?? 'Sin nombre',
-        email: p.email ?? '',
-        role: (p.role as UserRole) ?? 'auditor',
-        lastAccess: p.updated_at
-          ? new Date(p.updated_at).toLocaleDateString('es-CO', {
-              day: '2-digit', month: 'short', year: 'numeric',
-            })
-          : 'Sin registro',
-        active: p.active !== false, // default true if undefined
-      }));
-
-      setUsers(mapped);
+      const data = await apiGet<AuditorUserApiDto[]>('/api/admin/users');
+      setUsers((data ?? []).map(mapAuditorUser));
     } catch (err) {
       console.error('[useAdminUsers] Error:', err);
       toast.error('No se pudieron cargar los usuarios.');
@@ -184,47 +136,23 @@ export function useAdminUsers() {
 
   useEffect(() => { fetchUsers(); }, [fetchUsers]);
 
-  /** Crear usuario via Edge Function (usa Service Role Key internamente) */
+  /** Crear usuario (backend usa la Service Role Key de GoTrue internamente) */
   const createUser = useCallback(async (
     name: string, email: string, password: string, role: UserRole
   ) => {
-    const { data: { session } } = await supabase.auth.getSession();
-
-    const res = await fetch(
-      `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-user`,
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${session?.access_token ?? import.meta.env.VITE_SUPABASE_ANON_KEY}`,
-        },
-        body: JSON.stringify({ name, email, password, role }),
-      }
-    );
-
-    const result = await res.json();
-    if (!result.success) throw new Error(result.error);
-
+    await apiPost('/api/admin/users', { name, email, password, role });
     await fetchUsers();
   }, [fetchUsers]);
 
   /** Actualizar usuario (nombre y rol) */
   const updateUser = useCallback(async (id: string, name: string, role: UserRole) => {
-    const { error } = await supabase
-      .from('profiles')
-      .update({ full_name: name, role })
-      .eq('id', id);
-    if (error) throw error;
+    await apiPut(`/api/admin/users/${id}`, { name, role });
     await fetchUsers();
   }, [fetchUsers]);
 
   /** Activar/Desactivar usuario (Soft delete) */
-  const toggleUserActive = useCallback(async (id: string, currentActive: boolean) => {
-    const { error } = await supabase
-      .from('profiles')
-      .update({ active: !currentActive })
-      .eq('id', id);
-    if (error) throw error;
+  const toggleUserActive = useCallback(async (id: string, _currentActive: boolean) => {
+    await apiPatch(`/api/admin/users/${id}/active`);
     await fetchUsers();
   }, [fetchUsers]);
 
@@ -232,8 +160,17 @@ export function useAdminUsers() {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// HOOK: Banco de Preguntas (tabla banco_preguntas)
+// HOOK: Banco de Preguntas (tabla banco_preguntas vía /api/admin/banco-preguntas)
 // ─────────────────────────────────────────────────────────────────────────────
+interface BancoPreguntaApiDto {
+  id: string;
+  codigo: string;
+  categoria: string;
+  textoPregunta: string;
+  tipoEncuesta: string;
+  tipo: string;
+}
+
 export function useAdminQuestions() {
   const [questions, setQuestions] = useState<BankQuestion[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -241,50 +178,23 @@ export function useAdminQuestions() {
   const fetchQuestions = useCallback(async () => {
     setIsLoading(true);
     try {
-      let data: any[] | null = null;
+      const data = await apiGet<BancoPreguntaApiDto[]>('/api/admin/banco-preguntas');
 
-      // Intentar primero con todas las columnas
-      const res1 = await supabase
-        .from('banco_preguntas')
-        .select('*')
-        .order('categoria', { ascending: true })
-        .order('codigo', { ascending: true });
-
-      if (!res1.error) {
-        data = res1.data;
-      } else {
-        console.warn('[useAdminQuestions] Falló select * con order by categoria, codigo:', res1.error);
-        // Fallback si no existen esas columnas de ordenamiento
-        const res2 = await supabase.from('banco_preguntas').select('*');
-        if (!res2.error) {
-          data = res2.data;
-        } else {
-          console.error('[useAdminQuestions] Falló el fallback select *:', res2.error);
-          throw res2.error;
-        }
-      }
-
-      console.log('[useAdminQuestions] Datos obtenidos del banco:', data);
-
-      // Normalize tipo_encuesta from DB snake_case/lowercase to display string
       const normalizeSurveyType = (raw: string | null | undefined): string => {
         const v = (raw ?? '').toLowerCase().trim();
         if (v === 'madurez_predictiva' || v === 'predictiva') return 'Madurez Predictiva';
         if (v === 'madurez_agil' || v === 'madurez_ágil' || v === 'agil' || v === 'ágil') return 'Madurez Ágil';
-        // Default: Idoneidad
         return 'Idoneidad';
       };
 
-      const mapped: BankQuestion[] = (data ?? []).map((q: any) => {
-        return {
-          id: q.id,
-          text: q.texto_pregunta || q.pregunta_texto || '',
-          dimension: q.categoria || q.dimension || '',
-          surveyType: normalizeSurveyType(q.tipo_encuesta),
-          type: (q.tipo === 'likert_10' ? 'abierta' : 'si_no') as QuestionType,
-          options: []
-        };
-      });
+      const mapped: BankQuestion[] = (data ?? []).map((q) => ({
+        id: q.id,
+        text: q.textoPregunta || '',
+        dimension: q.categoria || '',
+        surveyType: normalizeSurveyType(q.tipoEncuesta),
+        type: (q.tipo === 'likert_10' ? 'abierta' : 'si_no') as QuestionType,
+        options: [],
+      }));
 
       setQuestions(mapped);
     } catch (err) {
@@ -299,18 +209,11 @@ export function useAdminQuestions() {
 
   /** Actualizar texto de una pregunta */
   const updateQuestion = useCallback(async (id: string, text: string, dimension: string) => {
-    const { error: err1 } = await supabase
-      .from('banco_preguntas')
-      .update({ texto_pregunta: text, categoria: dimension })
-      .eq('id', id);
-
-    if (err1) {
-      await supabase
-        .from('banco_preguntas')
-        .update({ pregunta_texto: text, dimension })
-        .eq('id', id);
+    try {
+      await apiPut(`/api/admin/banco-preguntas/${id}`, { text, dimension });
+    } catch (err) {
+      console.error('[updateQuestion] Error al actualizar pregunta:', err);
     }
-
     setQuestions(prev =>
       prev.map(q => q.id === id ? { ...q, text, dimension, isEditing: false } : q)
     );
@@ -320,40 +223,22 @@ export function useAdminQuestions() {
   const insertQuestion = useCallback(async (
     text: string, dimension: string, surveyType: string
   ) => {
-    // Denormalize display label back to DB snake_case value
-    const denormalizeSurveyType = (display: string): string => {
-      const v = display.toLowerCase().trim();
-      if (v.includes('predictiva')) return 'madurez_predictiva';
-      if (v.includes('ágil') || v.includes('agil')) return 'madurez_agil';
-      return 'idoneidad';
-    };
-
-    const dbSurveyType = denormalizeSurveyType(surveyType);
-
-    const { data, error: err1 } = await supabase
-      .from('banco_preguntas')
-      .insert({ texto_pregunta: text, categoria: dimension, tipo_encuesta: dbSurveyType })
-      .select('id')
-      .single();
-
-    let newId = data?.id;
-    if (err1) {
-      console.error('[insertQuestion] Error al insertar pregunta:', err1);
+    try {
+      const created = await apiPost<{ id: string }>('/api/admin/banco-preguntas', { text, dimension, surveyType });
+      const newQ: BankQuestion = { id: created?.id || '', text, dimension, surveyType, type: 'si_no' };
+      setQuestions(prev => [...prev, newQ]);
+      return newQ;
+    } catch (err) {
+      console.error('[insertQuestion] Error al insertar pregunta:', err);
+      const newQ: BankQuestion = { id: '', text, dimension, surveyType, type: 'si_no' };
+      setQuestions(prev => [...prev, newQ]);
+      return newQ;
     }
-
-    const newQ: BankQuestion = { id: newId || '', text, dimension, surveyType, type: 'si_no' };
-    setQuestions(prev => [...prev, newQ]);
-    return newQ;
   }, []);
 
   /** Eliminar pregunta */
   const deleteQuestion = useCallback(async (id: string) => {
-    const { error } = await supabase
-      .from('banco_preguntas')
-      .delete()
-      .eq('id', id);
-
-    if (error) throw error;
+    await apiDelete(`/api/admin/banco-preguntas/${id}`);
     setQuestions(prev => prev.filter(q => q.id !== id));
   }, []);
 

@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
-import { supabase } from '../lib/supabase';
+import { apiDelete, apiGet, apiPost, apiUpload, getPhaseState, runPhase } from '../lib/api';
 
 export interface EncuestaResponse {
   id: string;
@@ -8,6 +8,26 @@ export interface EncuestaResponse {
   area_encuestado: string;
   respuestas: any[];
   created_at: string;
+}
+
+interface EncuestaRespuestaApiDto {
+  id: string;
+  nombreEncuestado: string;
+  cargoEncuestado: string;
+  areaEncuestado: string;
+  respuestas: any;
+  createdAt: string | null;
+}
+
+function mapRespuesta(r: EncuestaRespuestaApiDto): EncuestaResponse {
+  return {
+    id: r.id,
+    nombre_encuestado: r.nombreEncuestado,
+    cargo_encuestado: r.cargoEncuestado,
+    area_encuestado: r.areaEncuestado,
+    respuestas: Array.isArray(r.respuestas) ? r.respuestas : [],
+    created_at: r.createdAt ?? '',
+  };
 }
 
 export interface AgentErrorPayload {
@@ -83,6 +103,8 @@ export function normalizeIdoneidadDiagnosis(value: unknown): any | null {
   return hasMeaningfulContent ? candidate : null;
 }
 
+const FILE_PREFIX = 'f3_';
+
 export function useIdoneidad(projectId: string | undefined) {
   const [activeLink, setActiveLink] = useState<string | null>(null);
   const [responses, setResponses] = useState<EncuestaResponse[]>([]);
@@ -92,7 +114,7 @@ export function useIdoneidad(projectId: string | undefined) {
   const [externalFile, setExternalFile] = useState<File | null>(null);
   const [existingFileName, setExistingFileName] = useState<string | null>(null);
   const [existingFileUrl, setExistingFileUrl] = useState<string | null>(null);
-  // Track locally-deleted files so polling doesn't restore them before Storage propagates
+  // Track locally-deleted files so el polling no los restaure antes de que Storage propague el borrado
   const deletedFilesRef = useRef<Set<string>>(new Set());
 
   const fetchInitialData = useCallback(async (isSilent = false) => {
@@ -100,40 +122,18 @@ export function useIdoneidad(projectId: string | undefined) {
     if (!isSilent) setIsLoadingData(true);
     try {
       // 1. Obtener link activo
-      const { data: linkData } = await supabase
-        .from('encuestas_links')
-        .select('token')
-        .eq('proyecto_id', projectId)
-        .eq('activo', true)
-        .eq('tipo_encuesta', 'idoneidad')
-        .order('created_at', { ascending: false })
-        .limit(1)
-        .single();
-
-      if (linkData) {
-        setActiveLink(linkData.token);
-      }
+      const linkData = await apiGet<{ token: string | null }>(`/api/projects/${projectId}/encuestas/idoneidad/link`);
+      if (linkData?.token) setActiveLink(linkData.token);
 
       // 2. Obtener respuestas
-      const { data: respData } = await supabase
-        .from('encuestas_respuestas')
-        .select('*')
-        .eq('proyecto_id', projectId)
-        .eq('tipo_encuesta', 'idoneidad')
-        .order('created_at', { ascending: false });
-        
-      setResponses(respData || []);
+      const respData = await apiGet<EncuestaRespuestaApiDto[]>(`/api/projects/${projectId}/encuestas/idoneidad/respuestas`);
+      setResponses((respData ?? []).map(mapRespuesta));
 
       // 3. Obtener diagnóstico de la fase 3
-      const { data: faseData } = await supabase
-        .from('fases_estado')
-        .select('datos_consolidados')
-        .eq('proyecto_id', projectId)
-        .eq('numero_fase', 3)
-        .single();
+      const faseData = await getPhaseState(projectId, 3);
 
-      if (faseData?.datos_consolidados) {
-        const consolidated = faseData.datos_consolidados as Record<string, any>;
+      if (faseData?.datosConsolidados) {
+        const consolidated = faseData.datosConsolidados as Record<string, any>;
         const storedError = extractAgentError(consolidated);
         if (storedError) {
           setAgentError(storedError);
@@ -149,20 +149,12 @@ export function useIdoneidad(projectId: string | undefined) {
       }
 
       // 4. Buscar archivos de encuestas offline previos
-      const { data: files } = await supabase.storage.from('documentos-pmo').list(`proyectos/${projectId}`);
-      const f3Files = files?.filter(f => f.name.startsWith('f3_')) || [];
-      if (f3Files.length > 0) {
-        f3Files.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
-        const latestFile = f3Files[0];
-        // Skip files the user has deleted (Storage may lag)
-        if (deletedFilesRef.current.has(latestFile.name)) {
-          setExistingFileName(null);
-          setExistingFileUrl(null);
-        } else {
-          setExistingFileName(latestFile.name);
-          const { data: signedData } = await supabase.storage.from('documentos-pmo').createSignedUrl(`proyectos/${projectId}/${latestFile.name}`, 3600);
-          setExistingFileUrl(signedData?.signedUrl || null);
-        }
+      const files = await apiGet<{ name: string; url: string }[]>(`/api/projects/${projectId}/files?prefix=${FILE_PREFIX}`);
+      const validFiles = (files ?? []).filter(f => !deletedFilesRef.current.has(f.name));
+      if (validFiles.length > 0) {
+        const latestFile = validFiles[0];
+        setExistingFileName(latestFile.name);
+        setExistingFileUrl(latestFile.url);
       } else {
         setExistingFileName(null);
         setExistingFileUrl(null);
@@ -177,55 +169,21 @@ export function useIdoneidad(projectId: string | undefined) {
   useEffect(() => {
     if (!projectId) return;
 
-    // Fetch inicial
     fetchInitialData();
 
-    // 1. Suscripción a Realtime de Supabase
-    const channel = supabase
-      .channel(`realtime_respuestas_${projectId}`)
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'encuestas_respuestas',
-          filter: `proyecto_id=eq.${projectId}`, // Supabase realtime doesn't support multiple eq easily in basic filter, but we fetch Initial Data which will filter by tipo_encuesta
-        },
-        () => {
-          console.log('[Realtime] Cambio detectado en encuestas_respuestas');
-          fetchInitialData(true);
-        }
-      )
-      .subscribe();
-
-    // 2. Polling cada 5 segundos como fallback silencioso
+    // Polling cada 5 segundos (reemplaza la suscripcion Realtime de Supabase)
     const interval = setInterval(() => {
       fetchInitialData(true);
     }, 5000);
 
     return () => {
-      supabase.removeChannel(channel);
       clearInterval(interval);
     };
   }, [projectId, fetchInitialData]);
 
   const generateLink = async () => {
     if (!projectId) return null;
-    
-    await supabase
-      .from('encuestas_links')
-      .update({ activo: false })
-      .eq('proyecto_id', projectId)
-      .eq('tipo_encuesta', 'idoneidad')
-      .eq('activo', true);
-
-    const { data, error } = await supabase
-      .from('encuestas_links')
-      .insert({ proyecto_id: projectId, activo: true, tipo_encuesta: 'idoneidad' })
-      .select('token')
-      .single();
-
-    if (error) throw error;
+    const data = await apiPost<{ token: string }>(`/api/projects/${projectId}/encuestas/idoneidad/link`);
     setActiveLink(data.token);
     return data.token;
   };
@@ -236,51 +194,34 @@ export function useIdoneidad(projectId: string | undefined) {
       setDiagnosis(null);
       setAgentError(null);
       // Al confirmar el envío se invalida el enlace activo
-      await supabase
-        .from('encuestas_links')
-        .update({ activo: false })
-        .eq('proyecto_id', projectId)
-        .eq('tipo_encuesta', 'idoneidad')
-        .eq('activo', true);
-      
+      await apiPost(`/api/projects/${projectId}/encuestas/idoneidad/link/deactivate`);
       setActiveLink(null);
 
       let finalFileUrl = existingFileUrl;
       if (externalFile) {
-        const safeFileName = externalFile.name
-          .normalize('NFD')
-          .replace(/[\u0300-\u036f]/g, '')
-          .replace(/[^a-zA-Z0-9._-]/g, '_')
-          .replace(/_+/g, '_')
-          .replace(/^_+|_+$/g, '');
-        const path = `proyectos/${projectId}/f3_${Date.now()}_${safeFileName}`;
-        const { error: uploadError } = await supabase.storage.from('documentos-pmo').upload(path, externalFile);
-        if (uploadError) throw new Error(`Error subiendo archivo: ${uploadError.message}`);
-        
-        const { data: signedData } = await supabase.storage.from('documentos-pmo').createSignedUrl(path, 3600);
-        finalFileUrl = signedData?.signedUrl;
+        const formData = new FormData();
+        formData.append('file', externalFile);
+        const uploaded = await apiUpload<{ name: string; url: string }>(`/api/projects/${projectId}/files?prefix=${FILE_PREFIX}`, formData);
+        finalFileUrl = uploaded.url;
       }
 
-      const response = await supabase.functions.invoke('pmo-agent', {
-        body: {
-          projectId,
-          phaseNumber: 3,
-          iteration: options?.iteration ?? 1,
-          comments: options?.comments ?? null,
-          externalFileUrl: finalFileUrl,
-        }
+      const result = await runPhase(projectId, 3, {
+        iteration: options?.iteration ?? 1,
+        comments: options?.comments ?? null,
+        externalFileUrl: finalFileUrl,
       });
-      if (response.error) throw new Error((response.data as any)?.error || response.error.message);
-      if ((response.data as any)?.success === false) {
-        throw new Error((response.data as any)?.error || 'Error desconocido en el agente');
+
+      if (result?.success === false) {
+        throw new Error(result.error ?? 'Error desconocido en el agente');
       }
-      const resultData = (response.data as any)?.data ?? response.data;
-      const reportedError = extractAgentError(resultData);
+
+      const reportedError = extractAgentError(result.data);
       if (reportedError) {
         setAgentError(reportedError);
         throw new Error(reportedError.message);
       }
-      const innerDiagnosis = normalizeIdoneidadDiagnosis(resultData);
+
+      const innerDiagnosis = normalizeIdoneidadDiagnosis(result.data);
       if (!innerDiagnosis) {
         throw new Error('El Agente aun no devolvio un diagnostico de idoneidad valido.');
       }
@@ -296,16 +237,16 @@ export function useIdoneidad(projectId: string | undefined) {
 
   const deleteFile = async () => {
     if (!projectId || !existingFileName) return;
-    const path = `proyectos/${projectId}/${existingFileName}`;
-    // Register as deleted immediately so polling won't restore it
+    // Registrar como borrado inmediatamente para que el polling no lo restaure
     deletedFilesRef.current.add(existingFileName);
+    const nameToDelete = existingFileName;
     setExistingFileName(null);
     setExistingFileUrl(null);
-    const { error } = await supabase.storage.from('documentos-pmo').remove([path]);
-    if (error) {
-      // Rollback the optimistic delete if storage call failed
-      deletedFilesRef.current.delete(existingFileName);
-      throw new Error(`Error eliminando archivo: ${error.message}`);
+    try {
+      await apiDelete(`/api/projects/${projectId}/files/${encodeURIComponent(nameToDelete)}`);
+    } catch (error) {
+      deletedFilesRef.current.delete(nameToDelete);
+      throw new Error(`Error eliminando archivo: ${error instanceof Error ? error.message : 'desconocido'}`);
     }
   };
 

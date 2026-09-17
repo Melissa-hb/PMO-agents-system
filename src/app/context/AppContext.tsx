@@ -2,7 +2,7 @@ import React, {
   createContext, useContext, useState,
   useEffect, useCallback, ReactNode, useRef
 } from 'react';
-import { supabase } from '../lib/supabase';
+import { apiDelete, apiGet, apiPatch, apiPost, apiPut } from '../lib/api';
 import { useAuth } from './AuthContext';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -42,111 +42,6 @@ export interface Project {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// NOMBRES CANÓNICOS DE LAS FASES (deben coincidir con configuracion_agentes)
-// ─────────────────────────────────────────────────────────────────────────────
-const PHASE_NAMES = [
-  'Registro documental',
-  'Registro de entrevistas',
-  'Encuestas de idoneidad',
-  'Diagnostico de idoneidad',
-  'Diagnóstico de madurez',
-  'Diseño guía metodológica',
-  'Construcción guía metodológica',
-  'Consolidación de artefactos',
-];
-
-// ─────────────────────────────────────────────────────────────────────────────
-// LÓGICA DE DISPONIBILIDAD DE FASES (regla de negocio central)
-// ─────────────────────────────────────────────────────────────────────────────
-function computePhaseAvailability(phases: Phase[]): Phase[] {
-  return phases.map((phase, idx) => {
-    if (phase.status === 'completado' || phase.status === 'procesando' || phase.status === 'error') return phase;
-    if (idx === 0) return phase.status === 'bloqueado' ? { ...phase, status: 'disponible' } : phase;
-    if (idx === 1) return { ...phase, status: phases[0]?.status === 'completado' ? 'disponible' : 'bloqueado' };
-    if (idx === 2) return { ...phase, status: phases[1]?.status === 'completado' ? 'disponible' : 'bloqueado' };
-    if (idx === 3) return { ...phase, status: phases[2]?.status === 'completado' ? 'disponible' : 'bloqueado' };
-    return { ...phase, status: phases[idx - 1]?.status === 'completado' ? 'disponible' : 'bloqueado' };
-  });
-}
-
-function createInitialPhases(): Phase[] {
-  return computePhaseAvailability(
-    PHASE_NAMES.map((name, i) => ({ number: i + 1, name, status: 'bloqueado' as PhaseStatus }))
-  );
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// MAPEADORES: DB → Modelo Local
-// ─────────────────────────────────────────────────────────────────────────────
-
-/** Construye el array de 8 fases mezclando los registros reales de fases_estado */
-function buildPhasesFromDB(fasesEstado: Record<string, unknown>[]): Phase[] {
-  const base = createInitialPhases();
-
-  for (const fe of fasesEstado) {
-    const idx = (fe.numero_fase as number) - 1;
-    if (idx < 0 || idx > 7) continue;
-    const datos = (fe.datos_consolidados as Record<string, unknown>) ?? {};
-    const diagnosis = (datos?.diagnosis as Record<string, unknown>) ?? {};
-    base[idx] = {
-      ...base[idx],
-      status: (fe.estado_visual as PhaseStatus) ?? 'bloqueado',
-      completedAt: fe.updated_at
-        ? new Date(fe.updated_at as string).toLocaleDateString('es-CO')
-        : undefined,
-      agentDiagnosis:
-        diagnosis?.summary as string
-        ?? diagnosis?.pmo_type as string
-        ?? diagnosis?.pmoType as string
-        ?? (datos?.summary as string)
-        ?? (datos?.pmo_type as string)
-        ?? (datos?.pmoType as string)
-        ?? undefined,
-      agentData: datos,
-    };
-  }
-
-  return computePhaseAvailability(base);
-}
-
-/** Mapea una fila de `proyectos` + empresa + auditores a nuestro tipo `Project` */
-function mapDBRowToProject(row: Record<string, unknown>): Project {
-  const empresa = (row.empresas as Record<string, unknown>) ?? {};
-  const perfil = (row.profiles as Record<string, unknown>) ?? {};
-  const fasesEstado = (row.fases_estado as Record<string, unknown>[]) ?? [];
-
-  const auditor: Auditor = {
-    id: (perfil.id as string) ?? row.auditor_id as string,
-    name: (perfil.full_name as string) ?? 'Sin asignar',
-    initials: ((perfil.full_name as string) ?? 'SA')
-      .split(' ')
-      .map((w: string) => w[0])
-      .join('')
-      .substring(0, 2)
-      .toUpperCase(),
-    color: '#5454e9',
-    role: (perfil.role as string) ?? 'auditor'
-  };
-
-  const phases = buildPhasesFromDB(fasesEstado);
-  const allDone = phases.every(p => p.status === 'completado');
-
-  return {
-    id: row.id as string,
-    companyName: (empresa.nombre as string) ?? 'Empresa sin nombre',
-    projectName: row.nombre_proyecto as string,
-    startDate: (row.fecha_inicio as string) ?? (row.created_at as string)?.split('T')[0] ?? '',
-    tamano: (row.tamano as string) ?? undefined,
-    mision: (row.mision as string) ?? undefined,
-    vision: (row.vision as string) ?? undefined,
-    auditors: [auditor],
-    phases,
-    status: allDone ? 'completado' : 'en_ejecucion',
-    isDeleted: (row.is_deleted as boolean) ?? false,
-  };
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
 // CONTEXTO
 // ─────────────────────────────────────────────────────────────────────────────
 interface AppContextType {
@@ -181,36 +76,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
     color: '#5454e9',
   });
 
-  // ── Cargar proyectos desde Supabase ──────────────────────────────────────
+  // ── Cargar proyectos desde el backend ────────────────────────────────────
   const fetchProjects = useCallback(async (isSilent = false) => {
     if (!isSilent) setIsLoading(true);
     try {
-      const { data, error } = await supabase
-        .from('proyectos')
-        .select(`
-          id,
-          nombre_proyecto,
-          tamano,
-          mision,
-          vision,
-          fase_actual,
-          created_at,
-          fecha_inicio,
-          fecha_cierre,
-          auditor_id,
-          is_deleted,
-          empresas ( id, nombre, tamano ),
-          profiles ( id, full_name, role ),
-          fases_estado ( numero_fase, estado_visual, datos_consolidados, updated_at )
-        `)
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-
-      const mapped = (data ?? []).map(row =>
-        mapDBRowToProject(row as Record<string, unknown>)
-      );
-      setProjects(mapped);
+      const data = await apiGet<Project[]>('/api/projects');
+      setProjects(data ?? []);
     } catch (err) {
       console.error('[AppContext] Error cargando proyectos:', err);
     } finally {
@@ -220,25 +91,20 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   // ── Cargar perfil del usuario actual ─────────────────────────────────────
   const fetchCurrentUser = useCallback(async () => {
-    const { data: { session } } = await supabase.auth.getSession();
-    const user = session?.user;
-    if (!user) return;
-
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('id, full_name, role')
-      .eq('id', user.id)
-      .single();
-
-    if (profile) {
-      const name = profile.full_name ?? user.email ?? 'Usuario';
-      setCurrentUser({
-        id: profile.id,
-        name,
-        initials: name.split(' ').map((w: string) => w[0]).join('').substring(0, 2).toUpperCase(),
-        color: '#5454e9',
-        role: profile.role ?? 'auditor'
-      });
+    try {
+      const profile = await apiGet<{ id: string; name: string; role: string }>('/api/profile');
+      if (profile) {
+        const name = profile.name ?? 'Usuario';
+        setCurrentUser({
+          id: profile.id,
+          name,
+          initials: name.split(' ').map((w: string) => w[0]).join('').substring(0, 2).toUpperCase(),
+          color: '#5454e9',
+          role: profile.role ?? 'auditor',
+        });
+      }
+    } catch (err) {
+      console.error('[AppContext] Error cargando perfil:', err);
     }
   }, []);
 
@@ -253,139 +119,43 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }
   }, [session, fetchProjects, fetchCurrentUser]);
 
-  // Debounced fetch para evitar sobrescrituras de estado durante actualizaciones rápidas
-  const debouncedFetchRef = useRef<NodeJS.Timeout | null>(null);
-
-  // ── Suscripción a Realtime para "fases_estado" ──────────────────────────
+  // ── Polling silencioso de respaldo (reemplaza la suscripcion Realtime de Supabase) ──
   useEffect(() => {
     if (!session) return;
-    const channel = supabase
-      .channel('realtime_fases_estado_global')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'fases_estado',
-        },
-        () => {
-          if (debouncedFetchRef.current) clearTimeout(debouncedFetchRef.current);
-          debouncedFetchRef.current = setTimeout(() => {
-            fetchProjects(true);
-          }, 2000);
-        }
-      )
-      .subscribe();
-
-    // Fallback polling silencioso
     const interval = setInterval(() => {
       fetchProjects(true);
     }, 15000);
 
     return () => {
-      if (debouncedFetchRef.current) clearTimeout(debouncedFetchRef.current);
-      supabase.removeChannel(channel);
       clearInterval(interval);
     };
   }, [session, fetchProjects]);
 
   // ── Crear nuevo proyecto ──────────────────────────────────────────────────
   const addProject = useCallback(async (data: Omit<Project, 'id' | 'phases' | 'status'>) => {
-    const { data: { session } } = await supabase.auth.getSession();
-    const userId = session?.user?.id;
-    
-    if (!userId) throw new Error('Usuario no autenticado (sesión inválida)');
-
-    let empresaId: string;
-    const { data: existingEmpresa, error: searchError } = await supabase
-      .from('empresas')
-      .select('id')
-      .ilike('nombre', data.companyName)
-      .maybeSingle();
-
-    if (searchError) throw searchError;
-
-    if (existingEmpresa) {
-      empresaId = existingEmpresa.id;
-    } else {
-      const { data: newEmpresa, error: empresaError } = await supabase
-        .from('empresas')
-        .insert({ nombre: data.companyName })
-        .select('id')
-        .single();
-      if (empresaError) throw empresaError;
-      empresaId = newEmpresa.id;
-    }
-
-    const { data: newProject, error: projectError } = await supabase
-      .from('proyectos')
-      .insert({
-        empresa_id: empresaId,
-        auditor_id: data.auditors && data.auditors.length > 0 ? data.auditors[0].id : userId,
-        nombre_proyecto: data.projectName,
-        tamano: data.tamano?.trim() || null,
-        mision: data.mision?.trim() || null,
-        vision: data.vision?.trim() || null,
-        fase_actual: 1,
-        fecha_inicio: data.startDate || new Date().toISOString().split('T')[0],
-      })
-      .select('id')
-      .single();
-
-    if (projectError) throw projectError;
-
-    const fasesInit = PHASE_NAMES.map((_, i) => ({
-      proyecto_id: newProject.id,
-      numero_fase: i + 1,
-      estado_visual: i === 0 ? 'disponible' : 'bloqueado',
-    }));
-
-    await supabase.from('fases_estado').insert(fasesInit);
+    await apiPost('/api/projects', {
+      companyName: data.companyName,
+      projectName: data.projectName,
+      startDate: data.startDate,
+      tamano: data.tamano,
+      mision: data.mision,
+      vision: data.vision,
+      auditorId: data.auditors && data.auditors.length > 0 ? data.auditors[0].id : undefined,
+    });
     await fetchProjects();
   }, [fetchProjects]);
 
   // ── Editar proyecto ────────────────────────────────────────────────────────
   const editProject = useCallback(async (id: string, data: { companyName: string; projectName: string; auditorId?: string }) => {
-    let empresaId: string;
-    const { data: existingEmpresa, error: searchError } = await supabase
-      .from('empresas')
-      .select('id')
-      .ilike('nombre', data.companyName)
-      .maybeSingle();
-
-    if (searchError) throw searchError;
-
-    if (existingEmpresa) {
-      empresaId = existingEmpresa.id;
-    } else {
-      const { data: newEmpresa, error: empresaError } = await supabase
-        .from('empresas')
-        .insert({ nombre: data.companyName })
-        .select('id')
-        .single();
-      if (empresaError) throw empresaError;
-      empresaId = newEmpresa.id;
-    }
-
-    const updates: any = {
-      empresa_id: empresaId,
-      nombre_proyecto: data.projectName,
-    };
-    if (data.auditorId) {
-      updates.auditor_id = data.auditorId;
-    }
-
-    const { error: projectError } = await supabase
-      .from('proyectos')
-      .update(updates)
-      .eq('id', id);
-
-    if (projectError) throw projectError;
-
+    await apiPut(`/api/projects/${id}`, {
+      companyName: data.companyName,
+      projectName: data.projectName,
+      auditorId: data.auditorId,
+    });
     await fetchProjects();
   }, [fetchProjects]);
 
-  // ── Actualizar estado de una fase (local + Supabase) ─────────────────────
+  // ── Actualizar estado de una fase (local + backend) ─────────────────────
   const updatePhaseStatus = useCallback((
     projectId: string,
     phaseNumber: number,
@@ -406,45 +176,19 @@ export function AppProvider({ children }: { children: ReactNode }) {
             agentDiagnosis: diagnosis ?? phase.agentDiagnosis,
           };
         });
-        const recomputed = computePhaseAvailability(updatedPhases);
-        const allDone = recomputed.every(p => p.status === 'completado');
-        return { ...project, phases: recomputed, status: allDone ? 'completado' : 'en_ejecucion' };
+        const allDone = updatedPhases.every(p => p.status === 'completado');
+        return { ...project, phases: updatedPhases, status: allDone ? 'completado' : 'en_ejecucion' };
       })
     );
 
-    supabase
-      .from('fases_estado')
-      .update({
-        estado_visual: status,
-        updated_at: new Date().toISOString(),
-      })
-      .eq('proyecto_id', projectId)
-      .eq('numero_fase', phaseNumber)
-      .then(({ error }) => {
-        if (error) console.error('[AppContext] Error actualizando fase en DB:', error);
-      });
-
-    if (status === 'completado' && phaseNumber < PHASE_NAMES.length) {
-      supabase
-        .from('fases_estado')
-        .update({
-          estado_visual: 'disponible',
-          updated_at: new Date().toISOString(),
-        })
-        .eq('proyecto_id', projectId)
-        .eq('numero_fase', phaseNumber + 1)
-        .eq('estado_visual', 'bloqueado')
-        .then(({ error }) => {
-          if (error) console.error('[AppContext] Error desbloqueando siguiente fase en DB:', error);
-        });
-    }
+    apiPatch(`/api/projects/${projectId}/phases/${phaseNumber}/status`, { status })
+      .catch(error => console.error('[AppContext] Error actualizando fase en backend:', error));
   }, []);
 
   const moveToTrash = useCallback(async (id: string) => {
     setProjects(prev => prev.map(p => p.id === id ? { ...p, isDeleted: true } : p));
     try {
-      const { error } = await supabase.from('proyectos').update({ is_deleted: true }).eq('id', id);
-      if (error && error.message) console.error('[AppContext] Error updating in DB:', error);
+      await apiPost(`/api/projects/${id}/trash`);
     } catch (err) {
       console.error('[AppContext] moveToTrash exception:', err);
     }
@@ -453,13 +197,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const deleteProject = useCallback(async (id: string) => {
     setProjects(prev => prev.filter(p => p.id !== id));
     try {
-      await supabase.from('encuestas_respuestas').delete().eq('proyecto_id', id);
-      await supabase.from('entrevistas').delete().eq('proyecto_id', id);
-      await supabase.from('documentos').delete().eq('proyecto_id', id);
-      await supabase.from('fases_estado').delete().eq('proyecto_id', id);
-
-      const { error } = await supabase.from('proyectos').delete().eq('id', id);
-      if (error && error.message) console.error('[AppContext] Error deleting from DB:', error);
+      await apiDelete(`/api/projects/${id}`);
     } catch (err) {
       console.error('[AppContext] deleteProject exception:', err);
     }
@@ -468,8 +206,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const restoreProject = useCallback(async (id: string) => {
     setProjects(prev => prev.map(p => p.id === id ? { ...p, isDeleted: false } : p));
     try {
-      const { error } = await supabase.from('proyectos').update({ is_deleted: false }).eq('id', id);
-      if (error && error.message) console.error('[AppContext] Error restoring in DB:', error);
+      await apiPost(`/api/projects/${id}/restore`);
     } catch (err) {
       console.error('[AppContext] restoreProject exception:', err);
     }
@@ -500,31 +237,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
           }
           return phase;
         });
-        const recomputed = computePhaseAvailability(updatedPhases);
-        return { ...project, phases: recomputed, status: 'en_ejecucion' as const };
+        return { ...project, phases: updatedPhases, status: 'en_ejecucion' as const };
       })
     );
 
     try {
-      await supabase
-        .from('fases_estado')
-        .update({
-          estado_visual: 'disponible',
-          datos_consolidados: null,
-          updated_at: new Date().toISOString(),
-        })
-        .eq('proyecto_id', projectId)
-        .eq('numero_fase', phaseNumber);
-
-      await supabase
-        .from('fases_estado')
-        .update({
-          estado_visual: 'bloqueado',
-          datos_consolidados: null,
-          updated_at: new Date().toISOString(),
-        })
-        .eq('proyecto_id', projectId)
-        .gt('numero_fase', phaseNumber);
+      await apiPost(`/api/projects/${projectId}/phases/${phaseNumber}/reprocess`);
     } catch (err) {
       console.error('[AppContext] Error in reprocessPhase:', err);
     }
