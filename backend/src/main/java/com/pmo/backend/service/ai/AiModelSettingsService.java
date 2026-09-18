@@ -17,7 +17,7 @@ import com.pmo.backend.repository.AiModelSettingsRepository;
 
 import static com.pmo.backend.service.ai.AiModelDefaults.*;
 
-/** Puerto Java de aiModels.ts, adaptado a OpenRouter: modelos identificados por slug libre. */
+/** Puerto Java de aiModels.ts, adaptado a Gemini: modelos identificados por nombre libre. */
 @Service
 public class AiModelSettingsService {
 
@@ -71,8 +71,8 @@ public class AiModelSettingsService {
     /**
      * Puerto de getModelCandidates(): primero el modelo explicito de la fase
      * (configuracion_agentes.modelo) si viene informado, luego el modelo global configurado,
-     * y por ultimo el modelo de respaldo global. OpenRouter resuelve cada slug al proveedor
-     * real, asi que ya no hace falta ninguna logica de fallback cruzado por proveedor.
+     * y por ultimo el modelo de respaldo global. Todos los modelos son de Gemini, asi que ya
+     * no hace falta ninguna logica de fallback cruzado por proveedor.
      */
     public List<String> getModelCandidates(NormalizedAiModelSettings settings, String preferredModelRaw) {
         List<String> ordered = new ArrayList<>();
@@ -105,7 +105,7 @@ public class AiModelSettingsService {
         metadata.put("model_fallback_used", modelResult.isFallbackUsed());
         metadata.set("attempted_models", objectMapper.valueToTree(modelResult.getAttemptedModels()));
         metadata.set("model_errors", objectMapper.valueToTree(modelResult.getErrors()));
-        metadata.put("model_gateway", "openrouter");
+        metadata.put("model_gateway", "gemini");
 
         record.set("metadata", metadata);
         return record;

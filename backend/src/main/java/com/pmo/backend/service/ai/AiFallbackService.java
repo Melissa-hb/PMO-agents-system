@@ -12,29 +12,29 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.pmo.backend.config.AiProperties;
 
 /**
- * Puerto Java de callAiWithFallback() en aiModels.ts, adaptado a OpenRouter: un unico proveedor
- * HTTP (OpenRouter) que puede servir cualquier modelo, asi que el fallback es simplemente
- * "intenta el siguiente slug de la lista" en vez de alternar entre clientes de proveedor.
+ * Puerto Java de callAiWithFallback() en aiModels.ts, adaptado a Gemini: un unico proveedor
+ * HTTP (Google Gemini) que puede servir cualquier modelo de su catalogo, asi que el fallback es
+ * simplemente "intenta el siguiente modelo de la lista".
  */
 @Service
 public class AiFallbackService {
 
     private static final Set<Integer> RETRYABLE_STATUS = Set.of(400, 404, 408, 409, 429, 500, 502, 503, 504);
 
-    private final OpenRouterClient openRouterClient;
+    private final GeminiClient geminiClient;
     private final AiProperties aiProperties;
     private final ObjectMapper objectMapper;
 
-    public AiFallbackService(OpenRouterClient openRouterClient, AiProperties aiProperties, ObjectMapper objectMapper) {
-        this.openRouterClient = openRouterClient;
+    public AiFallbackService(GeminiClient geminiClient, AiProperties aiProperties, ObjectMapper objectMapper) {
+        this.geminiClient = geminiClient;
         this.aiProperties = aiProperties;
         this.objectMapper = objectMapper;
     }
 
     public AiGenerateResult callWithFallback(List<String> candidates, List<AiPart> parts, GenerationConfig config) {
-        String apiKey = aiProperties.openrouter().apiKey();
+        String apiKey = aiProperties.gemini().apiKey();
         if (apiKey == null || apiKey.isBlank()) {
-            throw new AiGenerationException("Falta configurar OPENROUTER_API_KEY.");
+            throw new AiGenerationException("Falta configurar GEMINI_API_KEY.");
         }
 
         List<AiAttemptError> errors = new ArrayList<>();
@@ -45,7 +45,7 @@ public class AiFallbackService {
             boolean isLast = index == candidates.size() - 1;
             attemptedModels.add(model);
 
-            AiCallResult result = openRouterClient.call(apiKey, model, parts, config);
+            AiCallResult result = geminiClient.call(apiKey, model, parts, config);
 
             if (result.isOk()) {
                 return AiGenerateResult.builder()
@@ -65,7 +65,7 @@ public class AiFallbackService {
 
             boolean shouldTryNext = !isLast && (result.getStatus() == 0 || RETRYABLE_STATUS.contains(result.getStatus()));
             if (!shouldTryNext) {
-                throw new AiGenerationException("Error de OpenRouter (" + model + ", " + result.getStatus() + "): " + message);
+                throw new AiGenerationException("Error de Gemini (" + model + ", " + result.getStatus() + "): " + message);
             }
 
             if (isLast) {

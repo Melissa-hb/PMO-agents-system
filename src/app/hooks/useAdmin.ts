@@ -9,14 +9,15 @@ export type QuestionType = 'abierta' | 'si_no' | 'multiple';
 export type UserRole = 'auditor' | 'admin' | 'usuario_externo';
 
 /**
- * Los modelos se sirven via OpenRouter (https://openrouter.ai): cualquier slug "vendor/modelo"
- * es valido (ej. "openai/gpt-4o", "anthropic/claude-3.5-sonnet"). No es un enum cerrado.
+ * Los modelos se sirven via Gemini (https://ai.google.dev): cualquier nombre de modelo del
+ * catalogo de Gemini es valido (ej. "gemini-pro-latest", "gemini-flash-latest"). No es un enum
+ * cerrado.
  */
 export type AiModelId = string;
 
 export interface AiModelSettings {
   id: 'global';
-  /** Vendor derivado del slug de selectedModel (ej. "openai"), solo informativo. */
+  /** Vendor derivado del nombre de selectedModel, solo informativo (siempre "gemini"). */
   provider: string;
   selectedModel: AiModelId;
   fallbackModel: AiModelId;
@@ -53,9 +54,9 @@ export interface BankQuestion {
 // ─────────────────────────────────────────────────────────────────────────────
 const DEFAULT_AI_MODEL_SETTINGS: AiModelSettings = {
   id: 'global',
-  provider: 'anthropic',
-  selectedModel: 'anthropic/claude-opus-5',
-  fallbackModel: 'openai/gpt-5.6-luna',
+  provider: 'gemini',
+  selectedModel: 'gemini-pro-latest',
+  fallbackModel: 'gemini-flash-latest',
 };
 
 export function useAiModelSettings() {

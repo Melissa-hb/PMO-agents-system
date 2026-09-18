@@ -1,22 +1,25 @@
 package com.pmo.backend.service.ai;
 
 /**
- * Con OpenRouter cualquier modelo se identifica con un slug "vendor/modelo" (ej.
- * "anthropic/claude-opus-5"). El campo es texto libre en el panel de admin, no una lista
- * cerrada; estos defaults reflejan la eleccion del equipo para agentes (razonamiento y
- * planificacion como modelo principal, con un proveedor distinto como respaldo).
+ * Con Gemini el modelo se identifica con su nombre directo (ej. "gemini-2.5-pro"), sin
+ * prefijo de vendor. El campo es texto libre en el panel de admin, no una lista cerrada;
+ * verifica que estos defaults existan en el catalogo actual de Gemini
+ * (https://ai.google.dev/gemini-api/docs/models) antes de confiar en ellos en produccion.
  */
 public final class AiModelDefaults {
-    public static final String DEFAULT_MODEL = "anthropic/claude-opus-5";
-    public static final String DEFAULT_FALLBACK_MODEL = "openai/gpt-5.6-luna";
+    // Alias "-latest" en vez de una version fechada: Google los mueve automaticamente al
+    // modelo recomendado vigente, evitando que un nombre fijo quede deprecado con el tiempo
+    // (verificado: gemini-2.5-flash ya devuelve 404 "no longer available to new users").
+    public static final String DEFAULT_MODEL = "gemini-pro-latest";
+    public static final String DEFAULT_FALLBACK_MODEL = "gemini-flash-latest";
 
     private AiModelDefaults() {
     }
 
-    /** Extrae el vendor del slug ("openai/gpt-4o" -> "openai"), solo para trazabilidad/metadata. */
+    /** Extrae el vendor de un slug con formato "vendor/modelo"; si no lo tiene, retorna el nombre tal cual. */
     public static String vendorOf(String modelSlug) {
         if (modelSlug == null || modelSlug.isBlank()) return "unknown";
         int slash = modelSlug.indexOf('/');
-        return slash > 0 ? modelSlug.substring(0, slash) : modelSlug;
+        return slash > 0 ? modelSlug.substring(0, slash) : "gemini";
     }
 }

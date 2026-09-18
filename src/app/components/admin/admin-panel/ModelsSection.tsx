@@ -4,21 +4,17 @@ import { toast } from 'sonner';
 import { useAiModelSettings } from '../../../hooks/useAdmin';
 
 /**
- * Ranking curado por el equipo para agentes (ver conversacion del proyecto). No es una lista
- * cerrada: cualquier slug "vendor/modelo" valido de OpenRouter funciona, pero estos son los
- * candidatos recomendados y aparecen como sugerencias de autocompletado.
+ * Modelos de Gemini disponibles para los agentes. No es una lista cerrada: cualquier nombre
+ * de modelo valido del catalogo de Gemini funciona, pero estos son los candidatos recomendados
+ * y aparecen como sugerencias de autocompletado. Los alias "-latest" se recomiendan sobre
+ * versiones fechadas porque Google los mueve automaticamente al modelo vigente.
  */
 const MODEL_SUGGESTIONS: Array<{ rank: string; slug: string; useCase: string }> = [
-  { rank: '🥇', slug: 'anthropic/claude-opus-5', useCase: 'Agentes complejos / razonamiento / planificación' },
-  { rank: '🥈', slug: 'openai/gpt-5.6-luna', useCase: 'Agentes generales + código + razonamiento' },
-  { rank: '🥉', slug: 'google/gemini-3-pro-preview', useCase: 'Agentes con muchísimo contexto y multimodalidad' },
-  { rank: '4', slug: 'anthropic/claude-sonnet-5', useCase: 'Excelente equilibrio entre agente, calidad y costo' },
-  { rank: '5', slug: 'tencent/hy4-preview', useCase: 'Coding agents + tool use + tareas largas' },
-  { rank: '6', slug: 'deepseek/deepseek-v4.1-flash', useCase: 'Agentes baratos + código + computer use' },
-  { rank: '7', slug: 'nex-agi/nex-n2.5-pro', useCase: 'Agentes autónomos / software engineering' },
-  { rank: '8', slug: 'nex-agi/nex-n2.5-mini:free', useCase: 'Probar agentes gratis' },
-  { rank: '9', slug: 'inception/mercury-2.5', useCase: 'Agentes rápidos + tool calling' },
-  { rank: '10', slug: 'openrouter/auto', useCase: 'Dejar que OpenRouter seleccione el modelo' },
+  { rank: '🥇', slug: 'gemini-pro-latest', useCase: 'Agentes complejos / razonamiento / planificación' },
+  { rank: '🥈', slug: 'gemini-flash-latest', useCase: 'Agentes generales, rápido y económico' },
+  { rank: '🥉', slug: 'gemini-flash-lite-latest', useCase: 'Agentes de alto volumen, el más económico' },
+  { rank: '4', slug: 'gemini-3.1-pro-preview', useCase: 'Mayor contexto y razonamiento (preview)' },
+  { rank: '5', slug: 'gemini-2.5-flash-lite', useCase: 'Alternativa estable de bajo costo' },
 ];
 
 function ModelsSection() {
@@ -61,7 +57,7 @@ function ModelsSection() {
       <div className="flex items-center justify-between mb-6">
         <div>
           <h2 className="text-gray-900" style={{ fontWeight: 700 }}>Modelos de IA</h2>
-          <p className="text-gray-500 text-sm mt-0.5">Modelo global para todos los agentes PMO, servido vía OpenRouter</p>
+          <p className="text-gray-500 text-sm mt-0.5">Modelo global para todos los agentes PMO, servido vía Gemini</p>
         </div>
         {(isLoading || isSaving) && (
           <div className="flex items-center gap-2 text-gray-400 text-sm">
@@ -79,8 +75,8 @@ function ModelsSection() {
               {settings.selectedModel || 'Sin modelo configurado'} activo
             </p>
             <p className="text-gray-500 text-xs mt-1">
-              Cada modelo se identifica con un slug de OpenRouter ("vendor/modelo"). Si el modelo
-              principal falla, se reintenta automáticamente con el de respaldo.
+              Cada modelo se identifica con su nombre de Gemini. Si el modelo principal falla,
+              se reintenta automáticamente con el de respaldo.
             </p>
           </div>
         </div>
@@ -98,7 +94,7 @@ function ModelsSection() {
               list="ai-model-suggestions"
               value={primary}
               onChange={e => setPrimary(e.target.value)}
-              placeholder="anthropic/claude-opus-5"
+              placeholder="gemini-pro-latest"
               disabled={isLoading || isSaving}
               className="w-full px-3 py-2.5 rounded-lg border border-gray-200 text-sm font-mono focus:outline-none focus:border-[#5454e9] disabled:opacity-60"
             />
@@ -116,7 +112,7 @@ function ModelsSection() {
               list="ai-model-suggestions"
               value={fallback}
               onChange={e => setFallback(e.target.value)}
-              placeholder="openai/gpt-5.6-luna"
+              placeholder="gemini-flash-latest"
               disabled={isLoading || isSaving}
               className="w-full px-3 py-2.5 rounded-lg border border-gray-200 text-sm font-mono focus:outline-none focus:border-[#5454e9] disabled:opacity-60"
             />
@@ -129,12 +125,12 @@ function ModelsSection() {
 
         <div className="mt-5 flex flex-wrap items-center justify-between gap-3">
           <a
-            href="https://openrouter.ai/models"
+            href="https://ai.google.dev/gemini-api/docs/models"
             target="_blank"
             rel="noreferrer"
             className="inline-flex items-center gap-1.5 text-xs text-[#5454e9] hover:underline"
           >
-            Ver catálogo de modelos en OpenRouter
+            Ver catálogo de modelos de Gemini
             <ExternalLink size={12} />
           </a>
           <button

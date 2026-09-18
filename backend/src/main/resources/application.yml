@@ -57,11 +57,8 @@ supabase:
     signed-url-ttl-seconds: ${SUPABASE_STORAGE_SIGNED_URL_TTL:3600}
 
 ai:
-  openrouter:
-    api-key: ${OPENROUTER_API_KEY:}
-    # Recomendados por OpenRouter para atribucion en su ranking de apps (opcionales).
-    site-url: ${OPENROUTER_SITE_URL:}
-    app-name: ${OPENROUTER_APP_NAME:PMO Intelligence Platform}
+  gemini:
+    api-key: ${GEMINI_API_KEY:}
 
 logging:
   level:

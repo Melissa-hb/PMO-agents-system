@@ -1,7 +1,7 @@
 # Perfil para correr el backend contra el Supabase local levantado con `supabase start`
 # (ver supabase/config.toml). Los secretos de aqui son los defaults publicos y fijos que la
 # CLI de Supabase usa para CUALQUIER instancia local: no son sensibles, por eso se commitean.
-# La API key de OpenRouter SI es sensible y se sigue leyendo de la variable de entorno.
+# La API key de Gemini SI es sensible y se sigue leyendo de la variable de entorno.
 #
 # Uso: mvn spring-boot:run -Dspring-boot.run.profiles=local
 #   o: SPRING_PROFILES_ACTIVE=local java -jar target/backend-0.1.0.jar

@@ -27,7 +27,7 @@ idoneidad, creacion de usuarios, etc.) vive ahora en Java, en este proyecto.
 - Java 21
 - Maven (o usa cualquier IDE con soporte Maven)
 - Postgres accesible (el de tu proyecto Supabase self-hosted)
-- `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `OPENROUTER_API_KEY`
+- `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `GEMINI_API_KEY`
 
 ## Variables de entorno
 
@@ -38,29 +38,29 @@ idoneidad, creacion de usuarios, etc.) vive ahora en Java, en este proyecto.
 | `SUPABASE_URL` | URL base del proyecto self-hosted (GoTrue Admin API, JWKS y Storage API) |
 | `SUPABASE_SERVICE_ROLE_KEY` | Service Role Key (crear usuarios, subir/firmar/borrar archivos) |
 | `SUPABASE_STORAGE_BUCKET` | por defecto `documentos-pmo` |
-| `OPENROUTER_API_KEY` | key de https://openrouter.ai — unico proveedor de IA, ver seccion abajo |
-| `OPENROUTER_SITE_URL` / `OPENROUTER_APP_NAME` | opcionales, para la atribucion en el ranking de OpenRouter |
+| `GEMINI_API_KEY` | key de Google AI Studio/Gemini — unico proveedor de IA, ver seccion abajo |
 | `APP_CORS_ALLOWED_ORIGINS` | origen(es) del frontend, ej. `http://localhost:5173` |
 
-## IA: OpenRouter como unico proveedor
+## IA: Gemini como unico proveedor
 
-Todas las llamadas a IA pasan por [OpenRouter](https://openrouter.ai) (`service/ai/OpenRouterClient.java`),
-no por OpenAI/Anthropic directo. Un modelo se identifica con un slug `"vendor/modelo"`
-(ej. `openai/gpt-4o`, `anthropic/claude-3.5-sonnet`) y OpenRouter resuelve el proveedor real.
+Todas las llamadas a IA pasan por la API de [Google Gemini](https://ai.google.dev)
+(`service/ai/GeminiClient.java`), no por OpenAI/Anthropic/OpenRouter. Un modelo se identifica
+con su nombre directo de Gemini (ej. `gemini-pro-latest`, `gemini-flash-latest`), sin prefijo
+de vendor.
 
 - **`AiFallbackService`** intenta en orden: el modelo explicito de la fase
   (`configuracion_agentes.modelo`, si esta seteado) → el modelo global (`ai_model_settings.selected_model`)
   → el modelo de respaldo (`ai_model_settings.openai_model`, reutilizado como `fallback_model`).
 - El campo de modelo en el panel de admin es **texto libre**, no una lista cerrada — cualquier
-  slug valido de OpenRouter funciona.
+  nombre de modelo valido de Gemini funciona.
 - **Requiere migracion de base de datos** antes de usarse: `supabase/migrations/202605200001_openrouter_ai_model_settings.sql`
   quita los `CHECK constraints` que la tabla `ai_model_settings` tenia (restringian esas columnas
-  a los 5 nombres fijos del enum viejo de OpenAI/Anthropic) y migra la fila `global` existente a
-  slugs de OpenRouter. Sin esa migracion, guardar un modelo nuevo falla con una violacion de
-  constraint. Aplicala con `supabase db push` o pegandola en el SQL editor de tu proyecto.
+  a los 5 nombres fijos del enum viejo de OpenAI/Anthropic). Sin esa migracion, guardar un
+  modelo nuevo falla con una violacion de constraint. Aplicala con `supabase db push` o
+  pegandola en el SQL editor de tu proyecto.
 - Los defaults (`AiModelDefaults.DEFAULT_MODEL` / `DEFAULT_FALLBACK_MODEL`) son un punto de
-  partida razonable, no una garantia — verifica que existan en el catalogo actual de OpenRouter
-  (https://openrouter.ai/models) antes de confiar en ellos en produccion.
+  partida razonable, no una garantia — verifica que existan en el catalogo actual de Gemini
+  (https://ai.google.dev/gemini-api/docs/models) antes de confiar en ellos en produccion.
 
 ## Ejecutar
 
