@@ -12,6 +12,10 @@ type GuideSidebarProps = {
   completedAt?: string;
   onVersionSelect: (version: DocVersion, index: number) => void;
   onAdjustTextChange: (value: string) => void;
+  /** Secciones de la version visible que se pueden ajustar por separado. */
+  sectionOptions: { id: string; title: string }[];
+  selectedSections: string[];
+  onToggleSection: (id: string) => void;
   onRequestAdjustments: () => void;
   onReprocess: () => void;
   onApprove: () => void;
@@ -29,6 +33,9 @@ export function GuideSidebar({
   completedAt,
   onVersionSelect,
   onAdjustTextChange,
+  sectionOptions,
+  selectedSections,
+  onToggleSection,
   onRequestAdjustments,
   onReprocess,
   onApprove,
@@ -108,6 +115,40 @@ export function GuideSidebar({
             <p className="text-neutral-500 text-[12px] mb-3 leading-relaxed flex-shrink-0">
               Describa los cambios requeridos. El Agente 7 generará una versión revisada. La versión anterior se conserva en el historial.
             </p>
+            {sectionOptions.length > 0 && (
+              <div className="mb-3 flex-shrink-0">
+                <p className="text-[11px] text-neutral-600 mb-1.5" style={{ fontWeight: 650 }}>
+                  Capítulos a ajustar <span className="text-neutral-400" style={{ fontWeight: 400 }}>(opcional)</span>
+                </p>
+                <div className="flex flex-wrap gap-1.5 max-h-[88px] overflow-y-auto pr-0.5" role="group" aria-label="Capítulos a ajustar">
+                  {sectionOptions.map(section => {
+                    const selected = selectedSections.includes(section.id);
+                    return (
+                      <button
+                        key={section.id}
+                        type="button"
+                        aria-pressed={selected}
+                        onClick={() => onToggleSection(section.id)}
+                        disabled={isAdjusting}
+                        className={`px-2.5 py-1 rounded-full border text-[11px] transition-colors disabled:opacity-50 ${
+                          selected
+                            ? 'bg-[#865cf0] border-[#865cf0] text-white'
+                            : 'bg-white border-neutral-200 text-neutral-600 hover:border-[#865cf0]/40 hover:text-[#6a45d8]'
+                        }`}
+                        style={{ fontWeight: 600 }}
+                      >
+                        {section.title}
+                      </button>
+                    );
+                  })}
+                </div>
+                <p className="text-neutral-400 text-[11px] mt-1.5 leading-relaxed">
+                  {selectedSections.length > 0
+                    ? `Solo se regenerarán ${selectedSections.length === 1 ? 'este capítulo' : `estos ${selectedSections.length} capítulos`}; el resto se conserva. Es más rápido y consume menos.`
+                    : 'Sin selección se regenera la guía completa.'}
+                </p>
+              </div>
+            )}
             <textarea
               value={adjustText}
               onChange={e => onAdjustTextChange(e.target.value)}
@@ -125,7 +166,7 @@ export function GuideSidebar({
               >
                 {isAdjusting
                   ? <><Loader2 size={12} className="animate-spin" strokeWidth={1.75} />Enviando…</>
-                  : <><Send size={12} strokeWidth={1.75} />Solicitar ajuste</>}
+                  : <><Send size={12} strokeWidth={1.75} />{selectedSections.length > 0 ? `Ajustar ${selectedSections.length} capítulo${selectedSections.length === 1 ? '' : 's'}` : 'Solicitar ajuste'}</>}
               </motion.button>
               <motion.button
                 whileHover={{ y: -1 }} whileTap={{ y: 0 }}

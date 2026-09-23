@@ -55,8 +55,8 @@ export interface BankQuestion {
 const DEFAULT_AI_MODEL_SETTINGS: AiModelSettings = {
   id: 'global',
   provider: 'gemini',
-  selectedModel: 'gemini-pro-latest',
-  fallbackModel: 'gemini-flash-latest',
+  selectedModel: 'gemini-flash-latest',
+  fallbackModel: 'gemini-flash-lite-latest',
 };
 
 export function useAiModelSettings() {

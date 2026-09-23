@@ -58,7 +58,10 @@ public class Phase2PayloadBuilder implements PhasePayloadBuilder {
                         "interviewee_role: " + (e.getCargo() != null ? e.getCargo() : "No disponible"),
                         "interviewee_area: " + (e.getArea() != null ? e.getArea() : "No disponible"),
                         "file_name: " + (e.getFileName() != null ? e.getFileName() : "No disponible"));
-                fileUrls.add(new FileRef(urlToUse, fileType != null ? fileType : "application/pdf", label));
+                // Entrevistas: sin limite de paginas (todo el contenido importa); solo se envian como
+                // texto si el PDF es de texto disperso y eso resulta mas barato.
+                fileUrls.add(new FileRef(urlToUse, fileType != null ? fileType : "application/pdf", label,
+                        new FileRef.PdfPolicy(null, false)));
             }
 
             ObjectNode interview = objectMapper.createObjectNode();

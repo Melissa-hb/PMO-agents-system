@@ -13,6 +13,7 @@ import { toast } from 'sonner';
 import { useApp } from '../../context/AppContext';
 import { useSoundManager } from '../../hooks/useSoundManager';
 import PhaseHeader from './_shared/PhaseHeader';
+import { usePhaseDependencies, BlockedActionHint, PhaseWaitingPanel } from './_shared/PhaseDependencyNotice';
 import NextPhaseButton from './_shared/NextPhaseButton';
 import { getPhaseState, runPhase, updatePhaseState } from '../../lib/api';
 
@@ -475,6 +476,7 @@ export default function EnfoqueModule() {
   const { id: projectId } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { getProject, updatePhaseStatus, reprocessPhase, isLoading } = useApp();
+  const { isBlocked: depsBlocked, blockedReason: depsReason } = usePhaseDependencies(projectId, 6);
 
   const { playAgentSuccess, playPhaseComplete } = useSoundManager();
 
@@ -783,6 +785,8 @@ export default function EnfoqueModule() {
     if (project.phases.some(p => p.number > 6 && p.status === 'completado')) return;
     if (hasFailed.current) return;
     if (autoTriggered.current) return;
+    // Con dependencias pendientes no se dispara el agente; se muestra el panel de espera.
+    if (depsBlocked) return;
     if (view === 'auto-trigger') {
       autoTriggered.current = true;
       (async () => {
@@ -854,7 +858,7 @@ export default function EnfoqueModule() {
         });
       })();
     }
-  }, [applyAgentResult, failPhase6, hasCheckedExistingResult, phase, project, projectId, readPhase6State, result, startPolling, updatePhaseStatus, view]);
+  }, [applyAgentResult, depsBlocked, failPhase6, hasCheckedExistingResult, phase, project, projectId, readPhase6State, result, startPolling, updatePhaseStatus, view]);
 
   if (!project || !phase) {
     return isLoading
@@ -1051,7 +1055,11 @@ export default function EnfoqueModule() {
       <div className="max-w-[1100px] mx-auto px-10 py-10">
         <AnimatePresence mode="wait">
 
-          {(view === 'auto-trigger' || view === 'processing') && (
+          {view === 'auto-trigger' && depsBlocked && (
+            <PhaseWaitingPanel key="waiting" agentLabel="El Agente 6" reason={depsReason} />
+          )}
+
+          {(view === 'processing' || (view === 'auto-trigger' && !depsBlocked)) && (
             <motion.div 
               key="processing-overlay"
               initial={{ opacity: 0 }} 
@@ -1108,14 +1116,17 @@ export default function EnfoqueModule() {
               <p className="text-neutral-500 text-[13px] max-w-md leading-relaxed mb-8">
                 {errorMessage || 'La ejecucion se detuvo para evitar reintentos automaticos y consumo adicional de tokens.'}
               </p>
+              <BlockedActionHint reason={depsReason}>
               <button
                 onClick={handleRetry}
-                className="inline-flex items-center gap-2 px-5 py-3 rounded-full text-white text-[13px] transition-all"
+                disabled={depsBlocked}
+                className="inline-flex items-center gap-2 px-5 py-3 rounded-full text-white text-[13px] transition-all disabled:opacity-40 disabled:cursor-not-allowed"
                 style={{ background: '#5454e9', fontWeight: 500, boxShadow: '0 1px 2px rgba(0,0,0,0.06), 0 8px 24px -8px rgba(0,0,0,0.18)' }}
               >
                 <RefreshCw size={14} strokeWidth={1.75} />
                 Reintentar Agente 6
               </button>
+              </BlockedActionHint>
             </motion.div>
           )}
 

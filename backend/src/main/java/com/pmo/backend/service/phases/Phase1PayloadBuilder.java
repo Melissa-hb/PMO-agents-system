@@ -3,6 +3,7 @@ package com.pmo.backend.service.phases;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.regex.Pattern;
 
 import org.springframework.stereotype.Component;
@@ -38,6 +39,11 @@ public class Phase1PayloadBuilder implements PhasePayloadBuilder {
             Map.entry("D16", "Otros")
     );
 
+    /** Documentos visuales: su estructura grafica importa, nunca se reemplazan por texto. */
+    private static final Set<String> VISUAL_CATEGORIES = Set.of("D01", "D09", "D12");
+    /** Un diagnostico documental no necesita cada pagina de un manual extenso. */
+    private static final int MAX_PDF_PAGES_PER_DOCUMENT = 30;
+
     private final DocumentoRepository documentoRepository;
     private final PhasePayloadSupport support;
     private final ObjectMapper objectMapper;
@@ -66,17 +72,25 @@ public class Phase1PayloadBuilder implements PhasePayloadBuilder {
             String ext = rawStoragePath.split("\\?")[0];
             ext = ext.contains(".") ? ext.substring(ext.lastIndexOf('.') + 1).toLowerCase() : "pdf";
 
+            String documentId = "doc-" + String.format("%03d", idx);
+            String documentName = d.getNombrePersonalizado() != null ? d.getNombrePersonalizado() : d.getStoragePath();
+            String categoryCode = d.getCategoria() != null ? d.getCategoria() : "D16";
+
             if (!rawStoragePath.isBlank()) {
                 String urlToUse = support.ensureFreshUrl(rawStoragePath);
-                fileUrls.add(new FileRef(urlToUse, PhasePayloadSupport.fileTypeFromPath(rawStoragePath), null));
+                String label = String.join("\n",
+                        "document_id: " + documentId,
+                        "document_name: " + documentName,
+                        "category: " + categoryCode + " (" + CATEGORY_LABELS.getOrDefault(categoryCode, "Otro") + ")");
+                fileUrls.add(new FileRef(urlToUse, PhasePayloadSupport.fileTypeFromPath(rawStoragePath), label,
+                        new FileRef.PdfPolicy(MAX_PDF_PAGES_PER_DOCUMENT, VISUAL_CATEGORIES.contains(categoryCode))));
             }
 
-            String categoryCode = d.getCategoria() != null ? d.getCategoria() : "D16";
             boolean isPredefined = PREDEFINED.matcher(categoryCode).matches() && !categoryCode.equals("D16");
 
             ObjectNode doc = objectMapper.createObjectNode();
-            doc.put("document_id", "doc-" + String.format("%03d", idx));
-            doc.put("document_name", d.getNombrePersonalizado() != null ? d.getNombrePersonalizado() : d.getStoragePath());
+            doc.put("document_id", documentId);
+            doc.put("document_name", documentName);
             doc.put("document_type", isPredefined ? "predefined" : "custom");
             doc.put("category", categoryCode);
             doc.put("category_label", CATEGORY_LABELS.getOrDefault(categoryCode, "Otro"));

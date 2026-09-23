@@ -1,13 +1,17 @@
 import { useState, useMemo, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Search, Plus, ChevronDown, FolderOpen, CheckSquare, SlidersHorizontal, User, Layers, Check } from 'lucide-react';
+import { Search, Plus, ChevronDown, ChevronLeft, ChevronRight, FolderOpen, CheckSquare, SlidersHorizontal, User, Layers, Check } from 'lucide-react';
 import { toast } from 'sonner';
 import { useApp } from '../../context/AppContext';
-import ProjectCard from './ProjectCard';
+import ProjectCard, { ProjectCardSkeleton } from './ProjectCard';
+import ProjectTable, { ProjectTableSkeleton, SortKey, SortDir } from './ProjectTable';
+import { getProjectSummary } from './projectDisplay';
 import NewProjectModal from './NewProjectModal';
 import IcesiLogo from '../brand/IcesiLogo';
 
 type Tab = 'en_ejecucion' | 'completado';
+
+const PAGE_SIZE = 10;
 
 // ── Custom filter dropdown ─────────────────────────────────────────────────────
 interface FilterOption { value: string; label: string }
@@ -17,9 +21,10 @@ interface FilterDropdownProps {
   options: FilterOption[];
   placeholder: string;
   icon: React.ReactNode;
+  className?: string;
 }
 
-function FilterDropdown({ value, onChange, options, placeholder, icon }: FilterDropdownProps) {
+function FilterDropdown({ value, onChange, options, placeholder, icon, className = '' }: FilterDropdownProps) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
@@ -35,10 +40,12 @@ function FilterDropdown({ value, onChange, options, placeholder, icon }: FilterD
   const isActive = !!value;
 
   return (
-    <div ref={ref} className="relative">
+    <div ref={ref} className={`relative ${className}`}>
       <button
         onClick={() => setOpen(prev => !prev)}
-        className={`flex items-center gap-2 pl-3.5 pr-3 py-2.5 rounded-full text-[13px] border transition-all cursor-pointer ${
+        aria-haspopup="listbox"
+        aria-expanded={open}
+        className={`w-full md:w-auto flex items-center gap-2 pl-3.5 pr-3 py-2.5 rounded-full text-[13px] border transition-all cursor-pointer ${
           isActive
             ? 'bg-neutral-900 text-white border-neutral-900'
             : 'bg-white text-neutral-700 border-neutral-200/80 hover:border-neutral-300'
@@ -46,7 +53,7 @@ function FilterDropdown({ value, onChange, options, placeholder, icon }: FilterD
         style={{ fontWeight: isActive ? 500 : 400 }}
       >
         <span className={isActive ? 'text-white/70' : 'text-neutral-400'}>{icon}</span>
-        <span>{selected ? selected.label : placeholder}</span>
+        <span className="flex-1 text-left truncate">{selected ? selected.label : placeholder}</span>
         <ChevronDown
           size={13}
           strokeWidth={2}
@@ -105,12 +112,15 @@ function FilterDropdown({ value, onChange, options, placeholder, icon }: FilterD
 
 // ── Dashboard ──────────────────────────────────────────────────────────────────
 export default function Dashboard() {
-  const { projects, currentUser, addProject } = useApp();
+  const { projects, currentUser, addProject, isLoading } = useApp();
   const [activeTab, setActiveTab] = useState<Tab>('en_ejecucion');
   const [search, setSearch] = useState('');
   const [filterAuditor, setFilterAuditor] = useState('');
   const [filterEstado, setFilterEstado] = useState('');
   const [showModal, setShowModal] = useState(false);
+  const [sortKey, setSortKey] = useState<SortKey | null>(null);
+  const [sortDir, setSortDir] = useState<SortDir>('asc');
+  const [page, setPage] = useState(1);
 
   // TODO: fetch('public.proyectos').select('*, profiles(*)')
   // TODO: Implementar búsqueda local (client-side filtering)
@@ -126,6 +136,39 @@ export default function Dashboard() {
       return matchDeleted && matchTab && matchSearch && matchAuditor && matchEstado;
     });
   }, [projects, activeTab, search, filterAuditor, filterEstado]);
+
+  const sortedProjects = useMemo(() => {
+    if (!sortKey) return filteredProjects;
+    const value = (p: typeof filteredProjects[number]) =>
+      sortKey === 'progreso' ? getProjectSummary(p).progress
+      : sortKey === 'fecha' ? p.startDate
+      : p.companyName;
+    const dir = sortDir === 'asc' ? 1 : -1;
+    return [...filteredProjects].sort((a, b) => {
+      const va = value(a), vb = value(b);
+      const cmp = typeof va === 'number' && typeof vb === 'number'
+        ? va - vb
+        : String(va).localeCompare(String(vb), 'es', { sensitivity: 'base' });
+      return cmp * dir;
+    });
+  }, [filteredProjects, sortKey, sortDir]);
+
+  // Volver a la primera pagina cuando cambian los filtros o el orden.
+  useEffect(() => { setPage(1); }, [activeTab, search, filterAuditor, filterEstado, sortKey, sortDir]);
+
+  const pageCount = Math.max(1, Math.ceil(sortedProjects.length / PAGE_SIZE));
+  const currentPage = Math.min(page, pageCount);
+  const pagedProjects = sortedProjects.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
+
+  const handleSort = (key: SortKey) => {
+    if (sortKey === key) {
+      setSortDir(d => (d === 'asc' ? 'desc' : 'asc'));
+    } else {
+      setSortKey(key);
+      // Progreso y fecha arrancan de mayor a menor (lo mas avanzado / reciente primero).
+      setSortDir(key === 'proyecto' ? 'asc' : 'desc');
+    }
+  };
 
   const handleNewProject = async (data: { companyName: string; projectName: string; auditors: any[]; startDate: string; tamano?: string; mision?: string; vision?: string }) => {
     try {
@@ -169,14 +212,14 @@ export default function Dashboard() {
 
   return (
     <div className="min-h-screen bg-[#f7f8ff]">
-      <div className="max-w-[1440px] mx-auto px-10 py-12">
+      <div className="max-w-[1440px] mx-auto px-4 py-6 sm:px-6 md:py-10 lg:px-10 lg:py-12">
         {/* Header */}
-        <div className="flex items-end justify-between mb-12 gap-6">
+        <div className="flex flex-col items-stretch gap-5 mb-6 sm:flex-row sm:items-end sm:justify-between sm:gap-6 md:mb-12">
           <div>
             <p className="text-[11px] uppercase tracking-[0.18em] text-neutral-400 mb-3" style={{ fontWeight: 500 }}>
               Panel principal
             </p>
-            <h1 className="text-neutral-900 tracking-tight" style={{ fontWeight: 500, fontSize: '2.25rem', lineHeight: 1.1, letterSpacing: '-0.02em' }}>
+            <h1 className="text-neutral-900 tracking-tight" style={{ fontWeight: 500, fontSize: 'clamp(1.75rem, 5vw, 2.25rem)', lineHeight: 1.1, letterSpacing: '-0.02em' }}>
               Mis proyectos
             </h1>
             <p className="text-neutral-500 text-sm mt-3" style={{ fontWeight: 400 }}>
@@ -191,7 +234,7 @@ export default function Dashboard() {
               whileHover={{ y: -1 }}
               whileTap={{ y: 0 }}
               onClick={() => setShowModal(true)}
-              className="brand-button-primary group flex items-center gap-2.5 pl-4 pr-5 py-3 rounded-full text-sm transition-all flex-shrink-0"
+              className="brand-button-primary group flex items-center justify-center gap-2.5 pl-4 pr-5 py-3 rounded-full text-sm transition-all flex-shrink-0 flex-1 sm:flex-none"
               style={{
                 fontWeight: 500,
                 boxShadow: '0 1px 2px rgba(0,0,0,0.06), 0 8px 24px -8px rgba(84,84,233,0.42)',
@@ -206,14 +249,14 @@ export default function Dashboard() {
         </div>
 
         {/* Stats strip */}
-        <div className="brand-kpi-strip grid-cols-3 mb-8">
+        <div className="brand-kpi-strip grid-cols-3 mb-4 md:mb-8">
           {[
             { label: 'Total', value: projects.length },
             { label: 'En ejecución', value: enEjecucionCount },
             { label: 'Completados', value: completadosCount },
           ].map((s) => (
-            <div key={s.label} className="brand-kpi-item flex items-center justify-between gap-3">
-              <p className="text-[11px] uppercase tracking-[0.14em] text-neutral-400" style={{ fontWeight: 500 }}>{s.label}</p>
+            <div key={s.label} className="brand-kpi-item flex flex-col items-start gap-0.5 max-md:px-2.5! max-md:py-2.5! md:flex-row md:items-center md:justify-between md:gap-3">
+              <p className="text-[9.5px] md:text-[11px] uppercase tracking-[0.04em] md:tracking-[0.14em] text-neutral-400 truncate max-w-full" style={{ fontWeight: 500 }}>{s.label}</p>
               <p className="text-neutral-900 tabular-nums" style={{ fontWeight: 500, fontSize: '1.125rem', letterSpacing: '-0.02em' }}>
                 {s.value}
               </p>
@@ -222,14 +265,16 @@ export default function Dashboard() {
         </div>
 
         {/* Toolbar — sticky on scroll */}
-        <div className="sticky top-0 z-30 py-4 mb-6 bg-[#f7f8ff]/90 backdrop-blur-md flex items-center justify-between gap-4 flex-wrap">
+        <div className="md:sticky md:top-0 z-30 py-2 md:py-4 mb-4 md:mb-6 bg-[#f7f8ff]/90 md:backdrop-blur-md flex flex-col items-stretch gap-3 md:flex-row md:items-center md:justify-between md:gap-4 md:flex-wrap">
           {/* Tabs */}
-          <div className="inline-flex items-center gap-1 p-1 rounded-full bg-white border border-neutral-200/80" style={{ boxShadow: '0 1px 2px rgba(0,0,0,0.02)' }}>
+          <div role="tablist" aria-label="Estado de los proyectos" className="flex md:inline-flex items-center gap-1 p-1 rounded-full bg-white border border-neutral-200/80" style={{ boxShadow: '0 1px 2px rgba(0,0,0,0.02)' }}>
             {tabs.map(tab => (
               <button
                 key={tab.key}
+                role="tab"
+                aria-selected={activeTab === tab.key}
                 onClick={() => setActiveTab(tab.key)}
-                className={`relative flex items-center gap-2 pl-3.5 pr-3 py-1.5 rounded-full text-[13px] transition-colors ${
+                className={`relative flex-1 md:flex-none justify-center flex items-center gap-2 whitespace-nowrap pl-3 pr-2.5 md:pl-3.5 md:pr-3 py-1.5 rounded-full text-[13px] transition-colors ${
                   activeTab === tab.key ? 'text-neutral-900' : 'text-neutral-500 hover:text-neutral-800'
                 }`}
                 style={{ fontWeight: activeTab === tab.key ? 500 : 400 }}
@@ -242,7 +287,7 @@ export default function Dashboard() {
                   />
                 )}
                 <span className="relative flex items-center gap-2">
-                  {tab.icon}
+                  <span className="hidden sm:inline-flex">{tab.icon}</span>
                   {tab.label}
                   <span
                     className={`tabular-nums text-[11px] px-1.5 py-px rounded-full ${
@@ -258,7 +303,7 @@ export default function Dashboard() {
           </div>
 
           {/* Search + filters */}
-          <div className="flex items-center gap-2">
+          <div className="flex flex-col gap-2 md:flex-row md:items-center">
             <div className="relative">
               <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-neutral-400" size={14} strokeWidth={1.75} />
               <input
@@ -266,11 +311,14 @@ export default function Dashboard() {
                 value={search}
                 onChange={e => setSearch(e.target.value)}
                 placeholder="Buscar empresa o proyecto"
-                className="w-72 pl-10 pr-4 py-2.5 bg-white border border-neutral-200/80 rounded-full text-[13px] outline-none focus:border-neutral-300 focus:ring-4 focus:ring-neutral-100 transition-all placeholder:text-neutral-400"
+                aria-label="Buscar empresa o proyecto"
+                className="w-full md:w-72 pl-10 pr-4 py-2.5 bg-white border border-neutral-200/80 rounded-full text-[13px] outline-none focus:border-neutral-300 focus:ring-4 focus:ring-neutral-100 transition-all placeholder:text-neutral-400"
               />
             </div>
 
+            <div className="flex gap-2">
             <FilterDropdown
+              className="flex-1 md:flex-none"
               value={filterAuditor}
               onChange={setFilterAuditor}
               options={auditorOptions}
@@ -279,27 +327,71 @@ export default function Dashboard() {
             />
 
             <FilterDropdown
+              className="flex-1 md:flex-none"
               value={filterEstado}
               onChange={setFilterEstado}
               options={estadoOptions}
               placeholder="Estado"
               icon={<Layers size={13} strokeWidth={1.75} />}
             />
+            </div>
           </div>
         </div>
 
-        {/* Grid */}
+        {/* Listado: tabla en tablet/escritorio (>= 768px), tarjetas compactas en celular */}
         <AnimatePresence mode="wait">
-          {filteredProjects.length > 0 ? (
+          {isLoading && projects.length === 0 ? (
+            <motion.div key="loading" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} aria-busy="true" aria-label="Cargando proyectos">
+              <div className="hidden md:block"><ProjectTableSkeleton /></div>
+              <div className="md:hidden flex flex-col gap-2">
+                {Array.from({ length: 4 }).map((_, i) => <ProjectCardSkeleton key={i} />)}
+              </div>
+            </motion.div>
+          ) : sortedProjects.length > 0 ? (
             <motion.div
               key={activeTab + search + filterAuditor + filterEstado}
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5"
             >
-              {filteredProjects.map((project, i) => (
-                <ProjectCard key={project.id} project={project} index={i} />
-              ))}
+              <div className="hidden md:block">
+                <ProjectTable projects={pagedProjects} sortKey={sortKey} sortDir={sortDir} onSort={handleSort} />
+              </div>
+              <div className="md:hidden flex flex-col gap-2">
+                {pagedProjects.map((project, i) => (
+                  <ProjectCard key={project.id} project={project} index={i} />
+                ))}
+              </div>
+
+              {pageCount > 1 && (
+                <nav aria-label="Paginación de proyectos" className="flex items-center justify-between gap-3 mt-4">
+                  <p className="text-neutral-500 text-[12px] tabular-nums">
+                    {(currentPage - 1) * PAGE_SIZE + 1}–{Math.min(currentPage * PAGE_SIZE, sortedProjects.length)} de {sortedProjects.length}
+                  </p>
+                  <div className="flex items-center gap-1.5">
+                    <button
+                      type="button"
+                      onClick={() => setPage(currentPage - 1)}
+                      disabled={currentPage === 1}
+                      aria-label="Página anterior"
+                      className="w-9 h-9 rounded-full bg-white border border-neutral-200/80 flex items-center justify-center text-neutral-600 hover:border-neutral-300 disabled:opacity-40 disabled:cursor-not-allowed transition-colors outline-none focus-visible:ring-2 focus-visible:ring-[#5454e9]/40"
+                    >
+                      <ChevronLeft size={15} strokeWidth={1.75} />
+                    </button>
+                    <span className="text-neutral-600 text-[12px] tabular-nums px-1.5" aria-current="page" style={{ fontWeight: 500 }}>
+                      {currentPage} / {pageCount}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setPage(currentPage + 1)}
+                      disabled={currentPage === pageCount}
+                      aria-label="Página siguiente"
+                      className="w-9 h-9 rounded-full bg-white border border-neutral-200/80 flex items-center justify-center text-neutral-600 hover:border-neutral-300 disabled:opacity-40 disabled:cursor-not-allowed transition-colors outline-none focus-visible:ring-2 focus-visible:ring-[#5454e9]/40"
+                    >
+                      <ChevronRight size={15} strokeWidth={1.75} />
+                    </button>
+                  </div>
+                </nav>
+              )}
             </motion.div>
           ) : (
             <motion.div
@@ -307,7 +399,7 @@ export default function Dashboard() {
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0 }}
-              className="flex flex-col items-center justify-center py-24 text-center bg-white rounded-2xl border border-dashed border-neutral-200"
+              className="flex flex-col items-center justify-center py-16 md:py-24 px-6 text-center bg-white rounded-2xl border border-dashed border-neutral-200"
             >
               <div className="w-14 h-14 rounded-2xl bg-neutral-50 border border-neutral-100 flex items-center justify-center mb-5">
                 <SlidersHorizontal size={20} className="text-neutral-400" strokeWidth={1.5} />

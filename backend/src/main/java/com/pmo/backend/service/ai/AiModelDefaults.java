@@ -10,8 +10,10 @@ public final class AiModelDefaults {
     // Alias "-latest" en vez de una version fechada: Google los mueve automaticamente al
     // modelo recomendado vigente, evitando que un nombre fijo quede deprecado con el tiempo
     // (verificado: gemini-2.5-flash ya devuelve 404 "no longer available to new users").
-    public static final String DEFAULT_MODEL = "gemini-pro-latest";
-    public static final String DEFAULT_FALLBACK_MODEL = "gemini-flash-latest";
+    // Flash / Flash-Lite en vez de Pro: el modelo global es el segundo intento cuando falla el de
+    // la fase, y no conviene que un error temporal escale al modelo mas caro.
+    public static final String DEFAULT_MODEL = "gemini-flash-latest";
+    public static final String DEFAULT_FALLBACK_MODEL = "gemini-flash-lite-latest";
 
     private AiModelDefaults() {
     }

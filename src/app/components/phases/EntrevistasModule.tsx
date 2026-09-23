@@ -18,6 +18,7 @@ import {
 import { useSoundManager } from '../../hooks/useSoundManager';
 import { supabase } from '../../lib/supabase';
 import PhaseHeader from './_shared/PhaseHeader';
+import { usePhaseDependencies, BlockedActionHint } from './_shared/PhaseDependencyNotice';
 import NextPhaseButton from './_shared/NextPhaseButton';
 import EntrevistasDiagnosisView from './entrevistas/EntrevistasDiagnosisView';
 import { ConfirmModal, DetailPanel, EmptyStatePanel, FormPanel, type PanelMode } from './entrevistas/EntrevistasPanels';
@@ -54,6 +55,7 @@ export default function EntrevistasModule() {
   const { id: projectId } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { getProject, updatePhaseStatus, reprocessPhase, isLoading } = useApp();
+  const { isBlocked: depsBlocked, blockedReason: depsReason } = usePhaseDependencies(projectId, 2);
   const { playAgentSuccess, playProcessError, playPhaseComplete } = useSoundManager();
 
   const project = getProject(projectId!);
@@ -766,16 +768,18 @@ export default function EntrevistasModule() {
       {!isCompleted && !isPhaseProcessing && (
         <div className="max-w-[1100px] mx-auto px-10 pb-12">
           <div className="flex justify-end pt-8 border-t border-neutral-200/60">
+            <BlockedActionHint reason={depsReason}>
             <motion.button
               whileHover={{ y: -1 }}
               whileTap={{ y: 0 }}
               onClick={handleMarkComplete}
-              disabled={entrevistas.length === 0}
+              disabled={entrevistas.length === 0 || depsBlocked}
               className="px-6 py-3 rounded-full text-white text-[13px] disabled:opacity-40 disabled:cursor-not-allowed transition-all"
               style={{ background: '#5454e9', fontWeight: 500, boxShadow: '0 1px 2px rgba(0,0,0,0.06), 0 8px 24px -8px rgba(0,0,0,0.18)' }}
             >
               Enviar al Agente
             </motion.button>
+            </BlockedActionHint>
           </div>
         </div>
       )}

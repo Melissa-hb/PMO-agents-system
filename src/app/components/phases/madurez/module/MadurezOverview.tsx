@@ -14,6 +14,8 @@ type MadurezOverviewProps = {
   predictivaManager: ReturnType<typeof useMadurez>;
   agilManager: ReturnType<typeof useMadurez>;
   onSend: () => void;
+  /** Motivo por el que no se puede enviar (dependencias pendientes). */
+  blockedReason?: string;
 };
 
 export function MadurezOverview({
@@ -26,7 +28,9 @@ export function MadurezOverview({
   predictivaManager,
   agilManager,
   onSend,
+  blockedReason,
 }: MadurezOverviewProps) {
+  const canSend = allDone && !blockedReason;
   return (
             <motion.div key="overview" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
               <div className="mb-10">
@@ -98,10 +102,10 @@ export function MadurezOverview({
               {/* Send to Agent 5 */}
               <div className="flex justify-end">
                 <motion.button
-                  whileHover={allDone ? { scale: 1.02 } : {}} 
-                  whileTap={allDone ? { scale: 0.97 } : {}}
-                  onClick={allDone ? onSend : undefined}
-                  disabled={!allDone}
+                  whileHover={canSend ? { scale: 1.02 } : {}} 
+                  whileTap={canSend ? { scale: 0.97 } : {}}
+                  onClick={canSend ? onSend : undefined}
+                  disabled={!canSend}
                   className="inline-flex items-center gap-2 px-5 py-3 rounded-full text-white text-[13px] transition-all disabled:opacity-40 disabled:cursor-not-allowed hover:-translate-y-px"
                   style={{ background: '#5454e9', fontWeight: 500, boxShadow: '0 1px 2px rgba(0,0,0,0.06), 0 8px 24px -8px rgba(0,0,0,0.18)' }}>
                   <Send size={15} /> Confirmar encuestas y Enviar al Agente 5

@@ -13,6 +13,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.fasterxml.jackson.databind.JsonNode;
 
+import com.pmo.backend.service.phases.PhaseDataFlow;
 import com.pmo.backend.domain.Empresa;
 import com.pmo.backend.domain.FaseEstado;
 import com.pmo.backend.domain.Profile;
@@ -157,7 +158,9 @@ public class ProyectoService {
             faseEstadoRepository.save(fase);
         });
 
-        for (FaseEstado fase : faseEstadoRepository.findByProyectoIdAndNumeroFaseGreaterThan(projectId, phaseNumber)) {
+        // Solo se invalidan las fases que consumen el resultado de esta (PhaseDataFlow), no todas
+        // las posteriores: las demas conservan su resultado y no hay que pagar su regeneracion.
+        for (FaseEstado fase : dependentPhaseStates(projectId, phaseNumber)) {
             fase.setEstadoVisual("bloqueado");
             fase.setDatosConsolidados(null);
             fase.setUpdatedAt(OffsetDateTime.now());
@@ -194,12 +197,17 @@ public class ProyectoService {
 
     @Transactional
     public void updatePhasesAfterRaw(UUID projectId, int phaseNumber, String estadoVisual, JsonNode datosConsolidados) {
-        for (FaseEstado fase : faseEstadoRepository.findByProyectoIdAndNumeroFaseGreaterThan(projectId, phaseNumber)) {
+        for (FaseEstado fase : dependentPhaseStates(projectId, phaseNumber)) {
             fase.setEstadoVisual(estadoVisual);
             fase.setDatosConsolidados(datosConsolidados != null && !datosConsolidados.isNull() ? datosConsolidados : null);
             fase.setUpdatedAt(OffsetDateTime.now());
             faseEstadoRepository.save(fase);
         }
+    }
+
+    private List<FaseEstado> dependentPhaseStates(UUID projectId, int phaseNumber) {
+        List<Integer> dependents = List.copyOf(PhaseDataFlow.dependentsOf(phaseNumber));
+        return dependents.isEmpty() ? List.of() : faseEstadoRepository.findByProyectoIdAndNumeroFaseIn(projectId, dependents);
     }
 
     private Empresa findOrCreateEmpresa(String nombre) {

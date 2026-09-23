@@ -19,7 +19,7 @@
  */
 
 // @refresh reset
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router';
 import { AnimatePresence, motion } from 'motion/react';
 import { Loader2 } from 'lucide-react';
@@ -27,6 +27,7 @@ import { toast } from 'sonner';
 import { useApp } from '../../context/AppContext';
 import { useSoundManager } from '../../hooks/useSoundManager';
 import PhaseHeader from './_shared/PhaseHeader';
+import { usePhaseDependencies, BlockedActionHint, PhaseWaitingPanel } from './_shared/PhaseDependencyNotice';
 import { apiPost, getPhaseState, runPhase, updatePhaseState, updatePhasesAfterState } from '../../lib/api';
 
 /** Adapta PhaseStateDto (camelCase) al shape snake_case que usaba la fila de Supabase. */
@@ -47,7 +48,7 @@ import {
   parsePmoType,
 } from './guia-metodologica/guideContent';
 import { hasUsableGuidePayload, normalizeChapters, unwrapGuidePayload, versionsFromPayload } from './guia-metodologica/normalizeGuide';
-import type { DocVersion, GuideChapter, ModuleView } from './guia-metodologica/types';
+import type { DocVersion, GuideChapter, ModuleView, Phase7Comments } from './guia-metodologica/types';
 
 const PHASE7_PROGRESS_STEPS = [
   { key: 'part_1a', stage: 'part_1a', label: '7.1A - Introduccion, objetivo y alcance' },
@@ -100,6 +101,7 @@ export default function GuiaMetodologicaView() {
   const { id: projectId } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { getProject, updatePhaseStatus, isLoading } = useApp();
+  const { isBlocked: depsBlocked, blockedReason: depsReason } = usePhaseDependencies(projectId, 7);
   const { playAgentSuccess, playPhaseComplete } = useSoundManager();
 
   const project = getProject(projectId!);
@@ -126,6 +128,7 @@ export default function GuiaMetodologicaView() {
   const [versions, setVersions] = useState<DocVersion[]>(() => versionsFromPayload(phase?.agentData));
   const [currentVersionIdx, setCurrentVersionIdx] = useState(0);
   const [adjustText, setAdjustText] = useState('');
+  const [selectedSections, setSelectedSections] = useState<string[]>([]);
   const [isAdjusting, setIsAdjusting] = useState(false);
   const [showApprove, setShowApprove] = useState(false);
   const [isApproving, setIsApproving] = useState(false);
@@ -137,13 +140,23 @@ export default function GuiaMetodologicaView() {
   const pollTimeoutStartRef = useRef(0);
   const transientRetryCountRef = useRef(0);
   const transientRetryTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const lastAgentRequestRef = useRef<{ iteration: number; comments: string | null } | null>(null);
+  /** Comentario del consultor: texto (regeneracion completa) u objeto con target_sections (ajuste parcial). */
+  const lastAgentRequestRef = useRef<{ iteration: number; comments: Phase7Comments } | null>(null);
   const guideFinishedRef = useRef(false);
   const stageTriggerRef = useRef<Record<string, boolean>>({});
   const lastPollSignatureRef = useRef('');
   const approvalCommittedRef = useRef(false);
 
   const currentVersion = versions[currentVersionIdx] ?? null;
+  // Secciones de la version visible, para elegir cuales ajustar (S01 es la portada).
+  const sectionOptions = useMemo(() => {
+    const data = currentVersion?.data;
+    const content = data?.diagnosis?.guide_content ?? data?.guide_content;
+    if (!Array.isArray(content)) return [];
+    return content
+      .filter((s: any) => s?.section_id && s.section_id !== 'S01')
+      .map((s: any) => ({ id: String(s.section_id), title: String(s.section_title ?? s.section_id) }));
+  }, [currentVersion]);
 
   const applyGuidePayload = useCallback((raw: any) => {
     const current = unwrapGuidePayload(raw);
@@ -231,7 +244,9 @@ export default function GuiaMetodologicaView() {
         pollTimeoutStartRef.current = retryStartedAt;
 
         try {
-          await updatePhaseState(projectId, 7, { estadoVisual: 'procesando', datosConsolidados: null });
+          await updatePhaseState(projectId, 7, lastAgentRequestRef.current?.comments
+            ? { estadoVisual: 'procesando' }
+            : { estadoVisual: 'procesando', datosConsolidados: null });
 
           updatePhaseStatus(projectId, 7, 'procesando');
           guideFinishedRef.current = false;
@@ -445,7 +460,7 @@ export default function GuiaMetodologicaView() {
     pollRef.current = setInterval(poll, 1500);
   }, [chapters.length, finishGuideGeneration, projectId, updatePhaseStatus]);
 
-  const invokeAgent7 = useCallback(async (iteration = 1, comments: string | null = null) => {
+  const invokeAgent7 = useCallback(async (iteration = 1, comments: Phase7Comments = null) => {
     if (!projectId) return;
     const startedAt = Date.now();
     logPhase7('invoke_start', { projectId, iteration, hasComments: Boolean(comments) });
@@ -467,7 +482,11 @@ export default function GuiaMetodologicaView() {
     // Also clear datos_consolidados to remove any stale _processing markers from
     // previous failed/timed-out runs — otherwise the edge function sees _processing:true
     // and returns inProgress:true without actually starting a new run.
-    await updatePhaseState(projectId, 7, { estadoVisual: 'procesando', datosConsolidados: null });
+    // Con comentarios (ajuste o reprocesamiento) la guia actual NO se borra: el backend la lee
+    // para versionarla y, en un ajuste parcial, para tomar las secciones a revisar.
+    await updatePhaseState(projectId, 7, comments
+      ? { estadoVisual: 'procesando' }
+      : { estadoVisual: 'procesando', datosConsolidados: null });
     logPhase7('invoke_marked_processing', { projectId, iteration });
 
     updatePhaseStatus(projectId, 7, 'procesando');
@@ -498,6 +517,10 @@ export default function GuiaMetodologicaView() {
       const stateAfterError = await readRawPhaseState(projectId, 7);
 
       if (stateAfterError?.datos_consolidados && stateAfterError.estado_visual !== 'error') {
+        const adjustError = stateAfterError.datos_consolidados?._last_adjust_error;
+        if (adjustError) {
+          toast.error('No se pudo aplicar el ajuste', { description: `${adjustError} Se conserva la versión anterior.` });
+        }
         if (finishGuideGeneration(stateAfterError.datos_consolidados, stateAfterError.estado_visual === 'completado' ? 'completado' : 'disponible')) return;
       }
 
@@ -599,12 +622,14 @@ export default function GuiaMetodologicaView() {
     if (!project || !phase || isLoading) return;
     if (phase.status !== 'disponible') return;
     if (autoTriggered.current || hasFailed.current || view !== 'auto-trigger' || chapters.length > 0) return;
+    // Con dependencias pendientes no se dispara el agente; se muestra el panel de espera.
+    if (depsBlocked) return;
     if ((phase.agentData as any)?._error) return;
     if (hasUsableGuidePayload(phase.agentData)) return;
     autoTriggered.current = true;
     logPhase7('auto_trigger_conditions_met', { projectId });
     invokeAgent7(1, null);
-  }, [chapters.length, invokeAgent7, isLoading, phase, project, view]);
+  }, [chapters.length, depsBlocked, invokeAgent7, isLoading, phase, project, view]);
 
   useEffect(() => {
     logPhase7('mount', {
@@ -645,8 +670,13 @@ export default function GuiaMetodologicaView() {
     setIsAdjustment(true);
     const nextIteration = (currentVersion?.number ?? versions.length) + 1;
     const comment = adjustText;
+    // Con capitulos elegidos solo se regeneran esos (ajuste parcial); sin seleccion, la guia completa.
+    const comments: Phase7Comments = selectedSections.length > 0
+      ? { comentario_consultor: comment, target_sections: selectedSections }
+      : comment;
     setAdjustText('');
-    await invokeAgent7(nextIteration, comment);
+    setSelectedSections([]);
+    await invokeAgent7(nextIteration, comments);
   };
 
   const handleRetry = async () => {
@@ -806,14 +836,17 @@ export default function GuiaMetodologicaView() {
             <p className="text-neutral-500 text-sm leading-relaxed mb-7">
               {errorMessage || 'Revisa la consola del navegador y los logs de Supabase para ver el ultimo paso registrado.'}
             </p>
+            <BlockedActionHint reason={depsReason}>
             <button
               type="button"
               onClick={handleRetry}
-              className="inline-flex items-center justify-center px-5 py-3 rounded-full bg-[#5454e9] text-white text-sm"
+              disabled={depsBlocked}
+              className="inline-flex items-center justify-center px-5 py-3 rounded-full bg-[#5454e9] text-white text-sm disabled:opacity-40 disabled:cursor-not-allowed"
               style={{ fontWeight: 600 }}
             >
               Reintentar Agente 7
             </button>
+            </BlockedActionHint>
           </div>
         </div>
       </div>
@@ -823,6 +856,20 @@ export default function GuiaMetodologicaView() {
   // ── Render: auto-trigger → skip straight to processing ───────────────────
   // There is no separate "sending" screen. The moment the component mounts
   // with no data it immediately invokes the agent and shows the processing overlay.
+  if (view === 'auto-trigger' && depsBlocked) {
+    return (
+      <div className="min-h-screen bg-[#f7f8ff]">
+        <PhaseHeader
+          projectId={projectId!}
+          companyName={project.companyName}
+          phaseNumber={7}
+          phaseName="Construcción guía metodológica"
+        />
+        <PhaseWaitingPanel agentLabel="El Agente 7" reason={depsReason} />
+      </div>
+    );
+  }
+
   if (view === 'auto-trigger') {
     return (
       <div className="h-screen bg-[#f7f8ff] flex flex-col overflow-hidden">
@@ -911,9 +958,13 @@ export default function GuiaMetodologicaView() {
           completedAt={phase.completedAt}
           onVersionSelect={(version, index) => {
             setCurrentVersionIdx(index);
+            setSelectedSections([]);
             if (version.data) setChapters(normalizeChapters(version.data));
           }}
           onAdjustTextChange={setAdjustText}
+          sectionOptions={sectionOptions}
+          selectedSections={selectedSections}
+          onToggleSection={(id) => setSelectedSections(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id])}
           onRequestAdjustments={handleRequestAdjustments}
           onReprocess={handleReprocess}
           onApprove={() => setShowApprove(true)}

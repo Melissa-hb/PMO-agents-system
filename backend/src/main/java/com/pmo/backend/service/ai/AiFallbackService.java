@@ -19,7 +19,10 @@ import com.pmo.backend.config.AiProperties;
 @Service
 public class AiFallbackService {
 
-    private static final Set<Integer> RETRYABLE_STATUS = Set.of(400, 404, 408, 409, 429, 500, 502, 503, 504);
+    // 400 no se reintenta: es una solicitud invalida (p. ej. demasiado grande o mal formada) y
+    // fallaria igual con otro modelo, pagando de nuevo todo el input. 404 si, porque indica
+    // que ese modelo concreto no existe y el siguiente candidato puede funcionar.
+    private static final Set<Integer> RETRYABLE_STATUS = Set.of(404, 408, 409, 429, 500, 502, 503, 504);
 
     private final GeminiClient geminiClient;
     private final AiProperties aiProperties;
@@ -56,6 +59,7 @@ public class AiFallbackService {
                         .attemptedModels(attemptedModels)
                         .errors(errors)
                         .fallbackUsed(index > 0)
+                        .usage(result.getUsage())
                         .build();
             }
 

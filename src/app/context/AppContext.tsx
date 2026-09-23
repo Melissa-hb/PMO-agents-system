@@ -226,15 +226,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
               agentData: undefined,
             };
           }
-          if (phase.number > phaseNumber) {
-            return {
-              ...phase,
-              status: 'bloqueado' as PhaseStatus,
-              completedAt: undefined,
-              agentDiagnosis: undefined,
-              agentData: undefined,
-            };
-          }
+          // Las fases que dependen de esta las invalida el backend (PhaseDataFlow); su estado real
+          // llega con la recarga de abajo.
           return phase;
         });
         return { ...project, phases: updatedPhases, status: 'en_ejecucion' as const };
@@ -243,10 +236,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
     try {
       await apiPost(`/api/projects/${projectId}/phases/${phaseNumber}/reprocess`);
+      await fetchProjects(true);
     } catch (err) {
       console.error('[AppContext] Error in reprocessPhase:', err);
     }
-  }, []);
+  }, [fetchProjects]);
 
   return (
     <AppContext.Provider value={{

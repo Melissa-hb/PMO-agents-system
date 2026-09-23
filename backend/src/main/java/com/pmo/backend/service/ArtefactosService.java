@@ -27,6 +27,7 @@ import com.pmo.backend.service.ai.AiModelSettingsService;
 import com.pmo.backend.service.ai.AiPart;
 import com.pmo.backend.service.ai.GenerationConfig;
 import com.pmo.backend.service.ai.NormalizedAiModelSettings;
+import com.pmo.backend.service.ai.TokenUsageRecorder;
 
 /**
  * Puerto Java de la Edge Function `pmo-agent-artefactos` (fase_numero=8, "Artefactos
@@ -40,6 +41,11 @@ public class ArtefactosService {
 
     private static final int FASE_ORIGEN = 7;
     private static final int FASE_ARTEFACTOS = 8;
+
+    /** Tope del extracto de la Fase 7 que se envia a la IA (~3K tokens en lugar de 40-100K). */
+    private static final int MAX_EXTRACT_CHARS = 12_000;
+    private static final int MAX_SNIPPETS_PER_ARTIFACT = 2;
+    private static final int MAX_SNIPPET_CHARS = 280;
 
     private static final List<String> ACTIVE_ARTEFACTOS_MAESTROS = List.of(
             "Abastecimiento",
@@ -127,17 +133,20 @@ public class ArtefactosService {
     private final AiModelSettingsService aiModelSettingsService;
     private final AiFallbackService aiFallbackService;
     private final ObjectMapper objectMapper;
+    private final TokenUsageRecorder tokenUsageRecorder;
 
     public ArtefactosService(ConfiguracionAgenteRepository configuracionAgenteRepository,
                               FaseEstadoRepository faseEstadoRepository,
                               AiModelSettingsService aiModelSettingsService,
                               AiFallbackService aiFallbackService,
-                              ObjectMapper objectMapper) {
+                              ObjectMapper objectMapper,
+                              TokenUsageRecorder tokenUsageRecorder) {
         this.configuracionAgenteRepository = configuracionAgenteRepository;
         this.faseEstadoRepository = faseEstadoRepository;
         this.aiModelSettingsService = aiModelSettingsService;
         this.aiFallbackService = aiFallbackService;
         this.objectMapper = objectMapper;
+        this.tokenUsageRecorder = tokenUsageRecorder;
     }
 
     public JsonNode consolidar(UUID projectId) {
@@ -170,8 +179,10 @@ public class ArtefactosService {
             throw new IllegalStateException("El documento de la Fase 7 está vacío o no tiene contenido procesable.");
         }
 
+        // La inferencia local (sin IA) sigue usando el texto completo; a la IA solo se le envia
+        // un extracto con la estructura de la guia y las frases que mencionan cada artefacto.
         String promptSistema = agentConfig != null ? agentConfig.getPromptSistema() : null;
-        String prompt = buildPrompt(fase7Content, promptSistema);
+        String prompt = buildPrompt(buildFase7Extract(fase7.getDatosConsolidados(), fase7Content), promptSistema);
 
         NormalizedAiModelSettings modelSettings = aiModelSettingsService.getNormalized();
         List<String> candidates = aiModelSettingsService.getModelCandidates(modelSettings,
@@ -183,9 +194,13 @@ public class ArtefactosService {
                 .maxOutputTokens(16384)
                 .providerTimeoutMs(90_000L)
                 .responseMimeType("application/json")
+                // Clasificar 18 artefactos en dos listas no requiere razonamiento extendido.
+                .thinkingBudget(0)
                 .build();
 
+        long startTime = System.currentTimeMillis();
         AiGenerateResult aiResult = aiFallbackService.callWithFallback(candidates, List.of(AiPart.ofText(prompt)), generationConfig);
+        tokenUsageRecorder.record(projectId, FASE_ARTEFACTOS, aiResult, System.currentTimeMillis() - startTime);
 
         JsonNode parsed = parseJsonResponse(aiResult.getText());
         List<String> aiRecommended = normalizeArtifactList(parsed.get("artefactos_recomendados"));
@@ -342,6 +357,86 @@ public class ArtefactosService {
             }
         }
         return String.join("\n", parts);
+    }
+
+    /**
+     * Extracto compacto de la guia para la clasificacion de artefactos: titulo, resumen,
+     * metodologia/enfoque, titulos de secciones, artefactos que la guia nombra y, como
+     * evidencia, las frases del texto completo que mencionan cada artefacto de la lista maestra
+     * (o un sinonimo). Es lo que el modelo necesita para decidir, sin reenviar la guia entera.
+     */
+    private String buildFase7Extract(JsonNode agentData, String fullContent) {
+        JsonNode d = unwrapFase7Payload(agentData);
+        List<String> parts = new ArrayList<>();
+        parts.add("(Extracto de la guía: estructura y frases relevantes para los artefactos. No es el documento completo.)");
+
+        addIfPresent(parts, "Título", d, "titulo");
+        addIfPresent(parts, "Resumen", d, "resumen_ejecutivo", "resumen", "summary");
+        if (d.hasNonNull("metodologia")) parts.add("Metodología: " + truncate(stringifyGuideValue(d.get("metodologia")), 600));
+        if (d.hasNonNull("enfoque")) parts.add("Enfoque: " + truncate(stringifyGuideValue(d.get("enfoque")), 600));
+
+        JsonNode secciones = firstPresent(d, "capitulos", "chapters", "secciones", "guide_content", "contenido");
+        if (secciones == null && d.hasNonNull("diagnosis") && d.get("diagnosis").hasNonNull("guide_content")) {
+            secciones = d.get("diagnosis").get("guide_content");
+        }
+        if (secciones != null && secciones.isArray() && !secciones.isEmpty()) {
+            parts.add("\nSecciones de la guía:");
+            for (JsonNode sec : secciones) {
+                String titulo = sec.isTextual() ? sec.asText()
+                        : firstText(sec, "titulo", "title", "nombre", "section_title", "id", "section_id");
+                if (!titulo.isBlank()) parts.add("- " + truncate(titulo, 160));
+                JsonNode subsecs = sec.isObject() ? firstPresent(sec, "subsecciones", "subsections", "secciones") : null;
+                if (subsecs != null && subsecs.isArray()) {
+                    for (JsonNode sub : subsecs) {
+                        String stit = firstText(sub, "titulo", "title");
+                        if (!stit.isBlank()) parts.add("  · " + truncate(stit, 160));
+                    }
+                }
+            }
+        }
+
+        JsonNode artefactos = firstPresent(d, "artefactos_recomendados", "artefactos", "artifacts");
+        if (artefactos != null && artefactos.isArray() && !artefactos.isEmpty()) {
+            parts.add("\nArtefactos mencionados en la guía:");
+            for (JsonNode art : artefactos) {
+                String nombre = art.isTextual() ? art.asText() : firstText(art, "nombre", "name", "titulo");
+                if (!nombre.isBlank()) parts.add("- " + truncate(nombre, 160));
+            }
+        }
+
+        List<String> sentences = new ArrayList<>();
+        for (String raw : fullContent.split("(?<=[.!?;])\\s+|\\n+")) {
+            String sentence = raw.replaceAll("[#*`>|]+", " ").replaceAll("\\s+", " ").trim();
+            if (sentence.length() >= 20) sentences.add(sentence);
+        }
+        List<String> evidence = new ArrayList<>();
+        Set<String> used = new LinkedHashSet<>();
+        for (String artifact : ACTIVE_ARTEFACTOS_MAESTROS) {
+            List<String> terms = new ArrayList<>();
+            terms.add(normalizeText(artifact));
+            ACTIVE_ARTIFACT_ALIASES.getOrDefault(artifact, List.of()).forEach(alias -> terms.add(normalizeText(alias)));
+            int found = 0;
+            for (String sentence : sentences) {
+                if (found >= MAX_SNIPPETS_PER_ARTIFACT) break;
+                String normalized = " " + normalizeText(sentence) + " ";
+                boolean mentions = terms.stream().anyMatch(t -> !t.isBlank() && normalized.contains(" " + t + " "));
+                if (mentions && used.add(sentence)) {
+                    evidence.add("- [" + artifact + "] " + truncate(sentence, MAX_SNIPPET_CHARS));
+                    found++;
+                }
+            }
+        }
+        if (!evidence.isEmpty()) {
+            parts.add("\nFrases de la guía que mencionan artefactos o sus equivalentes:");
+            parts.addAll(evidence);
+        }
+
+        return truncate(String.join("\n", parts), MAX_EXTRACT_CHARS);
+    }
+
+    private static String truncate(String value, int max) {
+        if (value == null) return "";
+        return value.length() <= max ? value : value.substring(0, max).trim() + "…";
     }
 
     private void addIfPresent(List<String> parts, String label, JsonNode node, String... keys) {

@@ -33,4 +33,10 @@ interface GuideChapter {
 
 type GuideSubsection = GuideChapter['subsections'][number];
 
-export type { PmoType, ModuleView, ProcessingStep, DocVersion, GuideChapter, GuideSubsection };
+/**
+ * Comentarios que se envian al Agente 7: texto para regenerar la guia completa, u objeto con
+ * target_sections (section_id) para regenerar solo esas secciones.
+ */
+type Phase7Comments = string | { comentario_consultor: string; target_sections: string[] } | null;
+
+export type { PmoType, ModuleView, ProcessingStep, DocVersion, GuideChapter, GuideSubsection, Phase7Comments };

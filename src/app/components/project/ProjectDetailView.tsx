@@ -5,7 +5,7 @@ import { ArrowLeft, BarChart3, CheckCircle2, X, Sparkles, MoreVertical, Edit2, T
 import { toast } from 'sonner';
 import { useApp } from '../../context/AppContext';
 import { supabase } from '../../lib/supabase';
-import PhaseItem from './PhaseItem';
+import PhaseCard from './PhaseCard';
 import EditProjectModal from '../dashboard/EditProjectModal';
 import IcesiLogo from '../brand/IcesiLogo';
 import { LoadingRouteState, MissingProjectState } from '../layout/RouteState';
@@ -54,7 +54,7 @@ export default function ProjectDetailView() {
 
   const handleRetry = async (phaseNumber: number) => {
     await reprocessPhase(project.id, phaseNumber);
-    toast.success(`Fase ${phaseNumber} reiniciada`, { description: 'La fase actual y todas las fases posteriores han sido restablecidas.' });
+    toast.success(`Fase ${phaseNumber} reiniciada`, { description: 'Se restablecieron esta fase y las que usan su resultado.' });
   };
 
   const processingPhase = project.phases.find(p => p.status === 'procesando');
@@ -291,7 +291,7 @@ export default function ProjectDetailView() {
         </AnimatePresence>
 
         {/* Pipeline */}
-        <div className="flex items-center justify-between mb-6">
+        <div className="flex flex-wrap items-end justify-between gap-x-4 gap-y-2 mb-6">
           <div>
             <p className="text-[11px] uppercase tracking-[0.18em] text-neutral-400" style={{ fontWeight: 500 }}>
               Pipeline
@@ -301,24 +301,22 @@ export default function ProjectDetailView() {
             </h2>
           </div>
           <span className="text-[12px] text-neutral-400">
-            Haga clic en una fase disponible para iniciarla
+            Haga clic en cualquier fase para ingresar
           </span>
         </div>
 
-        {/* All phases — sequential */}
-        <div className="bg-white rounded-2xl border border-neutral-200/70 p-1.5" style={{ boxShadow: '0 1px 2px rgba(0,0,0,0.02)' }}>
-          <div className="flex flex-col">
-            {project.phases.map((phase, i) => (
-              <PhaseItem
-                key={phase.number}
-                phase={phase}
-                projectId={project.id}
-                onRetry={handleRetry}
-                isLast={i === project.phases.length - 1}
-                indexInGroup={i}
-              />
-            ))}
-          </div>
+        {/* Todas las fases — cualquiera se puede abrir; las dependencias se indican en cada tarjeta */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          {project.phases.map((phase, i) => (
+            <PhaseCard
+              key={phase.number}
+              phase={phase}
+              phases={project.phases}
+              projectId={project.id}
+              onRetry={handleRetry}
+              index={i}
+            />
+          ))}
         </div>
       </div>
 

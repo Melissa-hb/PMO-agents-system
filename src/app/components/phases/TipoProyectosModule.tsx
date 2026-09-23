@@ -25,6 +25,7 @@ import {
 import { toast } from 'sonner';
 import { useApp } from '../../context/AppContext';
 import PhaseHeader from './_shared/PhaseHeader';
+import { usePhaseDependencies, BlockedActionHint, PhaseWaitingPanel } from './_shared/PhaseDependencyNotice';
 import NextPhaseButton from './_shared/NextPhaseButton';
 import { useSoundManager } from '../../hooks/useSoundManager';
 import { normalizeIdoneidadDiagnosisItems, getIdoneidadItemCode, getIdoneidadItemScore, inferIdoneidadDimension, factorMapping } from './IdoneidadModule';
@@ -128,6 +129,7 @@ export default function TipoProyectosModule() {
   const { id: projectId } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { getProject, updatePhaseStatus, reprocessPhase, isLoading } = useApp();
+  const { isBlocked: depsBlocked, blockedReason: depsReason } = usePhaseDependencies(projectId, 4);
   const { playAgentSuccess, playProcessError, playPhaseComplete } = useSoundManager();
 
   const project = getProject(projectId!);
@@ -332,6 +334,8 @@ export default function TipoProyectosModule() {
   // RF-F4-02: Auto-trigger on mount when disponible — invokes the edge function
   useEffect(() => {
     if (autoTriggered.current || !projectId) return;
+    // Con dependencias pendientes no se dispara el agente; se muestra el panel de espera.
+    if (depsBlocked) return;
     if (view === 'auto-trigger') {
       autoTriggered.current = true;
       (async () => {
@@ -360,7 +364,7 @@ export default function TipoProyectosModule() {
         }).catch(e => handlePhase4InvokeError('invoke failed', e));
       })();
     }
-  }, [view, projectId]);
+  }, [view, projectId, depsBlocked]);
 
   // Poll Supabase every 4s while processing to detect when agent finishes
   useEffect(() => {
@@ -681,14 +685,17 @@ export default function TipoProyectosModule() {
       <p className="text-neutral-500 text-[13px] max-w-sm leading-relaxed mb-8">
         Hubo un problema al procesar los datos de las fases anteriores. Esto puede ocurrir si los diagnósticos de las fases 1, 2 o 3 están vacíos. Revisa los logs en Supabase para más detalle.
       </p>
+      <BlockedActionHint reason={depsReason}>
       <button
         onClick={handleRetry}
-        className="flex items-center gap-2 px-6 py-3 rounded-xl text-white text-sm"
+        disabled={depsBlocked}
+        className="flex items-center gap-2 px-6 py-3 rounded-xl text-white text-sm disabled:opacity-40 disabled:cursor-not-allowed"
         style={{ background: '#5454e9', fontWeight: 500, boxShadow: '0 1px 2px rgba(0,0,0,0.06), 0 8px 24px -8px rgba(0,0,0,0.18)' }}
       >
         <RefreshCw size={14} />
         Reintentar
       </button>
+      </BlockedActionHint>
     </motion.div>
   );
 
@@ -730,7 +737,9 @@ export default function TipoProyectosModule() {
 
       <div className="max-w-[1100px] mx-auto px-10 py-10">
         <AnimatePresence mode="wait">
-          {view === 'auto-trigger' && renderAutoTrigger()}
+          {view === 'auto-trigger' && (depsBlocked
+            ? <PhaseWaitingPanel key="waiting" agentLabel="El Agente 4" reason={depsReason} />
+            : renderAutoTrigger())}
           {view === 'processing' && renderProcessing()}
           {view === 'diagnosis' && renderDiagnosis()}
           {view === 'approved' && renderApproved()}

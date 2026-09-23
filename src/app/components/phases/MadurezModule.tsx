@@ -20,6 +20,7 @@ import { AnimatePresence } from 'motion/react';
 import { toast } from 'sonner';
 import { useApp } from '../../context/AppContext';
 import PhaseHeader from './_shared/PhaseHeader';
+import { usePhaseDependencies } from './_shared/PhaseDependencyNotice';
 import NextPhaseButton from './_shared/NextPhaseButton';
 import { useSoundManager } from '../../hooks/useSoundManager';
 import { useMadurez } from '../../hooks/useMadurez';
@@ -35,6 +36,7 @@ import { LoadingRouteState, MissingProjectState } from '../layout/RouteState';
 export default function MadurezModule() {
   const { id: projectId } = useParams<{ id: string }>();
   const { getProject, updatePhaseStatus, reprocessPhase, isLoading } = useApp();
+  const { isBlocked: depsBlocked, blockedReason: depsReason } = usePhaseDependencies(projectId, 5);
   const { playAgentSuccess, playPhaseComplete } = useSoundManager();
 
   const project = getProject(projectId!);
@@ -411,6 +413,7 @@ export default function MadurezModule() {
               predictivaManager={predictivaManager}
               agilManager={agilManager}
               onSend={handleSend}
+              blockedReason={depsReason}
             />
           )}
 

@@ -10,6 +10,7 @@ import { useApp } from '../../context/AppContext';
 import { normalizeIdoneidadDiagnosis, useIdoneidad, type AgentErrorPayload } from '../../hooks/useIdoneidad';
 import { useSoundManager } from '../../hooks/useSoundManager';
 import PhaseHeader from './_shared/PhaseHeader';
+import { usePhaseDependencies, BlockedActionHint } from './_shared/PhaseDependencyNotice';
 import NextPhaseButton from './_shared/NextPhaseButton';
 import IdoneidadDiagnosisView from './idoneidad/IdoneidadDiagnosisView';
 import { LoadingRouteState, MissingProjectState } from '../layout/RouteState';
@@ -101,6 +102,7 @@ export default function IdoneidadModule() {
   const { id: projectId } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { getProject, updatePhaseStatus, reprocessPhase, isLoading } = useApp();
+  const { isBlocked: depsBlocked, blockedReason: depsReason } = usePhaseDependencies(projectId, 3);
   const { playAgentSuccess, playProcessError, playPhaseComplete } = useSoundManager();
 
   const { activeLink, responses, diagnosis, agentError, isLoadingData, externalFile, setExternalFile, existingFileName, existingFileUrl, fetchInitialData, generateLink, processPhase, deleteFile } = useIdoneidad(projectId);
@@ -508,16 +510,18 @@ export default function IdoneidadModule() {
 
               {/* Submit Button */}
               <div className="mt-8 flex justify-end">
+                <BlockedActionHint reason={depsReason}>
                 <motion.button
                   whileHover={{ y: -1 }} whileTap={{ y: 0 }}
                   onClick={handleMarkComplete}
                   className="inline-flex items-center gap-2 px-5 py-3 rounded-full text-white text-[13px] transition-all disabled:opacity-50"
-                  disabled={isSending}
+                  disabled={isSending || depsBlocked}
                   style={{ background: '#5454e9', fontWeight: 500, boxShadow: '0 1px 2px rgba(0,0,0,0.06), 0 8px 24px -8px rgba(0,0,0,0.18)' }}
                 >
                   {isSending ? <Loader2 size={13} className="animate-spin" /> : <Send size={13} strokeWidth={1.75} />}
                   {isSending ? 'Procesando y enviando...' : 'Marcar como completa y enviar al agente'}
                 </motion.button>
+                </BlockedActionHint>
               </div>
             </motion.div>
           )}

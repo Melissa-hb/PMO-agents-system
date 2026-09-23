@@ -76,7 +76,11 @@ public class AiModelSettingsService {
      */
     public List<String> getModelCandidates(NormalizedAiModelSettings settings, String preferredModelRaw) {
         List<String> ordered = new ArrayList<>();
-        if (preferredModelRaw != null && !preferredModelRaw.isBlank()) ordered.add(preferredModelRaw.trim());
+        // Solo modelos de Gemini: un nombre de otro proveedor (restos de OpenAI) fallaria con 404 y
+        // escalaria innecesariamente al siguiente candidato.
+        if (preferredModelRaw != null && preferredModelRaw.trim().toLowerCase().startsWith("gemini")) {
+            ordered.add(preferredModelRaw.trim());
+        }
         ordered.add(settings.selectedModel());
         ordered.add(settings.fallbackModel());
 
@@ -106,6 +110,9 @@ public class AiModelSettingsService {
         metadata.set("attempted_models", objectMapper.valueToTree(modelResult.getAttemptedModels()));
         metadata.set("model_errors", objectMapper.valueToTree(modelResult.getErrors()));
         metadata.put("model_gateway", "gemini");
+        if (modelResult.getUsage() != null) {
+            metadata.set("token_usage", objectMapper.valueToTree(modelResult.getUsage()));
+        }
 
         record.set("metadata", metadata);
         return record;

@@ -14,6 +14,7 @@ import {
 import { useSoundManager } from '../../hooks/useSoundManager';
 import { getPhaseState, runPhase, updatePhaseState } from '../../lib/api';
 import PhaseHeader from './_shared/PhaseHeader';
+import { usePhaseDependencies, BlockedActionHint } from './_shared/PhaseDependencyNotice';
 import NextPhaseButton from './_shared/NextPhaseButton';
 import type { DocCategory } from './documentacion/documentCategories';
 import { CompletedDiagnosisSection } from './documentacion/module/CompletedDiagnosisSection';
@@ -54,6 +55,7 @@ function AgentErrorCard({ error }: { error: AgentErrorPayload }) {
 export default function DocumentacionModule() {
   const { id: projectId } = useParams<{ id: string }>();
   const { getProject, updatePhaseStatus, reprocessPhase, isLoading } = useApp();
+  const { isBlocked: depsBlocked, blockedReason: depsReason } = usePhaseDependencies(projectId, 1);
   const { playProcessError, playPhaseComplete } = useSoundManager();
 
   const project = getProject(projectId!);
@@ -363,16 +365,18 @@ export default function DocumentacionModule() {
 
         {!isCompleted && !isProcessing && (
           <div className="mt-8 flex justify-end">
+            <BlockedActionHint reason={depsReason}>
             <motion.button
               whileHover={{ y: -1 }}
               whileTap={{ y: 0 }}
               onClick={handleMarkComplete}
-              disabled={!canComplete}
+              disabled={!canComplete || depsBlocked}
               className="px-6 py-3 rounded-full text-white text-[13px] disabled:opacity-40 disabled:cursor-not-allowed transition-all"
               style={{ background: '#5454e9', fontWeight: 500, boxShadow: '0 1px 2px rgba(0,0,0,0.06), 0 8px 24px -8px rgba(0,0,0,0.18)' }}
             >
               Enviar al Agente
             </motion.button>
+            </BlockedActionHint>
           </div>
         )}
 

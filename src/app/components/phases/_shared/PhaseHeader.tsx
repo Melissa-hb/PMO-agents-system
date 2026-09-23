@@ -6,6 +6,7 @@ import { toast } from 'sonner';
 import { useApp } from '../../../context/AppContext';
 import { useCancelAgent } from '../../../hooks/useCancelAgent';
 import IcesiLogo from '../../brand/IcesiLogo';
+import { PhaseDependencyNotice, usePhaseDependencies } from './PhaseDependencyNotice';
 
 interface PhaseHeaderProps {
   projectId: string;
@@ -33,6 +34,7 @@ export default function PhaseHeader({
   const navigate = useNavigate();
   const { getProject, reprocessPhase } = useApp();
   const { cancel, isCancelling } = useCancelAgent(projectId, phaseNumber);
+  const { isBlocked, blockedReason } = usePhaseDependencies(projectId, phaseNumber);
   const [showConfirm, setShowConfirm] = useState(false);
   const [showReprocess, setShowReprocess] = useState(false);
   const [showPdfMenu, setShowPdfMenu] = useState(false);
@@ -247,11 +249,13 @@ export default function PhaseHeader({
                 <motion.button
                   key="reprocess-btn"
                   initial={{ opacity: 0, scale: 0.9, width: 0 }}
-                  animate={{ opacity: 1, scale: 1, width: 'auto' }}
+                  animate={{ opacity: isBlocked ? 0.4 : 1, scale: 1, width: 'auto' }}
                   exit={{ opacity: 0, scale: 0.9, width: 0 }}
                   transition={{ duration: 0.18 }}
                   onClick={() => setShowReprocess(true)}
-                  className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-[13px] border bg-white border-neutral-200 hover:border-neutral-300 text-neutral-600 hover:text-neutral-900 transition-all flex-shrink-0 overflow-hidden"
+                  disabled={isBlocked}
+                  title={blockedReason}
+                  className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-[13px] border bg-white border-neutral-200 hover:border-neutral-300 text-neutral-600 hover:text-neutral-900 transition-all flex-shrink-0 overflow-hidden disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:border-neutral-200 disabled:hover:text-neutral-600"
                   style={{ fontWeight: 500, boxShadow: '0 1px 2px rgba(0,0,0,0.04)', whiteSpace: 'nowrap' }}
                 >
                   <RotateCcw size={13} strokeWidth={2} />
@@ -344,17 +348,12 @@ export default function PhaseHeader({
               {project.phases.map((p) => {
                 const isCurrent = p.number === phaseNumber;
                 const isCompleted = p.status === 'completado';
-                const previousPhase = project.phases.find(prev => prev.number === p.number - 1);
-                const isEffectivelyAvailable = p.number === 1 || previousPhase?.status === 'completado';
-                const isBlocked = p.status === 'bloqueado' && !isEffectivelyAvailable;
 
                 let itemClass = "";
                 if (isCurrent) {
                   itemClass = "bg-neutral-900 border-neutral-900 text-white font-medium shadow-sm hover:bg-neutral-800";
                 } else if (isCompleted) {
                   itemClass = "bg-neutral-100/60 border-neutral-200/60 text-neutral-900 hover:bg-neutral-100 hover:border-neutral-300";
-                } else if (isBlocked) {
-                  itemClass = "bg-transparent border-transparent text-neutral-400 cursor-not-allowed opacity-60";
                 } else {
                   itemClass = "bg-white/50 border-neutral-200/60 text-neutral-600 hover:bg-white hover:border-neutral-300";
                 }
@@ -362,7 +361,6 @@ export default function PhaseHeader({
                 return (
                   <button
                     key={p.number}
-                    disabled={isBlocked}
                     onClick={() => navigate(`/dashboard/project/${projectId}/phase/${p.number}`)}
                     className={`flex-1 flex items-center gap-2 px-2.5 py-1.5 rounded-xl border text-[11px] text-left transition-all truncate flex-shrink-0 ${itemClass}`}
                     style={{ fontWeight: isCurrent ? 500 : 400 }}
@@ -389,6 +387,7 @@ export default function PhaseHeader({
         )}
       </div>
       <div className="h-[100px] flex-shrink-0 print:hidden" aria-hidden="true" />
+      <PhaseDependencyNotice projectId={projectId} phaseNumber={phaseNumber} />
 
       {/* ── Modal de confirmación ─────────────────────────────────────────── */}
       <AnimatePresence>
@@ -477,7 +476,7 @@ export default function PhaseHeader({
                 ¿Reiniciar la Fase {phaseNumber}?
               </h3>
               <p className="text-neutral-500 text-[13px] leading-relaxed mb-6">
-                ¿Estás seguro de que deseas reiniciar la <strong>Fase {phaseNumber}: {phaseName}</strong>? Se restablecerán los datos de esta fase y todas las fases posteriores serán bloqueadas nuevamente.
+                ¿Estás seguro de que deseas reiniciar la <strong>Fase {phaseNumber}: {phaseName}</strong>? Se restablecerán los datos de esta fase y los de las fases que usan su resultado.
               </p>
 
               <div className="flex items-center gap-2">

@@ -11,4 +11,5 @@ class AiCallResult {
     private String finishReason;
     private String text;
     private String errorMessage;
+    private AiTokenUsage usage;
 }

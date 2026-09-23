@@ -11,6 +11,7 @@ import { useApp } from '../../context/AppContext';
 import { apiPost, getPhaseState } from '../../lib/api';
 import NextPhaseButton from './_shared/NextPhaseButton';
 import PhaseHeader from './_shared/PhaseHeader';
+import { usePhaseDependencies, BlockedActionHint } from './_shared/PhaseDependencyNotice';
 import { LoadingRouteState, MissingProjectState } from '../layout/RouteState';
 
 interface Artifact {
@@ -503,6 +504,7 @@ export default function ArtefactosView() {
   const { id: projectId } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { getProject, updatePhaseStatus, isLoading } = useApp();
+  const { isBlocked: depsBlocked, blockedReason: depsReason } = usePhaseDependencies(projectId, 8);
 
   const project = getProject(projectId!);
   const phase = project?.phases.find(p => p.number === 8);
@@ -822,10 +824,12 @@ export default function ArtefactosView() {
 
           {!isCompleted && (
             <div className="px-6 pb-6 pt-4 bg-white flex-shrink-0">
+              <BlockedActionHint reason={depsReason} className="w-full">
               <motion.button
-                whileHover={{ scale: 1.01, brightness: 1.1 }} whileTap={{ scale: 0.98 }}
+                whileHover={depsBlocked ? {} : { scale: 1.01, brightness: 1.1 }} whileTap={depsBlocked ? {} : { scale: 0.98 }}
                 onClick={() => setShowConfirm(true)}
-                className="w-full max-w-sm mx-auto py-3.5 rounded-xl text-white flex items-center justify-center gap-2.5 shadow-lg shadow-blue-600/15 group relative overflow-hidden"
+                disabled={depsBlocked}
+                className="disabled:opacity-40 disabled:cursor-not-allowed w-full max-w-sm mx-auto py-3.5 rounded-xl text-white flex items-center justify-center gap-2.5 shadow-lg shadow-blue-600/15 group relative overflow-hidden"
                 style={{ background: '#5454e9', fontWeight: 850 }}
               >
                 <div className="flex items-center gap-2.5 text-[14px] relative z-10">
@@ -837,6 +841,7 @@ export default function ArtefactosView() {
                 </span>
                 <div className="absolute inset-0 bg-gradient-to-tr from-white/0 via-white/5 to-white/10 opacity-0 group-hover:opacity-100 transition-opacity" />
               </motion.button>
+              </BlockedActionHint>
             </div>
           )}
         </div>

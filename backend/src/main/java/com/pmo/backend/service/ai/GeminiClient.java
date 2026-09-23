@@ -21,6 +21,8 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 class GeminiClient {
 
     private static final String ENDPOINT_TEMPLATE = "https://generativelanguage.googleapis.com/v1beta/models/%s:generateContent";
+    /** Minimo de razonamiento que aceptan los modelos Pro (no permiten desactivarlo). */
+    private static final int PRO_MIN_THINKING_BUDGET = 128;
 
     private final WebClient.Builder webClientBuilder;
     private final ObjectMapper objectMapper;
@@ -31,6 +33,16 @@ class GeminiClient {
     }
 
     AiCallResult call(String apiKey, String model, List<AiPart> parts, GenerationConfig config) {
+        AiCallResult result = call(apiKey, model, parts, config, true);
+        // Si el modelo rechaza la configuracion de razonamiento (400), se repite una vez sin ella.
+        // Una solicitud rechazada con 400 no consume tokens.
+        if (!result.isOk() && result.getStatus() == 400 && config.getThinkingBudget() != null) {
+            return call(apiKey, model, parts, config, false);
+        }
+        return result;
+    }
+
+    private AiCallResult call(String apiKey, String model, List<AiPart> parts, GenerationConfig config, boolean withThinking) {
         ObjectNode payload = objectMapper.createObjectNode();
 
         ArrayNode contents = payload.putArray("contents");
@@ -51,6 +63,11 @@ class GeminiClient {
         }
         if ("application/json".equalsIgnoreCase(config.getResponseMimeType())) {
             generationConfig.put("responseMimeType", "application/json");
+        }
+        if (withThinking && config.getThinkingBudget() != null) {
+            int budget = config.getThinkingBudget();
+            if (model.toLowerCase().contains("pro")) budget = Math.max(budget, PRO_MIN_THINKING_BUDGET);
+            generationConfig.putObject("thinkingConfig").put("thinkingBudget", budget);
         }
 
         try {
@@ -97,7 +114,8 @@ class GeminiClient {
         }
         String finishReason = candidate.path("finishReason").asText(null);
 
-        return AiCallResult.builder().ok(true).status(200).finishReason(finishReason).text(text.toString()).build();
+        return AiCallResult.builder().ok(true).status(200).finishReason(finishReason).text(text.toString())
+                .usage(AiTokenUsage.fromGemini(data.path("usageMetadata"))).build();
     }
 
     private static class GeminiErrorException extends RuntimeException {

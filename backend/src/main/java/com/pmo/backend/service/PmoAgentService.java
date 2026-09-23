@@ -31,7 +31,9 @@ import com.pmo.backend.service.ai.AiModelSettingsService;
 import com.pmo.backend.service.ai.AiPart;
 import com.pmo.backend.service.ai.GenerationConfig;
 import com.pmo.backend.service.ai.NormalizedAiModelSettings;
+import com.pmo.backend.service.ai.TokenUsageRecorder;
 import com.pmo.backend.service.phases.FileRef;
+import com.pmo.backend.service.phases.Phase7Sections;
 import com.pmo.backend.service.phases.PhasePayloadBuilder;
 import com.pmo.backend.service.phases.PhasePayloadContext;
 import com.pmo.backend.service.phases.PhasePayloadResult;
@@ -50,6 +52,11 @@ import com.pmo.backend.service.phases.Phase3CompletionService;
 public class PmoAgentService {
 
     private static final Set<Integer> RUN_TRACKED_PHASES = Set.of(4, 5, 6, 9);
+    /**
+     * Fases de clasificacion/extraccion (3.1 = preguntas de entrevista, 4 = tipo de PMO) que no
+     * necesitan razonamiento extendido: se ejecutan con thinkingBudget=0 para no pagar esos tokens.
+     */
+    private static final Set<Integer> CLASSIFICATION_PHASES = Set.of(4, 9);
 
     private final ConfiguracionAgenteRepository configuracionAgenteRepository;
     private final FaseEstadoRepository faseEstadoRepository;
@@ -60,6 +67,9 @@ public class PmoAgentService {
     private final ObjectMapper objectMapper;
     private final WebClient.Builder webClientBuilder;
     private final Executor pmoAgentExecutor;
+    private final TokenUsageRecorder tokenUsageRecorder;
+    private final PdfAttachmentOptimizer pdfAttachmentOptimizer;
+    private final PromptCompactor promptCompactor;
 
     public PmoAgentService(ConfiguracionAgenteRepository configuracionAgenteRepository,
                             FaseEstadoRepository faseEstadoRepository,
@@ -69,7 +79,10 @@ public class PmoAgentService {
                             List<PhasePayloadBuilder> builders,
                             ObjectMapper objectMapper,
                             WebClient.Builder webClientBuilder,
-                            @org.springframework.beans.factory.annotation.Qualifier("pmoAgentExecutor") Executor pmoAgentExecutor) {
+                            @org.springframework.beans.factory.annotation.Qualifier("pmoAgentExecutor") Executor pmoAgentExecutor,
+                            TokenUsageRecorder tokenUsageRecorder,
+                            PdfAttachmentOptimizer pdfAttachmentOptimizer,
+                            PromptCompactor promptCompactor) {
         this.configuracionAgenteRepository = configuracionAgenteRepository;
         this.faseEstadoRepository = faseEstadoRepository;
         this.aiModelSettingsService = aiModelSettingsService;
@@ -79,6 +92,9 @@ public class PmoAgentService {
         this.objectMapper = objectMapper;
         this.webClientBuilder = webClientBuilder;
         this.pmoAgentExecutor = pmoAgentExecutor;
+        this.tokenUsageRecorder = tokenUsageRecorder;
+        this.pdfAttachmentOptimizer = pdfAttachmentOptimizer;
+        this.promptCompactor = promptCompactor;
     }
 
     private record PhaseRunResult(JsonNode diagnosis, String processingTime, boolean cancelled) {
@@ -130,6 +146,9 @@ public class PmoAgentService {
                 wrapped.put("comments", extractCommentText(resolvedComments));
                 wrapped.set("current_guide_for_revision", existingGuide);
                 wrapped.set("latest_version", existingGuide.path("_latest_version"));
+                if (resolvedComments.isObject() && resolvedComments.has("target_sections")) {
+                    wrapped.set("target_sections", resolvedComments.get("target_sections"));
+                }
                 commentsForAgent = wrapped;
             }
         }
@@ -172,7 +191,17 @@ public class PmoAgentService {
         try {
             result = runAgent(projectId, phaseNumber, iteration, commentsForAgent, request.externalFileUrl(), extraFileUrls, runId);
         } catch (Exception ex) {
-            saveError(projectId, phaseNumber, ex.getMessage() != null ? ex.getMessage() : "Error desconocido ejecutando el agente");
+            String message = ex.getMessage() != null ? ex.getMessage() : "Error desconocido ejecutando el agente";
+            JsonNode previousGuide = phaseNumber == 7 && commentsForAgent != null && commentsForAgent.isObject()
+                    ? commentsForAgent.get("current_guide_for_revision") : null;
+            if (previousGuide != null && previousGuide.isObject()) {
+                // Un ajuste fallido no debe borrar la guia: se restaura la version anterior.
+                ObjectNode restored = ((ObjectNode) previousGuide).deepCopy();
+                restored.put("_last_adjust_error", message);
+                saveFaseEstado(projectId, 7, "disponible", restored);
+            } else {
+                saveError(projectId, phaseNumber, message);
+            }
             throw ex;
         }
 
@@ -265,15 +294,26 @@ public class PmoAgentService {
         inputEnvelope.set("payload", payloadResult.payload());
         inputEnvelope.set("comments", payloadResult.comments() != null ? payloadResult.comments() : objectMapper.nullNode());
 
-        String fullPrompt = agentConfig.getPromptSistema() + "\n\nJSON DE ENTRADA:\n"
-                + toPrettyJson(inputEnvelope) + outputInstructionFor(phaseNumber) + ENFORCE_JSON_INSTRUCTION;
+        boolean isPartialPhase7 = phaseNumber == 7
+                && "partial".equals(payloadResult.metadata().path("revision_mode").asText(null));
+
+        // Orden pensado para la cache implicita de Gemini: primero lo que es identico entre
+        // llamadas (prompt de sistema + contexto fijo como las guias de la Fase 7) y al final
+        // los datos propios del proyecto.
+        String staticContext = payloadResult.staticContext() != null && !payloadResult.staticContext().isBlank()
+                ? "\n\n" + promptCompactor.compact(payloadResult.staticContext()) : "";
+        String fullPrompt = promptCompactor.compact(agentConfig.getPromptSistema()) + staticContext + "\n\nJSON DE ENTRADA:\n"
+                + toCompactJson(inputEnvelope)
+                + (isPartialPhase7 ? PHASE7_PARTIAL_INSTRUCTION : outputInstructionFor(phaseNumber))
+                + ENFORCE_JSON_INSTRUCTION;
 
         List<AiPart> parts = new ArrayList<>();
         parts.add(AiPart.ofText(fullPrompt));
 
         List<String> csvTextsForPhase3 = new ArrayList<>();
+        long[] inlinePdfBytes = {0L};
         for (FileRef fileRef : payloadResult.fileUrls()) {
-            attachFile(parts, fileRef, phaseNumber, csvTextsForPhase3);
+            attachFile(parts, fileRef, phaseNumber, csvTextsForPhase3, inlinePdfBytes);
         }
 
         NormalizedAiModelSettings modelSettings = aiModelSettingsService.getNormalized();
@@ -281,9 +321,8 @@ public class PmoAgentService {
 
         boolean hasAttachedFiles = !payloadResult.fileUrls().isEmpty();
         long providerTimeoutMs = phaseNumber == 9 ? 75_000
-                // Fase 7 exige una guia de minimo 20 paginas / 10 capitulos: es, con diferencia,
-                // la generacion mas grande del sistema (mas incluso que Fase 5). En modelos
-                // lentos o de menor prioridad de cola puede tardar varios minutos en completarse.
+                // Fase 7 genera la guia completa (8-12 paginas): es la generacion mas grande del
+                // sistema. En modelos lentos o de menor prioridad de cola puede tardar varios minutos.
                 : phaseNumber == 7 ? 280_000
                 : phaseNumber == 6 ? 90_000
                 : phaseNumber == 5 ? (hasAttachedFiles ? 200_000 : 180_000)
@@ -296,14 +335,19 @@ public class PmoAgentService {
         // el timeout mas generoso que el resto de fases.
         GenerationConfig generationConfig = GenerationConfig.builder()
                 .temperature(agentConfig.getTemperatura() != null ? agentConfig.getTemperatura().doubleValue() : 1.0)
-                .maxOutputTokens(phaseNumber == 7 || phaseNumber == 5 ? 65536 : 16384)
+                // Fase 7: guia completa (8-12 paginas, ~10-15K tokens; 65K deja margen). Fase 5: su respuesta real ronda
+                // 5-9K tokens; 32K deja margen amplio y solo corta respuestas desbocadas.
+                .maxOutputTokens(phaseNumber == 7 ? (isPartialPhase7 ? 32768 : 65536) : phaseNumber == 5 ? 32768 : 16384)
                 .providerTimeoutMs(providerTimeoutMs)
                 .responseMimeType("application/json")
+                .thinkingBudget(CLASSIFICATION_PHASES.contains(phaseNumber) ? 0 : null)
                 .build();
 
         long startTime = System.currentTimeMillis();
         AiGenerateResult aiResult = aiFallbackService.callWithFallback(candidates, parts, generationConfig);
-        String processingTime = String.format(Locale.US, "%.2f", (System.currentTimeMillis() - startTime) / 1000.0);
+        long durationMs = System.currentTimeMillis() - startTime;
+        String processingTime = String.format(Locale.US, "%.2f", durationMs / 1000.0);
+        tokenUsageRecorder.record(projectId, phaseNumber, aiResult, durationMs);
 
         if ("MAX_TOKENS".equals(aiResult.getFinishReason())) {
             throw new IllegalStateException("El modelo " + aiResult.getProvider() + ":" + aiResult.getModel()
@@ -329,7 +373,20 @@ public class PmoAgentService {
                 : diagnosis;
 
         if (phaseNumber == 7) {
-            diagnosisToSave = wrapPhase7Version(projectId, diagnosis, comments, commentText);
+            JsonNode guideToVersion = diagnosis;
+            if (isPartialPhase7) {
+                JsonNode previousGuide = comments != null && comments.isObject() ? comments.get("current_guide_for_revision") : null;
+                guideToVersion = Phase7Sections.merge(Phase7Sections.currentGuide(previousGuide), diagnosis,
+                        Phase7Sections.targetSections(comments));
+                if (guideToVersion == null) {
+                    throw new IllegalStateException("El ajuste parcial no devolvió las secciones solicitadas; se conserva la versión anterior de la guía.");
+                }
+            }
+            String versionComment = isPartialPhase7
+                    ? "Ajuste de secciones " + String.join(", ", Phase7Sections.targetSections(comments))
+                        + (commentText != null ? ": " + commentText : "")
+                    : commentText;
+            diagnosisToSave = wrapPhase7Version(projectId, guideToVersion, comments, versionComment);
         } else if (phaseNumber == 4) {
             diagnosisToSave = normalizePhase4Envelope(diagnosisToSave, inputEnvelope, processingTime);
         } else if (phaseNumber == 5) {
@@ -354,7 +411,15 @@ public class PmoAgentService {
 
     // ── Adjuntos: descarga y base64, replica el bloque de fetch de archivos de runAgent() ──
 
-    private void attachFile(List<AiPart> parts, FileRef fileRef, int phaseNumber, List<String> csvTextsForPhase3) {
+    /**
+     * Limite de bytes de PDF por solicitud. Gemini acepta hasta 20 MB por solicitud y el base64
+     * agrega ~33 %, asi que se reserva margen para el prompt. Los PDF que ya no caben se envian
+     * como texto extraido (o se omiten con una nota) en vez de hacer fallar toda la llamada.
+     */
+    private static final long MAX_INLINE_PDF_BYTES = 14L * 1024 * 1024;
+
+    private void attachFile(List<AiPart> parts, FileRef fileRef, int phaseNumber, List<String> csvTextsForPhase3,
+                            long[] inlinePdfBytes) {
         try {
             byte[] bytes = webClientBuilder.build().get().uri(fileRef.url()).retrieve().bodyToMono(byte[].class)
                     .block(Duration.ofSeconds(60));
@@ -370,15 +435,54 @@ public class PmoAgentService {
                 return;
             }
 
-            String base64 = java.util.Base64.getEncoder().encodeToString(bytes);
+            String label = fileRef.label() != null ? fileRef.label() : "Archivo PDF adjunto";
+            byte[] pdfBytes = bytes;
+            String note = "";
+            String fallbackText = null;
+            boolean isPdf = "application/pdf".equals(fileRef.type());
+
+            if (isPdf && fileRef.pdfPolicy() != null) {
+                PdfAttachmentOptimizer.Prepared prepared = pdfAttachmentOptimizer.prepare(bytes, fileRef.pdfPolicy());
+                if (prepared.mode() == PdfAttachmentOptimizer.Mode.TEXT) {
+                    addTextAttachment(parts, label, prepared.note(), prepared.text());
+                    return;
+                }
+                pdfBytes = prepared.pdfBytes();
+                note = prepared.note();
+                fallbackText = prepared.text();
+            }
+
+            if (isPdf && inlinePdfBytes[0] + pdfBytes.length > MAX_INLINE_PDF_BYTES) {
+                if (fallbackText == null) {
+                    fallbackText = pdfAttachmentOptimizer.prepare(bytes, new FileRef.PdfPolicy(null, true)).text();
+                }
+                String sizeMb = String.format(Locale.US, "%.1f", pdfBytes.length / 1048576.0);
+                if (fallbackText != null && !fallbackText.isBlank()) {
+                    addTextAttachment(parts, label, "El PDF (" + sizeMb + " MB) no cabe en el límite de tamaño de la solicitud; se envía su texto extraído.", fallbackText);
+                } else {
+                    parts.add(AiPart.ofText("\n\n--- METADATOS DE ARCHIVO ADJUNTO ---\n" + label
+                            + "\nDocumento omitido: el PDF (" + sizeMb + " MB) supera el límite de tamaño de la solicitud y no tiene texto extraíble.\n"));
+                }
+                return;
+            }
+            if (isPdf) inlinePdfBytes[0] += pdfBytes.length;
+
+            String base64 = java.util.Base64.getEncoder().encodeToString(pdfBytes);
             parts.add(AiPart.ofText("\n\n--- METADATOS DE ARCHIVO ADJUNTO ---\n"
-                    + (fileRef.label() != null ? fileRef.label() : "Archivo PDF adjunto")
+                    + label + (note.isBlank() ? "" : "\nNota: " + note)
                     + "\n--- EL SIGUIENTE PDF CORRESPONDE A LOS METADATOS ANTERIORES ---\n"));
             parts.add(AiPart.builder().mimeType(fileRef.type()).base64Data(base64).sourceUrl(fileRef.url())
                     .filename(fileRef.label() != null ? fileRef.label() : "archivo-adjunto.pdf").build());
         } catch (Exception e) {
             System.err.println("[pmo-agent] Error descargando archivo adjunto " + fileRef.url() + ": " + e.getMessage());
         }
+    }
+
+    private void addTextAttachment(List<AiPart> parts, String label, String note, String text) {
+        parts.add(AiPart.ofText("\n\n--- METADATOS DE ARCHIVO ADJUNTO ---\n" + label
+                + (note == null || note.isBlank() ? "" : "\nNota: " + note)
+                + "\n--- INICIO TEXTO EXTRAÍDO DEL DOCUMENTO ---\n" + text
+                + "\n--- FIN TEXTO EXTRAÍDO DEL DOCUMENTO ---\n"));
     }
 
     // ── Parseo/limpieza de la respuesta JSON de la IA ───────────────────────────────────────
@@ -400,9 +504,10 @@ public class PmoAgentService {
         }
     }
 
-    private String toPrettyJson(JsonNode node) {
+    /** JSON sin sangria ni saltos de linea: mismo contenido, sin pagar tokens por espacios en blanco. */
+    private String toCompactJson(JsonNode node) {
         try {
-            return objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(node);
+            return objectMapper.writeValueAsString(node);
         } catch (Exception e) {
             return node.toString();
         }
@@ -627,7 +732,7 @@ public class PmoAgentService {
             Mapeo agil por factor: cultura=C1,C2,C3,C4,C5,C6; equipo=E7,E8,E9,E10,E11; producto=P12,P13,P14,P15,P16,P17,P18,P19; interesados=I20,I21,I22,I23,I24,I25,I26; valor=V27,V28,V29,V30,V31,V32,V33; adaptabilidad=A34,A35,A36,A37,A38,A39,A40,A41,A42,A43.
             Incluye en brechas todos los dominios, fases o factores en Informal o Basico. No reportes fortalezas salvo Avanzado o Excelencia. Menciona brechas relativas solo en patrones_estructurales, no en brechas.
             Los campos narrativos deben ser claros, concretos y seguros para JSON: usa frases compactas, sin saltos de linea dentro de strings y sin markdown. Limita patrones_estructurales, impactos, sintesis, relaciones, tensiones y recomendaciones a 1 o 2 frases cada uno. Prioriza JSON completo y valido por encima de extension narrativa.
-            Devuelve exclusivamente el JSON del contrato del Asistente 5 con metadata.agent_id="asistente-5", diagnosis, error=null en exito, top_gaps maximo 5 y recommendations maximo 6. La respuesta completa no debe exceder 12000 caracteres. Si no hay datos suficientes, devuelve la plantilla de error con codigo adecuado.""";
+            Devuelve exclusivamente el JSON del contrato del Asistente 5 con metadata.agent_id="asistente-5", diagnosis, error=null en exito, top_gaps maximo 5 y recommendations maximo 6. La respuesta completa no debe exceder 12000 caracteres: es un limite estricto, no una sugerencia; si te acercas, acorta los textos narrativos antes que omitir campos. Si no hay datos suficientes, devuelve la plantilla de error con codigo adecuado.""";
 
     private static final String PHASE6_INSTRUCTION = """
 
@@ -638,21 +743,25 @@ public class PmoAgentService {
             Devuelve exclusivamente el contrato JSON corto del Agente 6: metadata.agent_id="agente-6", metadata.phase=6, diagnosis.summary, diagnosis.guide_approach, diagnosis.secciones, diagnosis.critical_weaknesses, diagnosis.parametros_construccion, diagnosis.advertencias_de_entrada, diagnosis.insumos_base_utilizados y error=null en exito.
             Incluye siempre las 10 secciones base, maximo 8 critical_weaknesses y solo secciones adicionales justificadas por Fase 4 o Fase 5. Si faltan Fase 4 o Fase 5, devuelve la plantilla de error del prompt con codigo MISSING_PHASE4_DIAGNOSIS, MISSING_PHASE5_DIAGNOSIS, INVALID_FORMAT, INVALID_PMO_TYPE o INSUFFICIENT_DATA.""";
 
+    private static final String PHASE7_PARTIAL_INSTRUCTION = """
+
+
+            MODO AJUSTE PARCIAL DE FASE 7 (tiene prioridad sobre el contrato de salida completo del prompt):
+            No generes la guia completa. payload.sections_to_revise trae las secciones que el consultor pidio ajustar, payload.guide_outline los titulos de toda la guia (solo para mantener coherencia) y payload.comments las instrucciones del consultor, que son obligatorias.
+            Reescribe UNICAMENTE las secciones de sections_to_revise aplicando los comentarios. Conserva todo lo que el comentario no pida cambiar, manten el mismo section_id, section_key y section_title (salvo que el comentario pida otro titulo) y la misma estructura del campo contenido, con el mismo nivel de detalle y estilo que exige el prompt para cada seccion.
+            La extension objetivo de la guia completa no aplica aqui: cada seccion revisada conserva una extension similar a la actual salvo que el comentario pida otra cosa.
+            Devuelve exclusivamente {"guide_content":[...]} con las secciones revisadas y nada mas.""";
+
     private static final String PHASE7_INSTRUCTION = """
 
 
             REQUISITO ESTRICTO PARA FASE 7:
-            Debes generar una guia metodologica extensa, detallada y profesional, con extension equivalente a MINIMO 20 paginas A4 en el visor de la plataforma. No entregues un resumen ni una estructura ligera.
-            Si el JSON DE ENTRADA incluye mandatory_consultant_instructions, esos comentarios del consultor tienen prioridad maxima. Debes aplicarlos como requerimientos obligatorios de reprocesamiento, hacer visible el cambio en el documento final y no tratarlos como observaciones opcionales.
-            La guia debe incluir al menos 10 capitulos sustantivos. Cada capitulo debe tener una introduccion de minimo 120 palabras y minimo 3 secciones desarrolladas.
-            Cada seccion debe contener minimo 2 parrafos narrativos de mas de 70 palabras cada uno, items accionables con mas de 70 palabras por item y, cuando aplique, una tabla con encabezados claros y minimo 4 filas de datos concretos.
-            Cada capitulo debe desarrollar el tema con profundidad consultiva y cada seccion debe contener explicaciones amplias, accionables y contextualizadas para la organizacion evaluada.
-            Debes preservar y desarrollar toda la informacion relevante recibida en el JSON de entrada: hallazgos, brechas, riesgos, metricas, scores, dimensiones, fases, actividades, entradas, salidas, roles, responsabilidades, criterios, dependencias, artefactos, KPIs, formulas, umbrales, responsables, recomendaciones y acciones. No omitas datos utiles para el cliente ni los compactes en una frase general.
-            Puedes excluir campos tecnicos, metadatos de ejecucion, identificadores internos, timestamps, nombres de llaves JSON, trazas de versionado y cualquier dato que solo sirva para procesamiento del sistema. Todo contenido de negocio, diagnostico, gestion, metodologia o implementacion debe quedar visible y organizado en el informe.
-            Cada parrafo, item y subitem debe superar las 70 palabras. En cada uno explica que significa, por que es importante, como se aplica en la PMO, que decisiones habilita y que riesgos reduce.
-            Si produces listas dentro de items, subitems, riesgos, artefactos, criterios, roles, procesos, metricas o recomendaciones, cada elemento de esa lista tambien debe superar las 70 palabras y debe leerse como un parrafo profesional completo.
-            Evita frases genericas, definiciones cortas, placeholders y bullets de una sola linea. El resultado total debe tener una extension grande y un nivel de detalle propio de una guia metodologica corporativa lista para revision ejecutiva.
-            Antes de entregar el JSON, verifica internamente que la respuesta cumple: minimo 20 paginas equivalentes, minimo 10 capitulos, minimo 3 secciones por capitulo, minimo 2 parrafos por seccion y tablas con datos cuando correspondan.""";
+            Genera una guia metodologica profesional, especifica para la organizacion evaluada y lista para revision ejecutiva, con una extension objetivo equivalente a 8-12 paginas A4. La estructura de secciones y sus minimos de contenido (conceptos, politicas, roles, comites, etc.) son los que define este prompt.
+            Si el JSON DE ENTRADA incluye comentarios del consultor, tienen prioridad maxima: aplicalos como requerimientos obligatorios y haz visible el cambio en el documento final.
+            Preserva la informacion de negocio relevante del JSON de entrada: hallazgos, brechas, riesgos, scores, fases, actividades, entradas, salidas, roles, responsabilidades, criterios, artefactos, KPIs, umbrales y recomendaciones. Excluye campos tecnicos, metadatos, identificadores internos, timestamps, nombres de llaves JSON y trazas de versionado.
+            Redacta de forma concreta y sin relleno: parrafos de 40 a 80 palabras, items accionables de una o dos frases, y tablas con encabezados claros y datos concretos cuando aporten (minimo 3 filas). No repitas en una seccion lo que ya explicaste en otra y evita definiciones genericas o placeholders.
+            Antes de entregar el JSON, verifica que cada seccion del prompt esta presente con contenido real y que se cumplen sus minimos de contenido.""";
+
 
     private String outputInstructionFor(int phaseNumber) {
         return switch (phaseNumber) {

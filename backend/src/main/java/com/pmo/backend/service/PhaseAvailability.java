@@ -3,8 +3,10 @@ package com.pmo.backend.service;
 import java.util.List;
 
 /**
- * Puerto exacto de computePhaseAvailability() / PHASE_NAMES en AppContext.tsx: la regla de
- * negocio central que determina si una fase esta bloqueada o disponible segun la fase anterior.
+ * Nombres de las fases y normalizacion de su estado visual. Ya no hay bloqueo secuencial:
+ * toda fase que no este completada, procesando o en error se expone como "disponible".
+ * Las dependencias entre fases (qué fases deben completarse antes de ejecutar otra) se
+ * configuran en el frontend, en src/app/lib/phaseDependencies.ts.
  */
 public final class PhaseAvailability {
 
@@ -44,17 +46,10 @@ public final class PhaseAvailability {
     }
 
     public static List<MutablePhase> recompute(List<MutablePhase> phases) {
-        for (int idx = 0; idx < phases.size(); idx++) {
-            MutablePhase phase = phases.get(idx);
-            if (phase.status.equals("completado") || phase.status.equals("procesando") || phase.status.equals("error")) {
-                continue;
+        for (MutablePhase phase : phases) {
+            if (phase.status == null || phase.status.equals("bloqueado")) {
+                phase.status = "disponible";
             }
-            if (idx == 0) {
-                if (phase.status.equals("bloqueado")) phase.status = "disponible";
-                continue;
-            }
-            String previousStatus = phases.get(idx - 1).status;
-            phase.status = "completado".equals(previousStatus) ? "disponible" : "bloqueado";
         }
         return phases;
     }

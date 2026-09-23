@@ -15,4 +15,6 @@ public class AiGenerateResult {
     private List<String> attemptedModels;
     private List<AiAttemptError> errors;
     private boolean fallbackUsed;
+    /** Consumo de tokens de la llamada exitosa (null si Gemini no lo informo). */
+    private AiTokenUsage usage;
 }
