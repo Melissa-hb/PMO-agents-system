@@ -1,0 +1,5 @@
+[build]
+cmds = ["pnpm install", "pnpm run build"]
+
+[start]
+cmd = "pnpm run preview"
