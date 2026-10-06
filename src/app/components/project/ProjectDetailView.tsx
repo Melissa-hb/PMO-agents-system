@@ -5,7 +5,7 @@ import { ArrowLeft, X, Sparkles, MoreVertical, Edit2, Trash2, Square, Loader2 } 
 import { toast } from 'sonner';
 import { useApp } from '../../context/AppContext';
 import { apiPost } from '../../lib/api';
-import PhaseRow from './PhaseRow';
+import PhaseCard from './PhaseCard';
 import ExecutiveOverview from './ExecutiveOverview';
 import { usePhaseConfig } from '../../lib/phaseConfig';
 import EditProjectModal from '../dashboard/EditProjectModal';
@@ -225,12 +225,16 @@ export default function ProjectDetailView() {
 
         <ExecutiveOverview projectId={project.id} phases={project.phases} config={phaseConfig} />
 
-        {/* Avance por fase: cualquier fase se puede abrir; las dependencias se indican en cada fila */}
+        {/* Fases del proyecto: tarjetas (formato pedido por el profesor). Cualquier fase se puede
+            abrir; las dependencias se indican en cada tarjeta. */}
         <section className="mt-12">
-          <h2 className="text-neutral-900 mb-4" style={{ fontWeight: 500, fontSize: '1.0625rem' }}>Avance por fase</h2>
-          <div className="bg-white rounded-xl border border-neutral-200/70 divide-y divide-neutral-100 overflow-hidden">
+          <div className="flex flex-wrap items-end justify-between gap-x-4 gap-y-2 mb-4">
+            <h2 className="text-neutral-900" style={{ fontWeight: 500, fontSize: '1.0625rem' }}>Fases del proyecto</h2>
+            <span className="text-[12px] text-neutral-400">Haga clic en cualquier fase para ingresar</span>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             {project.phases.map((phase, i) => (
-              <PhaseRow
+              <PhaseCard
                 key={phase.number}
                 phase={phase}
                 phases={project.phases}

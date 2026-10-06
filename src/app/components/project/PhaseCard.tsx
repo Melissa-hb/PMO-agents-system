@@ -1,14 +1,14 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useNavigate } from 'react-router';
-import { Loader2, Check, AlertTriangle, ChevronRight, RotateCcw, Square, Circle } from 'lucide-react';
+import { Loader2, Check, AlertTriangle, ArrowUpRight, RotateCcw, Square, Hourglass, Circle } from 'lucide-react';
 import { Phase } from '../../context/AppContext';
 import { useCancelAgent } from '../../hooks/useCancelAgent';
 import { getPendingDependencies } from '../../lib/phaseDependencies';
 import { usePhaseConfig } from '../../lib/phaseConfig';
 import { PHASE_CATALOG, DEFAULT_PHASE_INFO } from './phaseCatalog';
 
-interface PhaseRowProps {
+interface PhaseCardProps {
   phase: Phase;
   /** Todas las fases del proyecto, para calcular las dependencias pendientes. */
   phases: Phase[];
@@ -19,12 +19,42 @@ interface PhaseRowProps {
 
 type CardState = 'completado' | 'en_progreso' | 'disponible' | 'requiere' | 'error';
 
-const CARD_STATE: Record<CardState, { label: string; text: string; dot: React.ReactNode }> = {
-  completado: { label: 'Completada', text: 'text-neutral-700', dot: <Check size={12} strokeWidth={2.25} className="text-[#5454e9]" /> },
-  en_progreso: { label: 'En progreso', text: 'text-[#5454e9]', dot: <Loader2 size={12} strokeWidth={2} className="animate-spin" /> },
-  disponible: { label: 'Disponible', text: 'text-neutral-700', dot: <Circle size={6} fill="currentColor" strokeWidth={0} className="text-neutral-400" /> },
-  requiere: { label: 'Requiere fases previas', text: 'text-neutral-500', dot: <Circle size={6} strokeWidth={2} className="text-neutral-300" /> },
-  error: { label: 'Error', text: 'text-rose-700', dot: <AlertTriangle size={12} strokeWidth={2} /> },
+const CARD_STATE: Record<CardState, {
+  label: string;
+  badge: string;
+  dot: React.ReactNode;
+  iconWrap: string;
+}> = {
+  completado: {
+    label: 'Completada',
+    badge: 'bg-emerald-50 text-emerald-700 border-emerald-100',
+    dot: <Check size={10} strokeWidth={2.5} />,
+    iconWrap: 'bg-emerald-50 border-emerald-100 text-emerald-600',
+  },
+  en_progreso: {
+    label: 'En progreso',
+    badge: 'bg-sky-50 text-sky-700 border-sky-100',
+    dot: <Loader2 size={10} strokeWidth={2.25} className="animate-spin" />,
+    iconWrap: 'bg-sky-50 border-sky-100 text-sky-600',
+  },
+  disponible: {
+    label: 'Disponible',
+    badge: 'bg-[#5454e9]/[0.07] text-[#5454e9] border-[#5454e9]/15',
+    dot: <Circle size={7} fill="currentColor" strokeWidth={0} />,
+    iconWrap: 'bg-[#5454e9]/[0.07] border-[#5454e9]/15 text-[#5454e9]',
+  },
+  requiere: {
+    label: 'Requiere fases previas',
+    badge: 'bg-amber-50 text-amber-700 border-amber-100',
+    dot: <Hourglass size={10} strokeWidth={2} />,
+    iconWrap: 'bg-amber-50 border-amber-100 text-amber-600',
+  },
+  error: {
+    label: 'Error',
+    badge: 'bg-rose-50 text-rose-700 border-rose-100',
+    dot: <AlertTriangle size={10} strokeWidth={2} />,
+    iconWrap: 'bg-rose-50 border-rose-100 text-rose-600',
+  },
 };
 
 const hasProgressData = (data: unknown) =>
@@ -80,8 +110,7 @@ function CancelButton({ projectId, phaseNumber }: { projectId: string; phaseNumb
 }
 
 // ── Componente principal ─────────────────────────────────────────────────────
-/** Fila de la tabla "Avance por fase" de la portada del proyecto. */
-export default function PhaseRow({ phase, phases, projectId, onRetry, index = 0 }: PhaseRowProps) {
+export default function PhaseCard({ phase, phases, projectId, onRetry, index = 0 }: PhaseCardProps) {
   const navigate = useNavigate();
   const [showResetModal, setShowResetModal] = useState(false);
 
@@ -89,20 +118,15 @@ export default function PhaseRow({ phase, phases, projectId, onRetry, index = 0 
   const pending = getPendingDependencies(phases, phase.number, phaseConfig);
   const state = getCardState(phase, pending.length);
   const meta = CARD_STATE[state];
-  const { description } = PHASE_CATALOG[phase.number] ?? DEFAULT_PHASE_INFO;
+  const { icon: Icon, description } = PHASE_CATALOG[phase.number] ?? DEFAULT_PHASE_INFO;
 
   const open = () => navigate(`/dashboard/project/${projectId}/phase/${phase.number}`);
 
-  const statusDetail =
-    state === 'completado' && phase.completedAt ? phase.completedAt
-    : state === 'requiere' ? `Requiere ${pending.map(p => `F${p.number}`).join(', ')}`
-    : null;
-
   return (
     <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      transition={{ delay: index * 0.02, duration: 0.25 }}
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: index * 0.04, duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
       role="link"
       tabIndex={0}
       aria-label={`Ingresar a la fase ${phase.number}: ${phase.name}. Estado: ${meta.label}`}
@@ -114,24 +138,44 @@ export default function PhaseRow({ phase, phases, projectId, onRetry, index = 0 
           open();
         }
       }}
-      className="group grid grid-cols-[32px_minmax(0,1fr)_auto] md:grid-cols-[32px_minmax(0,1fr)_190px_auto] items-center gap-x-4 px-5 py-4 cursor-pointer transition-colors hover:bg-neutral-50/80 outline-none focus-visible:bg-neutral-50 focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#5454e9]/30"
+      className="group relative flex flex-col h-full bg-white rounded-2xl border border-neutral-200/70 p-5 cursor-pointer transition-all duration-300 hover:-translate-y-0.5 hover:border-neutral-300/80 hover:shadow-[0_12px_32px_-12px_rgba(84,84,233,0.22)] outline-none focus-visible:ring-2 focus-visible:ring-[#5454e9]/40"
+      style={{ boxShadow: '0 1px 2px rgba(0,0,0,0.02)' }}
     >
-      <span className="text-[13px] tabular-nums text-neutral-400">{String(phase.number).padStart(2, '0')}</span>
-
-      <div className="min-w-0">
-        <p className="text-neutral-900 text-[14px] truncate" style={{ fontWeight: 500 }}>{phase.name}</p>
-        <p className="text-[12.5px] text-neutral-500 truncate mt-0.5">{description}</p>
-      </div>
-
-      <div className={`hidden md:flex items-center gap-2 text-[13px] ${meta.text}`}>
-        <span className="w-3.5 flex justify-center flex-shrink-0">{meta.dot}</span>
-        <span className="truncate">
+      {/* Código + estado */}
+      <div className="flex items-start justify-between gap-2 mb-4">
+        <span className="text-[11px] uppercase tracking-[0.14em] text-neutral-400 tabular-nums" style={{ fontWeight: 500 }}>
+          F{phase.number}
+        </span>
+        <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full border text-[11px] whitespace-nowrap ${meta.badge}`} style={{ fontWeight: 500 }}>
+          {meta.dot}
           {meta.label}
-          {statusDetail && <span className="text-neutral-400"> · {statusDetail}</span>}
         </span>
       </div>
 
-      <div className="flex items-center justify-end gap-2" onClick={e => e.stopPropagation()} onKeyDown={e => e.stopPropagation()}>
+      {/* Ícono */}
+      <div className={`w-10 h-10 rounded-xl border flex items-center justify-center mb-4 transition-colors ${meta.iconWrap}`}>
+        <Icon size={18} strokeWidth={1.75} />
+      </div>
+
+      {/* Nombre + descripción */}
+      <h3 className="text-neutral-900 tracking-tight mb-1.5" style={{ fontWeight: 500, fontSize: '0.9375rem', letterSpacing: '-0.005em' }}>
+        {phase.name}
+      </h3>
+      <p className="text-[12px] text-neutral-500 leading-relaxed line-clamp-2">
+        {description}
+      </p>
+
+      {pending.length > 0 && (
+        <p className="text-[11px] text-amber-700 mt-2.5" style={{ fontWeight: 500 }}>
+          Requiere: {pending.map(p => `F${p.number}`).join(', ')}
+        </p>
+      )}
+      {state === 'completado' && phase.completedAt && (
+        <p className="text-[11px] text-neutral-400 mt-2.5">Completada el {phase.completedAt}</p>
+      )}
+
+      {/* Acciones */}
+      <div className="mt-auto pt-4 flex items-center justify-end gap-2" onClick={e => e.stopPropagation()} onKeyDown={e => e.stopPropagation()}>
         {phase.status === 'procesando' && (
           <CancelButton projectId={projectId} phaseNumber={phase.number} />
         )}
@@ -139,9 +183,10 @@ export default function PhaseRow({ phase, phases, projectId, onRetry, index = 0 
         {phase.status === 'error' && onRetry && (
           <button
             onClick={() => setShowResetModal(true)}
-            className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-rose-700 text-[12px] hover:bg-rose-50 transition-colors"
+            className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-rose-50 text-rose-700 text-[11px] hover:bg-rose-100 transition-colors border border-rose-100"
+            style={{ fontWeight: 500 }}
           >
-            <RotateCcw size={11} strokeWidth={2} />
+            <RotateCcw size={10} strokeWidth={2} />
             Reintentar
           </button>
         )}
@@ -149,14 +194,23 @@ export default function PhaseRow({ phase, phases, projectId, onRetry, index = 0 
         {phase.status === 'completado' && onRetry && (
           <button
             onClick={() => setShowResetModal(true)}
-            className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-neutral-500 text-[12px] opacity-0 group-hover:opacity-100 focus-visible:opacity-100 hover:bg-neutral-100 hover:text-neutral-900 transition-all"
+            className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-neutral-50 text-neutral-600 text-[11px] hover:bg-neutral-100 hover:text-neutral-900 transition-colors border border-neutral-200/80"
+            style={{ fontWeight: 500 }}
           >
-            <RotateCcw size={11} strokeWidth={2} />
+            <RotateCcw size={10} strokeWidth={2} />
             Reprocesar
           </button>
         )}
 
-        <ChevronRight size={16} strokeWidth={1.75} className="text-neutral-300 group-hover:text-neutral-600 transition-colors" aria-hidden="true" />
+        <button
+          type="button"
+          tabIndex={-1}
+          aria-hidden="true"
+          onClick={open}
+          className="w-8 h-8 rounded-full border border-neutral-200/70 flex items-center justify-center text-neutral-400 group-hover:bg-[#5454e9] group-hover:border-[#5454e9] group-hover:text-white transition-all"
+        >
+          <ArrowUpRight size={13} strokeWidth={1.75} />
+        </button>
       </div>
 
       {/* Modal de confirmación de Reprocesar */}
