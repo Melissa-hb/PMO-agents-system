@@ -150,7 +150,7 @@ function getSummaryText(results: any) {
   return results?.summary?.trim()
     || results?.recommendations?.slice(0, 2).join(' ')
     || results?.analisis_cualitativo?.temas_recurrentes?.[0]?.sintesis
-    || 'Diagnostico generado por el Agente 5 con los insumos disponibles.';
+    || 'Diagnóstico generado por el Agente 5 con los insumos disponibles.';
 }
 
 function toneForScore(score: number): PhaseReportTone {
@@ -193,7 +193,7 @@ function MaturityHero({ results, pmoType, pmoColor, approved, completedAt }: {
             <div>
               <p className="text-[10px] uppercase tracking-[0.18em] text-neutral-500 mb-2" style={{ fontWeight: 800 }}>Fase 5 · PMO {pmoType}</p>
               <h1 className="text-neutral-950 tracking-tight" style={{ fontWeight: 850, fontSize: '2.35rem', lineHeight: 1.02 }}>
-                {approved ? 'Diagnostico de madurez aprobado' : 'Diagnostico de madurez'}
+                {approved ? 'Diagnóstico de madurez aprobado' : 'Diagnóstico de madurez'}
               </h1>
               <p className="mt-3 max-w-2xl text-[14px] leading-relaxed text-neutral-600">
                 Nivel consolidado del Agente 5 para orientar la guia metodologica y las prioridades de mejora.
@@ -241,7 +241,7 @@ function ExecutiveCharts({ results }: { results: any }) {
   const phaseRows = scoreEntries(results.predictiva?.por_fase).map((row) => ({ ...row, label: `${row.label} Pred.` }));
   const domainRows = [
     ...scoreEntries(results.predictiva?.por_dominio).map((row) => ({ ...row, label: `${row.label} Pred.` })),
-    ...scoreEntries(results.agil?.por_factor).map((row) => ({ ...row, label: `${row.label} Agil` })),
+    ...scoreEntries(results.agil?.por_factor).map((row) => ({ ...row, label: `${row.label} Ágil` })),
   ];
   const topRows = [...phaseRows, ...domainRows]
     .filter((row) => row.score > 0)
@@ -410,7 +410,7 @@ function AnalysisDetails({ results }: { results: any }) {
 
         {qualitative?.temas_recurrentes?.length > 0 && (
           <div className="rounded-2xl border border-neutral-200 bg-white p-4">
-            <p className="text-[10px] uppercase tracking-[0.14em] text-neutral-400 mb-1" style={{ fontWeight: 800 }}>Analisis cualitativo</p>
+            <p className="text-[10px] uppercase tracking-[0.14em] text-neutral-400 mb-1" style={{ fontWeight: 800 }}>Análisis cualitativo</p>
             <p className="text-[11px] text-neutral-500 mb-3">{valueOrEmpty(qualitative.total_respuestas_abiertas)} respuestas abiertas procesadas</p>
             <div className="space-y-3">
               {qualitative.temas_recurrentes.map((theme: any, index: number) => (
@@ -472,14 +472,14 @@ function ConsultantComments({
       </p>
       {savedComment && (
         <div className="mb-3 px-3 py-2.5 rounded-xl bg-[#5454e9]/[0.06] border border-[#5454e9]/15 text-[13px] text-neutral-700">
-          <p className="text-[#3838b8] text-xs mb-1" style={{ fontWeight: 800 }}>Ultimo comentario guardado</p>
+          <p className="text-[#3838b8] text-xs mb-1" style={{ fontWeight: 800 }}>Último comentario guardado</p>
           <p className="leading-relaxed">{savedComment}</p>
         </div>
       )}
       <textarea
         value={comment}
         onChange={(event) => onCommentChange?.(event.target.value)}
-        placeholder="Ej: El area de manufactura tiene un nivel de madurez distinto al resto de la organizacion..."
+        placeholder="Ej: El area de manufactura tiene un nivel de madurez distinto al resto de la organización..."
         rows={4}
         className="w-full px-3 py-2.5 border border-neutral-200 rounded-xl text-sm outline-none focus:border-[#5454e9]/60 focus:ring-2 focus:ring-[#5454e9]/10 transition-all resize-y leading-relaxed bg-white mb-3"
       />
@@ -515,7 +515,7 @@ export default function MadurezDiagnosisView(props: MadurezDiagnosisViewProps) {
       <div className="rounded-[1.35rem] border border-[#5454e9]/15 bg-white p-6">
         <div className="flex items-center gap-2 mb-3">
           <Lightbulb size={17} className="text-[#5454e9]" />
-          <p className="text-[11px] uppercase tracking-[0.14em] text-[#3838b8]" style={{ fontWeight: 850 }}>Sintesis del diagnostico</p>
+          <p className="text-[11px] uppercase tracking-[0.14em] text-[#3838b8]" style={{ fontWeight: 850 }}>Síntesis del diagnóstico</p>
         </div>
         <p className="text-neutral-700 text-[14px] leading-relaxed">{getSummaryText(results)}</p>
         {structuralPatterns.map((pattern) => (

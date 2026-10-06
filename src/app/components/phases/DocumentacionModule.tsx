@@ -44,7 +44,7 @@ function AgentErrorCard({ error }: { error: AgentErrorPayload }) {
           {error.details && <p className="mt-2 text-neutral-600 text-[13px] leading-relaxed">{error.details}</p>}
           {typeof error.retryable === 'boolean' && (
             <p className="mt-3 text-[11px] text-neutral-500">
-              {error.retryable ? 'Puede reintentarse despues de ajustar la entrada.' : 'El agente marco este error como no reintentable.'}
+              {error.retryable ? 'Puede reintentarse después de ajustar la entrada.' : 'El agente marco este error como no reintentable.'}
             </p>
           )}
         </div>
@@ -111,7 +111,7 @@ export default function DocumentacionModule() {
 
     if (data?.estadoVisual === 'procesando') {
       setIsSending(false);
-      toast.info('El Agente 1 sigue en ejecucion.', {
+      toast.info('El Agente 1 sigue en ejecución.', {
         description: 'Seguiremos esperando el resultado guardado en el backend.',
       });
       return true;

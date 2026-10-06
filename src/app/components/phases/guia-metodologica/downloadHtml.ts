@@ -1,3 +1,4 @@
+import { CONSULTORA, LINEA_SERVICIO, NOTA_ELABORACION } from './guideBranding';
 import type { DocVersion, GuideChapter, PmoType } from './types';
 
 function escapeHtml(value: unknown): string {
@@ -121,7 +122,7 @@ function generateDownloadHTML(
   <h1>Guía Metodológica<br>para la PMO</h1>
   <p><strong>${escapeHtml(org)}</strong></p>
   <p>PMO Tipo: ${escapeHtml(pmoType)}</p>
-  <p>Generada por PMO Intelligence Platform · Agente 7</p>
+  <p>${CONSULTORA} · ${LINEA_SERVICIO}</p>
   <div class="badge">Versión ${version.number} — ${fmt(version.generatedAt)}</div>
 </div>
 <div class="content">
@@ -132,7 +133,8 @@ function generateDownloadHTML(
 ${chapHtml}
 <div class="footer">
   Guía Metodológica · ${org} · Versión ${version.number} · ${fmt(version.generatedAt)}<br>
-  Generado automáticamente por PMO Intelligence Platform — Agente 7
+  ${CONSULTORA} · ${LINEA_SERVICIO} · Documento confidencial<br>
+  ${NOTA_ELABORACION}
 </div>
 </div>
 </body>

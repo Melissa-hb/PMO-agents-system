@@ -436,7 +436,7 @@ export default function TipoProyectosModule() {
 
   if (!project) {
     return isLoading
-      ? <LoadingRouteState message="Cargando el proyecto y la clasificacion..." />
+      ? <LoadingRouteState message="Cargando el proyecto y la clasificación..." />
       : <MissingProjectState />;
   }
   // phase may be undefined briefly when navigating from Phase 3 — use safe defaults

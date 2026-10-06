@@ -56,7 +56,7 @@ function InterviewHero({ diagnosis }: { diagnosis: EntrevistasDiagnosis }) {
           </div>
           <div>
             <p className="text-[10px] uppercase tracking-[0.16em] text-white/70" style={{ fontWeight: 800 }}>Agente 2 - Registro de entrevistas</p>
-            <h2 className="text-[22px] tracking-tight" style={{ fontWeight: 850 }}>Diagnostico cualitativo consolidado</h2>
+            <h2 className="text-[22px] tracking-tight" style={{ fontWeight: 850 }}>Diagnóstico cualitativo consolidado</h2>
           </div>
         </div>
         <p className="text-white/88 text-[14px] leading-relaxed max-w-4xl">{valueOrEmpty(diagnosis.summary)}</p>
@@ -71,7 +71,7 @@ function InterviewMetrics({ diagnosis }: { diagnosis: EntrevistasDiagnosis }) {
       <PhaseReportMetric label="Entrevistados" value={diagnosis.numero_entrevistados} tone="blue" icon={<Users size={15} />} />
       <PhaseReportMetric label="Roles" value={diagnosis.roles_identificados?.length ?? 0} tone="green" icon={<Briefcase size={15} />} />
       <PhaseReportMetric label="Temas" value={diagnosis.recurring_themes?.length ?? 0} tone="purple" icon={<Radio size={15} />} />
-      <PhaseReportMetric label="Fuente unica" value={diagnosis.advertencia_fuente_unica} tone={diagnosis.advertencia_fuente_unica ? 'orange' : 'green'} icon={<AlertCircle size={15} />} />
+      <PhaseReportMetric label="Fuente única" value={diagnosis.advertencia_fuente_unica} tone={diagnosis.advertencia_fuente_unica ? 'orange' : 'green'} icon={<AlertCircle size={15} />} />
     </div>
   );
 }
@@ -85,7 +85,7 @@ function ContextPanel({ diagnosis }: { diagnosis: EntrevistasDiagnosis }) {
         { label: 'Tamano aproximado', value: diagnosis.contexto_organizacional?.tamanio_aproximado, tone: 'purple' },
         { label: 'Tipo proyecto analizado', value: diagnosis.contexto_organizacional?.tipo_proyecto_analizado, tone: 'amber' },
         { label: 'Cultura visible', value: diagnosis.contexto_organizacional?.cultura_visible, tone: 'green' },
-        { label: 'Nivel formalizacion general', value: diagnosis.nivel_formalizacion_general ?? diagnosis.insumos_para_agente_4?.nivel_general_formalizacion, tone: levelTone(diagnosis.nivel_formalizacion_general ?? diagnosis.insumos_para_agente_4?.nivel_general_formalizacion) },
+        { label: 'Nivel formalización general', value: diagnosis.nivel_formalizacion_general ?? diagnosis.insumos_para_agente_4?.nivel_general_formalizacion, tone: levelTone(diagnosis.nivel_formalizacion_general ?? diagnosis.insumos_para_agente_4?.nivel_general_formalizacion) },
       ]} />
       <div>
         <p className="text-[10px] uppercase tracking-[0.14em] text-neutral-400 mb-3" style={{ fontWeight: 800 }}>Roles identificados</p>
@@ -186,13 +186,13 @@ function InterviewDimensionCard({ label, dim, index }: { label: string; dim?: In
           </span>
         </div>
         <PhaseReportKeyValueGrid compact rows={[
-          { label: 'Tipo gestion', value: (dim as any)?.tipo_gestion, tone: levelTone((dim as any)?.tipo_gestion) },
+          { label: 'Tipo gestión', value: (dim as any)?.tipo_gestion, tone: levelTone((dim as any)?.tipo_gestion) },
           { label: 'Recurrencia', value: (dim as any)?.recurrencia, tone: levelTone((dim as any)?.recurrencia) },
           { label: 'Formalidad', value: (dim as any)?.nivel_formalidad, tone: levelTone((dim as any)?.nivel_formalidad) },
           { label: 'Confianza', value: (dim as any)?.confianza, tone: confidenceTone },
         ]} />
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 mt-3">
-          <PhaseReportMiniList title="Practicas reales" items={(dim as any)?.practicas_reales} tone={tone} />
+          <PhaseReportMiniList title="Prácticas reales" items={(dim as any)?.practicas_reales} tone={tone} />
           <PhaseReportMiniList title="Evidencias" items={(dim as any)?.evidencias} tone={tone} />
           <PhaseReportMiniList title="Herramientas" items={(dim as any)?.herramientas} tone={tone} />
         </div>
@@ -387,8 +387,8 @@ function Agent4Inputs({ diagnosis }: { diagnosis: EntrevistasDiagnosis }) {
   return (
     <div className="space-y-5">
       <PhaseReportKeyValueGrid rows={[
-        { label: 'Nivel general formalizacion', value: diagnosis.nivel_formalizacion_general ?? inputs?.nivel_general_formalizacion, tone: levelTone(diagnosis.nivel_formalizacion_general ?? inputs?.nivel_general_formalizacion) },
-        { label: 'Listo para integracion', value: diagnosis.listo_para_integracion, tone: diagnosis.listo_para_integracion ? 'green' : 'orange' },
+        { label: 'Nivel general formalización', value: diagnosis.nivel_formalizacion_general ?? inputs?.nivel_general_formalizacion, tone: levelTone(diagnosis.nivel_formalizacion_general ?? inputs?.nivel_general_formalizacion) },
+        { label: 'Listo para integración', value: diagnosis.listo_para_integracion, tone: diagnosis.listo_para_integracion ? 'green' : 'orange' },
         { label: 'Tiene preproyecto', value: inputs?.tiene_preproyecto, tone: inputs?.tiene_preproyecto ? 'green' : 'orange' },
         { label: 'Tiene postcierre', value: inputs?.tiene_postcierre, tone: inputs?.tiene_postcierre ? 'green' : 'orange' },
       ]} />
@@ -418,7 +418,7 @@ export default function EntrevistasDiagnosisView({ diagnosis }: { diagnosis: Ent
         <InterviewMetrics diagnosis={diagnosis} />
       </PhaseReportSection>
 
-      <PhaseReportSection title="Contexto organizacional" eyebrow="Marco de interpretacion" icon={<Target size={18} />} tone="blue">
+      <PhaseReportSection title="Contexto organizacional" eyebrow="Marco de interpretación" icon={<Target size={18} />} tone="blue">
         <ContextPanel diagnosis={diagnosis} />
       </PhaseReportSection>
 
@@ -436,7 +436,7 @@ export default function EntrevistasDiagnosisView({ diagnosis }: { diagnosis: Ent
         </div>
       </PhaseReportSection>
 
-      <PhaseReportSection title="Dimensiones base" eyebrow="Practicas reales por fase" icon={<Layers3 size={18} />} tone="blue">
+      <PhaseReportSection title="Dimensiones base" eyebrow="Prácticas reales por fase" icon={<Layers3 size={18} />} tone="blue">
         <div className="grid grid-cols-1 gap-3">
           {DIMENSION_LABELS.map(([key, label], i) => (
             <InterviewDimensionCard key={key} label={label} dim={diagnosis.dimensiones_base?.[key]} index={i} />

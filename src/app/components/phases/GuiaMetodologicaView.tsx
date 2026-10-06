@@ -53,12 +53,12 @@ import type { DocVersion, GuideChapter, ModuleView, Phase7Comments } from './gui
 const PHASE7_PROGRESS_STEPS = [
   { key: 'part_1a', stage: 'part_1a', label: '7.1A - Introduccion, objetivo y alcance' },
   { key: 'part_1b', stage: 'part_1b', label: '7.1B - Responsables, marco conceptual y marco de referencia' },
-  { key: 'part_1c', stage: 'part_1c', label: '7.1C - Politicas, roles y comites' },
-  { key: 'part_2a', stage: 'part_2a', label: '7.2A - Flujos de inicio y planificacion' },
-  { key: 'part_2b', stage: 'part_2b', label: '7.2B - Flujos de ejecucion, monitoreo, control y cierre' },
+  { key: 'part_1c', stage: 'part_1c', label: '7.1C - Políticas, roles y comités' },
+  { key: 'part_2a', stage: 'part_2a', label: '7.2A - Flujos de inicio y planificación' },
+  { key: 'part_2b', stage: 'part_2b', label: '7.2B - Flujos de ejecución, monitoreo, control y cierre' },
   { key: 'part_2c', stage: 'part_2c', label: '7.2C - Indicadores predictivos y de control' },
-  { key: 'part_2d', stage: 'part_2d', label: '7.2D - Indicadores agiles, valor y adopcion' },
-  { key: 'part_2e', stage: 'part_2e', label: '7.2E - Documentos de inicio, planificacion y ejecucion' },
+  { key: 'part_2d', stage: 'part_2d', label: '7.2D - Indicadores agiles, valor y adopción' },
+  { key: 'part_2e', stage: 'part_2e', label: '7.2E - Documentos de inicio, planificación y ejecución' },
   { key: 'part_2f', stage: 'part_2f', label: '7.2F - Documentos de seguimiento, control, cierre y mejora' },
 ];
 
@@ -198,8 +198,8 @@ export default function GuiaMetodologicaView() {
     setView(status === 'completado' ? 'approved' : 'results');
     updatePhaseStatus(projectId!, 7, status);
     playAgentSuccess();
-    toast.success('Agente 7 genero la guia metodologica', {
-      description: 'El documento quedo listo para revision.',
+    toast.success('Agente 7 genero la guía metodológica', {
+      description: 'El documento quedo listo para revisión.',
     });
     return true;
   }, [applyGuidePayload, playAgentSuccess, projectId, updatePhaseStatus]);
@@ -234,7 +234,7 @@ export default function GuiaMetodologicaView() {
       setProcessingStep(1);
 
       toast.info(`La IA esta saturada. Reintentando Agente 7 (${attempt}/${MAX_TRANSIENT_GEMINI_RETRIES})...`, {
-        description: 'La pantalla seguira en modo de carga y volvera a consultar automaticamente.',
+        description: 'La pantalla seguira en modo de carga y volvera a consultar automáticamente.',
         duration: 7000,
       });
 
@@ -292,7 +292,7 @@ export default function GuiaMetodologicaView() {
 
     const poll = async () => {
       if (Date.now() - pollTimeoutStartRef.current > 30 * 60 * 1000) {
-        const message = 'El Agente 7 tardo demasiado en responder. La ejecucion se marco como fallida para evitar dejar la fase pegada.';
+        const message = 'El Agente 7 tardo demasiado en responder. La ejecución se marco como fallida para evitar dejar la fase pegada.';
         logPhase7('poll_timeout', { projectId, elapsedMs: Date.now() - pollTimeoutStartRef.current });
         if (pollRef.current) clearInterval(pollRef.current);
         pollRef.current = null;
@@ -375,7 +375,7 @@ export default function GuiaMetodologicaView() {
         lastUpdatedAt > 0 &&
         staleProcessingMs > 30 * 60 * 1000
       ) {
-        const message = `La ejecucion anterior del Agente 7 quedo sin actividad en ${phase7Data?.stage ?? 'processing'}.`;
+        const message = `La ejecución anterior del Agente 7 quedo sin actividad en ${phase7Data?.stage ?? 'processing'}.`;
         if (pollRef.current) clearInterval(pollRef.current);
         pollRef.current = null;
         setIsAdjusting(false);
@@ -395,7 +395,7 @@ export default function GuiaMetodologicaView() {
             timestamp: new Date().toISOString(),
           },
         });
-        toast.error('La ejecucion anterior del Agente 7 quedo sin actividad.', {
+        toast.error('La ejecución anterior del Agente 7 quedo sin actividad.', {
           description: 'La fase quedo marcada con error para que puedas reintentar limpiamente.',
           duration: 9000,
         });
@@ -527,7 +527,7 @@ export default function GuiaMetodologicaView() {
       if (stateAfterError?.estado_visual === 'procesando') {
         setView('processing');
         startPolling(startedAt, true);
-        toast.info('El Agente 7 sigue en ejecucion.', {
+        toast.info('El Agente 7 sigue en ejecución.', {
           description: 'Seguiremos monitoreando el resultado en esta pantalla.',
         });
         return;
@@ -654,8 +654,8 @@ export default function GuiaMetodologicaView() {
 
   if (!project || !phase) {
     return isLoading
-      ? <LoadingRouteState message="Cargando el proyecto y la guia metodologica..." />
-      : <MissingProjectState title="Fase no disponible" description="No pudimos encontrar el proyecto o la guia metodologica." />;
+      ? <LoadingRouteState message="Cargando el proyecto y la guía metodológica..." />
+      : <MissingProjectState title="Fase no disponible" description="No pudimos encontrar el proyecto o la guía metodológica." />;
   }
 
   // ── Remaining handlers (non-hook, safe after guard) ──────────────────────
@@ -823,7 +823,7 @@ export default function GuiaMetodologicaView() {
           companyName={project.companyName}
           phaseNumber={7}
           phaseName="Construcción guía metodológica"
-          eyebrow="Revision requerida"
+          eyebrow="Revisión requerida"
         />
         <div className="flex-1 flex items-center justify-center px-6">
           <div className="max-w-xl text-center">
@@ -834,7 +834,7 @@ export default function GuiaMetodologicaView() {
               La Fase 7 no pudo completar la guia
             </h2>
             <p className="text-neutral-500 text-sm leading-relaxed mb-7">
-              {errorMessage || 'Revisa la consola del navegador y los logs de Supabase para ver el ultimo paso registrado.'}
+              {errorMessage || 'Revisa la consola del navegador y los logs de Supabase para ver el último paso registrado.'}
             </p>
             <BlockedActionHint reason={depsReason}>
             <button
@@ -942,6 +942,8 @@ export default function GuiaMetodologicaView() {
                   org={project.companyName}
                   pmoType={pmoType}
                   version={currentVersion}
+                  approved={isCompleted}
+                  preparedBy={project.auditors.find(a => a.name && a.name !== 'Sin asignar')?.name}
                 />
               </motion.div>
             )}

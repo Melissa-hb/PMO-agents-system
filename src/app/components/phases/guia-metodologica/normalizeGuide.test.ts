@@ -87,3 +87,17 @@ describe('versiones de la guia', () => {
     expect(versionsFromPayload(null)).toEqual([]);
   });
 });
+
+describe('titulos generados a partir de las claves de la guia', () => {
+  it('usan mayuscula solo al inicio y llevan tilde', () => {
+    const [capitulo] = normalizeChapters({ guide_content: [seccion('S9', 'Comités', {
+      tabla_comites: [{ comite: 'Directivo', temas_de_decision: ['Presupuesto'] }],
+      consideraciones_por_enfoque: 'Formal',
+    })] });
+
+    const titulos = capitulo.subsections.map(s => s.title);
+    expect(titulos).toContain('Consideraciones por enfoque');
+    const tabla = capitulo.subsections.find(s => s.table)?.table;
+    expect(tabla?.headers).toEqual(['Comité', 'Temas de decisión']);
+  });
+});

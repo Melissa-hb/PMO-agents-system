@@ -201,7 +201,7 @@ export default function ProjectSummaryView() {
             <div className="flex items-center gap-3 mb-6">
               <IcesiLogo variant="positive" className="brand-logo-mark h-14 w-auto" />
               <div>
-                <p className="text-xs text-gray-400 uppercase tracking-widest" style={{ fontWeight: 600 }}>Universidad Icesi - PMO Intelligence Platform</p>
+                <p className="text-xs text-gray-400 uppercase tracking-widest" style={{ fontWeight: 600 }}>Universidad Icesi · Consultoría en Gestión de Proyectos</p>
                 <h1 className="text-gray-900" style={{ fontWeight: 800, fontSize: '1.75rem' }}>
                   Diagnóstico Consolidado de PMO
                 </h1>
@@ -379,7 +379,7 @@ export default function ProjectSummaryView() {
 
         {/* Report Footer */}
         <div className="pt-6 border-t border-gray-200 flex items-center justify-between text-gray-400 text-xs">
-          <span>PMO Intelligence Platform - Universidad Icesi</span>
+          <span>Universidad Icesi · Consultoría en Gestión de Proyectos</span>
           <span>Generado el {new Date().toLocaleDateString('es-CO', { year: 'numeric', month: 'long', day: 'numeric' })}</span>
           <span>Confidencial</span>
         </div>

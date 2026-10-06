@@ -91,7 +91,7 @@ function EnfoqueHero({ result, pmoType, pmoColor, maturityLevel, approved, compl
           <div className="min-w-0">
             <p className="text-[10px] uppercase tracking-[0.18em] text-neutral-500 mb-2" style={{ fontWeight: 800 }}>Fase 6 · PMO {pmoType} · Nivel {maturityLevel}</p>
             <h1 className="text-neutral-950 tracking-tight" style={{ fontWeight: 850, fontSize: '2.35rem', lineHeight: 1.02 }}>
-              {approved ? 'Enfoque metodologico aprobado' : 'Enfoque metodologico'}
+              {approved ? 'Enfoque metodológico aprobado' : 'Enfoque metodológico'}
             </h1>
             <p className="mt-3 max-w-4xl text-[14px] leading-relaxed text-neutral-600">
               El Agente 6 consolido tipo de PMO y madurez para definir el enfoque, priorizar debilidades y preparar las instrucciones que recibira el Agente 7.
@@ -109,7 +109,7 @@ function EnfoqueHero({ result, pmoType, pmoColor, maturityLevel, approved, compl
                 <GitMerge size={22} />
               </div>
               <div>
-                <p className="text-[10px] uppercase tracking-[0.16em] text-[#3535a8] mb-1" style={{ fontWeight: 850 }}>Tipo de guia recomendado</p>
+                <p className="text-[10px] uppercase tracking-[0.16em] text-[#3535a8] mb-1" style={{ fontWeight: 850 }}>Tipo de guía recomendado</p>
                 <h2 className="text-neutral-950 text-[20px] leading-tight" style={{ fontWeight: 850 }}>{valueOrEmpty(result.enfoque?.tipo)}</h2>
                 <p className="mt-3 text-[13px] leading-relaxed text-neutral-700">{valueOrEmpty(result.enfoque?.orientacion)}</p>
               </div>
@@ -138,7 +138,7 @@ function EnfoqueHero({ result, pmoType, pmoColor, maturityLevel, approved, compl
 function PrincipiosSection({ result }: { result: any }) {
   const tones: PhaseReportTone[] = ['blue', 'green', 'purple', 'orange', 'amber'];
   return (
-    <PhaseReportSection title="Principios rectores" eyebrow="Definicion de enfoque" icon={<Lightbulb size={18} />} tone="blue">
+    <PhaseReportSection title="Principios rectores" eyebrow="Definición de enfoque" icon={<Lightbulb size={18} />} tone="blue">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
         {(result.enfoque?.principios ?? []).map((principio: any, index: number) => {
           const tone = tones[index % tones.length];
@@ -201,11 +201,11 @@ function InstruccionesSection({ result }: { result: any }) {
   const [expanded, setExpanded] = useState<number | null>(0);
 
   return (
-    <PhaseReportSection title="Brief tecnico para Agente 7" eyebrow={`${directrizCount(result)} directrices`} icon={<Brain size={18} />} tone="purple">
+    <PhaseReportSection title="Brief técnico para Agente 7" eyebrow={`${directrizCount(result)} directrices`} icon={<Brain size={18} />} tone="purple">
       <div className="rounded-2xl border border-[#5454e9]/20 bg-white overflow-hidden">
         <div className="bg-[#5454e9] px-5 py-3 flex flex-wrap items-center gap-2 text-white">
           <Code2 size={15} />
-          <span className="text-[11px] uppercase tracking-[0.14em]" style={{ fontWeight: 850 }}>Instrucciones de construccion de guia</span>
+          <span className="text-[11px] uppercase tracking-[0.14em]" style={{ fontWeight: 850 }}>Instrucciones de construcción de guía</span>
           <span className="ml-auto text-[11px] text-white/70">Generado por Agente 6</span>
         </div>
 
@@ -260,7 +260,7 @@ function DiagnosticSummarySection({ result }: { result: any }) {
   if (!hasContent) return null;
 
   return (
-    <PhaseReportSection title="Resumen diagnostico" eyebrow="Contexto del agente" icon={<BarChart3 size={18} />} tone="slate">
+    <PhaseReportSection title="Resumen diagnóstico" eyebrow="Contexto del agente" icon={<BarChart3 size={18} />} tone="slate">
       <div className="space-y-4">
         <PhaseReportKeyValueGrid rows={[
           { label: 'Tipo de enfoque', value: ga?.type ?? result.enfoque?.tipo, tone: 'blue' },
@@ -303,14 +303,14 @@ function CommentsSection({
       </p>
       {savedComment && (
         <div className="mb-3 px-3 py-2.5 rounded-xl bg-[#5454e9]/[0.06] border border-[#5454e9]/15 text-[13px] text-neutral-700">
-          <p className="text-[#3535a8] text-xs mb-1" style={{ fontWeight: 800 }}>Ultimo ajuste guardado</p>
+          <p className="text-[#3535a8] text-xs mb-1" style={{ fontWeight: 800 }}>Último ajuste guardado</p>
           <p className="leading-relaxed">{savedComment}</p>
         </div>
       )}
       <textarea
         value={comment}
         onChange={(event) => onCommentChange?.(event.target.value)}
-        placeholder="Ej: Las instrucciones deben incluir una seccion especifica de gobernanza para proyectos regulados..."
+        placeholder="Ej: Las instrucciones deben incluir una sección especifica de gobernanza para proyectos regulados..."
         rows={4}
         className="w-full px-3 py-2.5 border border-neutral-200 rounded-xl text-sm outline-none focus:border-[#5454e9]/60 focus:ring-2 focus:ring-[#5454e9]/10 transition-all resize-y leading-relaxed bg-white mb-3"
       />

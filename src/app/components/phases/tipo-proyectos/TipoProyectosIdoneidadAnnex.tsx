@@ -54,8 +54,8 @@ export default function TipoProyectosIdoneidadAnnex({ phase3AgentData, radarData
                   <PolarAngleAxis dataKey="subject" tick={{ fill: '#374151', fontSize: 11, fontWeight: 700 }} />
                   <PolarRadiusAxis angle={90} domain={[0, 10]} tick={{ fill: '#9ca3af', fontSize: 10 }} axisLine={false} tickCount={6} />
                   <Radar name="Zona Predictiva (7-10)" dataKey="PredictiveZone" stroke="#5454e9" strokeWidth={1.5} strokeDasharray="5 3" fill="#5454e9" fillOpacity={0.12} isAnimationActive={false} />
-                  <Radar name="Zona de transicion (3.1-6.9)" dataKey="TransitionZone" stroke="#f59e0b" strokeWidth={1.5} strokeDasharray="5 3" fill="#f59e0b" fillOpacity={0.18} isAnimationActive={false} />
-                  <Radar name="Zona agil (1-3)" dataKey="AgileZone" stroke="#10b981" strokeWidth={1.5} strokeDasharray="5 3" fill="#10b981" fillOpacity={0.22} isAnimationActive={false} />
+                  <Radar name="Zona de transición (3.1-6.9)" dataKey="TransitionZone" stroke="#f59e0b" strokeWidth={1.5} strokeDasharray="5 3" fill="#f59e0b" fillOpacity={0.18} isAnimationActive={false} />
+                  <Radar name="Zona ágil (1-3)" dataKey="AgileZone" stroke="#10b981" strokeWidth={1.5} strokeDasharray="5 3" fill="#10b981" fillOpacity={0.22} isAnimationActive={false} />
                   <Radar name="Puntaje Real" dataKey="Puntaje" stroke="#5454e9" strokeWidth={3} fill="#5454e9" fillOpacity={0.18} dot={{ r: 4.5, fill: '#5454e9', stroke: '#fff', strokeWidth: 2 }} isAnimationActive={false} />
                   <Tooltip content={<CustomRadarTooltip />} />
                   <Legend wrapperStyle={{ paddingTop: '20px', fontSize: '11px', fontWeight: 500 }} />
@@ -92,9 +92,9 @@ export default function TipoProyectosIdoneidadAnnex({ phase3AgentData, radarData
               <table className="w-full text-left text-[11px]">
                 <thead className="bg-neutral-50/80 border-b border-neutral-200/60">
                   <tr>
-                    <th className="px-3 py-2 font-semibold text-neutral-500 w-16">Codigo</th>
+                    <th className="px-3 py-2 font-semibold text-neutral-500 w-16">Código</th>
                     <th className="px-3 py-2 font-semibold text-neutral-500">Factor propuesto</th>
-                    <th className="px-3 py-2 font-semibold text-neutral-500">Descripcion tecnica</th>
+                    <th className="px-3 py-2 font-semibold text-neutral-500">Descripción técnica</th>
                     <th className="px-3 py-2 font-semibold text-neutral-500 w-16 text-right">Pts</th>
                     <th className="px-3 py-2 font-semibold text-neutral-500 w-24 text-center">Zona</th>
                   </tr>
@@ -128,7 +128,7 @@ export default function TipoProyectosIdoneidadAnnex({ phase3AgentData, radarData
                         {group.items.map((res: any, index: number) => {
                           const score = getIdoneidadItemScore(res) ?? res.promedio;
                           const code = getIdoneidadItemCode(res);
-                          const factorInfo = factorMapping[code] || { name: res.factor || 'Factor desconocido', description: res.interpretacion || 'Sin descripcion' };
+                          const factorInfo = factorMapping[code] || { name: res.factor || 'Factor desconocido', description: res.interpretacion || 'Sin descripción' };
                           const zoneColor = score <= 3
                             ? 'bg-emerald-50 text-emerald-700 border-emerald-100'
                             : score < 7

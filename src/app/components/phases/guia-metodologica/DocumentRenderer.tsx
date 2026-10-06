@@ -1,4 +1,5 @@
-import { FileText } from 'lucide-react';
+import IcesiLogo from '../../brand/IcesiLogo';
+import { CONSULTORA, documentStatusLabel, LINEA_SERVICIO, NOTA_ELABORACION } from './guideBranding';
 import type { DocVersion, GuideChapter, PmoType } from './types';
 
 function InlineFormattedText({ text }: { text: string }) {
@@ -89,8 +90,12 @@ function tableColumnPercent(headers: string[], rows: string[][], columnIndex: nu
   return `${(tableColumnWidth(headers, rows, columnIndex) / tableWidth(headers, rows)) * 100}%`;
 }
 
-function DocumentRenderer({ chapters, org, pmoType, version }: {
+function DocumentRenderer({ chapters, org, pmoType, version, approved = false, preparedBy }: {
   chapters: GuideChapter[]; org: string; pmoType: PmoType; version: DocVersion;
+  /** La guia ya fue aprobada (fase 7 completada). */
+  approved?: boolean;
+  /** Consultor responsable del proyecto. */
+  preparedBy?: string;
 }) {
   const fmt = new Date(version.generatedAt).toLocaleDateString('es-CO', { day: '2-digit', month: 'long', year: 'numeric' });
   const accent = '#5454e9';
@@ -134,25 +139,22 @@ function DocumentRenderer({ chapters, org, pmoType, version }: {
       `}</style>
       {/* Cover */}
       <div className="p-12 pb-10 print:p-8 print:pb-7" style={{ background: '#5454e9', color: '#fff' }}>
-        <div className="flex items-center gap-3 mb-8">
-          <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: 'rgba(255,255,255,0.12)' }}>
-            <FileText size={20} className="text-white" />
-          </div>
-          <div>
-            <p className="text-xs uppercase tracking-widest opacity-60">PMO Intelligence Platform · Agente 7</p>
-          </div>
+        <div className="flex items-center justify-between gap-4 mb-10">
+          <IcesiLogo variant="negative" className="h-10 w-auto" />
+          <p className="text-[11px] uppercase tracking-widest opacity-70 text-right">{LINEA_SERVICIO}</p>
         </div>
         <h1 className="mb-2" style={{ fontSize: '2rem', fontWeight: 800, lineHeight: 1.2 }}>
           Guía Metodológica
         </h1>
         <p className="opacity-70 text-sm mb-1" style={{ fontWeight: 500 }}>{org}</p>
-        <p className="opacity-50 text-xs">PMO {pmoType} · Generada por IA · {fmt}</p>
+        <p className="opacity-60 text-xs">PMO {pmoType} · {fmt}</p>
+        {preparedBy && <p className="opacity-60 text-xs mt-1">Elaborado por: {preparedBy} · {CONSULTORA}</p>}
         <div className="mt-6 flex items-center gap-3">
           <span className="px-3 py-1.5 rounded-full text-xs" style={{ background: 'rgba(255,255,255,0.15)', color: '#fff', border: '1px solid rgba(255,255,255,0.3)', fontWeight: 600 }}>
             Versión {version.number}.0
           </span>
           <span className="px-3 py-1.5 rounded-full text-xs border border-white/20 text-white/70">
-            {version.status === 'revisado' ? 'Documento revisado' : 'Borrador para revisión'}
+            {documentStatusLabel(version, approved)}
           </span>
         </div>
       </div>
@@ -267,7 +269,8 @@ function DocumentRenderer({ chapters, org, pmoType, version }: {
         <div className="pt-6 border-t border-gray-200 text-center">
           <p className="text-gray-400 text-xs">
             Guía Metodológica · {org} · Versión {version.number}.0 · {fmt}<br />
-            Generado por PMO Intelligence Platform — Agente 7 · Documento confidencial
+            {CONSULTORA} · {LINEA_SERVICIO} · Documento confidencial<br />
+            <span className="text-gray-300">{NOTA_ELABORACION}</span>
           </p>
         </div>
       </div>

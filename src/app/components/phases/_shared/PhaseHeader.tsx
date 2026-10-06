@@ -32,7 +32,9 @@ export default function PhaseHeader({
   onReprocessed,
 }: PhaseHeaderProps) {
   const navigate = useNavigate();
-  const { getProject, reprocessPhase } = useApp();
+  const { getProject, reprocessPhase, currentUser } = useApp();
+  // La respuesta cruda del agente (JSON) es una herramienta tecnica: solo la ven los administradores.
+  const canSeeRawJson = currentUser.role === 'admin';
   const { cancel, isCancelling } = useCancelAgent(projectId, phaseNumber);
   const { isBlocked, blockedReason } = usePhaseDependencies(projectId, phaseNumber);
   const [showConfirm, setShowConfirm] = useState(false);
@@ -264,9 +266,9 @@ export default function PhaseHeader({
               )}
             </AnimatePresence>
 
-            {/* ── Botón Ver JSON (automático si hay agentData) ── */}
+            {/* ── Botón Ver JSON (solo administradores, si hay agentData) ── */}
             <AnimatePresence>
-              {hasDisplayableAgentData && (
+              {canSeeRawJson && hasDisplayableAgentData && (
                 <motion.button
                   key="json-btn"
                   initial={{ opacity: 0, scale: 0.9, width: 0 }}

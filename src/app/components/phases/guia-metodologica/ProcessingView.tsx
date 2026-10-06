@@ -44,8 +44,8 @@ function ProcessingView({
         </h2>
         <p className="text-[#5454e9] text-[13px] max-w-md text-center leading-relaxed mb-6">
           {isAdjustment
-            ? 'El Agente esta incorporando los ajustes del consultor y generando una nueva version extensa. Este proceso puede tardar varios minutos.'
-            : 'La guia se esta construyendo de acuerdo al enfoque aprobado en la Fase 6. Este proceso puede tardar varios minutos.'}
+            ? 'El Agente esta incorporando los ajustes del consultor y generando una nueva versión extensa. Este proceso puede tardar varios minutos.'
+            : 'La guía se esta construyendo de acuerdo al enfoque aprobado en la Fase 6. Este proceso puede tardar varios minutos.'}
         </p>
 
         {phaseProgress && (

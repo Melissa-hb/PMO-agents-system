@@ -106,8 +106,8 @@ function ScoreHero({ diagnosis }: { diagnosis: any }) {
                 <Gauge size={18} />
               </div>
               <div>
-                <p className="text-[10px] uppercase tracking-[0.16em] text-white/70" style={{ fontWeight: 800 }}>Agente 3 - Diagnostico de idoneidad</p>
-                <h2 className="text-[22px] tracking-tight" style={{ fontWeight: 850 }}>Idoneidad metodologica consolidada</h2>
+                <p className="text-[10px] uppercase tracking-[0.16em] text-white/70" style={{ fontWeight: 800 }}>Agente 3 - Diagnóstico de idoneidad</p>
+                <h2 className="text-[22px] tracking-tight" style={{ fontWeight: 850 }}>Idoneidad metodológica consolidada</h2>
               </div>
             </div>
             <p className="text-white/88 text-[14px] leading-relaxed max-w-4xl">{textWithFactorNames(diagnosis.summary)}</p>
@@ -191,8 +191,8 @@ function RadarPanel({ radarData, diagnosis }: { radarData: any[]; diagnosis: any
               <PolarAngleAxis dataKey="subject" tick={{ fill: '#374151', fontSize: 11, fontWeight: 700 }} />
               <PolarRadiusAxis angle={90} domain={[0, 10]} tick={{ fill: '#9ca3af', fontSize: 10 }} axisLine={false} tickCount={6} />
               <Radar name="Zona Predictiva (7-10)" dataKey="PredictiveZone" stroke="#5454e9" strokeWidth={1.5} strokeDasharray="5 3" fill="#5454e9" fillOpacity={0.12} isAnimationActive={false} />
-              <Radar name="Zona de transicion (3.1-6.9)" dataKey="TransitionZone" stroke="#f59e0b" strokeWidth={1.5} strokeDasharray="5 3" fill="#f59e0b" fillOpacity={0.18} isAnimationActive={false} />
-              <Radar name="Zona agil (1-3)" dataKey="AgileZone" stroke="#10b981" strokeWidth={1.5} strokeDasharray="5 3" fill="#10b981" fillOpacity={0.22} isAnimationActive={false} />
+              <Radar name="Zona de transición (3.1-6.9)" dataKey="TransitionZone" stroke="#f59e0b" strokeWidth={1.5} strokeDasharray="5 3" fill="#f59e0b" fillOpacity={0.18} isAnimationActive={false} />
+              <Radar name="Zona ágil (1-3)" dataKey="AgileZone" stroke="#10b981" strokeWidth={1.5} strokeDasharray="5 3" fill="#10b981" fillOpacity={0.22} isAnimationActive={false} />
               <Radar name="Puntaje Real" dataKey="Puntaje" stroke="#5454e9" strokeWidth={3} fill="#5454e9" fillOpacity={0.18} dot={{ r: 4.5, fill: '#5454e9', stroke: '#fff', strokeWidth: 2 }} isAnimationActive={false} />
               <Tooltip content={<CustomRadarTooltip />} />
               <Legend wrapperStyle={{ paddingTop: '20px', fontSize: '11px', fontWeight: 500 }} />
@@ -320,7 +320,7 @@ function IndicadoresZona({ diagnosis }: { diagnosis: any }) {
     <div className="space-y-4">
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
         <div className="rounded-2xl border border-green-200 bg-green-50/40 p-4">
-          <p className="text-[10px] uppercase tracking-[0.14em] text-green-700 mb-3" style={{ fontWeight: 800 }}>Indicadores agil (≤3.0)</p>
+          <p className="text-[10px] uppercase tracking-[0.14em] text-green-700 mb-3" style={{ fontWeight: 800 }}>Indicadores ágil (≤3.0)</p>
           <div className="space-y-2">
             {agil.length ? agil.map((x: any, i: number) => (
               <div key={i} className="flex items-center justify-between gap-2">
@@ -331,7 +331,7 @@ function IndicadoresZona({ diagnosis }: { diagnosis: any }) {
           </div>
         </div>
         <div className="rounded-2xl border border-amber-200 bg-amber-50/40 p-4">
-          <p className="text-[10px] uppercase tracking-[0.14em] text-amber-700 mb-3" style={{ fontWeight: 800 }}>Indicadores de transicion</p>
+          <p className="text-[10px] uppercase tracking-[0.14em] text-amber-700 mb-3" style={{ fontWeight: 800 }}>Indicadores de transición</p>
           <div className="space-y-2">
             {hibr.length ? hibr.map((x: any, i: number) => (
               <div key={i} className="flex items-center justify-between gap-2">
@@ -376,7 +376,7 @@ function FactorsPanel({ diagnosis }: { diagnosis: any }) {
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
       <PhaseReportMiniList title="Alta afinidad predictiva" items={predictive.map((fac: any) => `${factorName(fac.item)} (${valueOrEmpty(fac.promedio)}): ${textWithFactorNames(fac.interpretacion)}`)} tone="red" />
-      <PhaseReportMiniList title="Alta afinidad agil" items={agile.map((fac: any) => `${factorName(fac.item)} (${valueOrEmpty(fac.promedio)}): ${textWithFactorNames(fac.interpretacion)}`)} tone="green" />
+      <PhaseReportMiniList title="Alta afinidad ágil" items={agile.map((fac: any) => `${factorName(fac.item)} (${valueOrEmpty(fac.promedio)}): ${textWithFactorNames(fac.interpretacion)}`)} tone="green" />
     </div>
   );
 }
@@ -420,7 +420,7 @@ function TrazabilidadPanel({ diagnosis }: { diagnosis: any }) {
         { label: 'Suma cultura', value: t.suma_promedios_cultura_10_items, tone: 'purple' },
         { label: 'Suma equipo', value: t.suma_promedios_equipo_6_items, tone: 'green' },
         { label: 'Suma proyecto', value: t.suma_promedios_proyecto_5_items, tone: 'amber' },
-        { label: 'Verificacion rango', value: t.verificacion_rango_superada ? 'Superada ✓' : 'No superada ✗', tone: t.verificacion_rango_superada ? 'green' : 'red' },
+        { label: 'Verificación rango', value: t.verificacion_rango_superada ? 'Superada ✓' : 'No superada ✗', tone: t.verificacion_rango_superada ? 'green' : 'red' },
       ]} />
       {itemKeys.length > 0 && (
         <div className="overflow-x-auto rounded-2xl border border-neutral-100">
@@ -534,7 +534,7 @@ function Agent4Inputs({ diagnosis }: { diagnosis: any }) {
   return (
     <div className="space-y-5">
       <PhaseReportKeyValueGrid rows={[
-        { label: 'Listo para integracion', value: diagnosis?.listo_para_integracion, tone: diagnosis?.listo_para_integracion ? 'green' : 'orange' },
+        { label: 'Listo para integración', value: diagnosis?.listo_para_integracion, tone: diagnosis?.listo_para_integracion ? 'green' : 'orange' },
         { label: 'Nivel confiabilidad', value: inputs?.nivel_confiabilidad, tone: levelTone(inputs?.nivel_confiabilidad) },
         { label: 'Comportamiento general', value: inputs?.comportamiento_general, tone: levelTone(inputs?.comportamiento_general) },
         { label: 'Zona predominante general', value: inputs?.zona_predominante_general || diagnosis?.zona_predominante_general, tone: zoneTone(inputs?.zona_predominante_general || diagnosis?.zona_predominante_general) },
@@ -543,7 +543,7 @@ function Agent4Inputs({ diagnosis }: { diagnosis: any }) {
       ]} />
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <PhaseReportMiniList title="Indicadores predictivos" items={(inputs?.indicadores_predictivos ?? []).map((x: any) => `${factorName(x.item || x.dimension)} (${valueOrEmpty(x.promedio)}): ${textWithFactorNames(x.interpretacion_del_factor)}`)} tone="red" />
-        <PhaseReportMiniList title="Indicadores de transicion" items={(inputs?.indicadores_hibridos ?? []).map((x: any) => `${factorName(x.item_o_dimension)} (${valueOrEmpty(x.promedio)}): ${textWithFactorNames(x.interpretacion_del_factor)}`)} tone="amber" />
+        <PhaseReportMiniList title="Indicadores de transición" items={(inputs?.indicadores_hibridos ?? []).map((x: any) => `${factorName(x.item_o_dimension)} (${valueOrEmpty(x.promedio)}): ${textWithFactorNames(x.interpretacion_del_factor)}`)} tone="amber" />
         <PhaseReportMiniList title="Indicadores agilidad" items={(inputs?.indicadores_agilidad ?? []).map((x: any) => typeof x === 'string' ? x : `${factorName(x.item || x.dimension)} (${valueOrEmpty(x.promedio)})`)} tone="green" />
         <PhaseReportMiniList title="Inconsistencias criticas" items={inputs?.inconsistencias_criticas_resumen} tone="orange" mapItem={textWithFactorNames} />
         <PhaseReportMiniList title="Tensiones criticas" items={inputs?.tensiones_criticas_resumen} tone="orange" mapItem={textWithFactorNames} />
@@ -573,7 +573,7 @@ export default function IdoneidadDiagnosisView({ diagnosis, radarData, totalResp
         <MetricsStrip diagnosis={diagnosis} totalRespondentCount={totalRespondentCount} completedAt={completedAt} />
       </PhaseReportSection>
 
-      <PhaseReportSection title="Indicadores por zona" eyebrow="Agil - transicion - predictivo" icon={<Zap size={18} />} tone="green">
+      <PhaseReportSection title="Indicadores por zona" eyebrow="Ágil - transición - predictivo" icon={<Zap size={18} />} tone="green">
         <IndicadoresZona diagnosis={diagnosis} />
       </PhaseReportSection>
 
@@ -588,7 +588,7 @@ export default function IdoneidadDiagnosisView({ diagnosis, radarData, totalResp
         </div>
       </PhaseReportSection>
 
-      <PhaseReportSection title="Distribucion por zona" eyebrow="Agil - transicion - predictivo" icon={<Target size={18} />} tone="red">
+      <PhaseReportSection title="Distribución por zona" eyebrow="Ágil - transición - predictivo" icon={<Target size={18} />} tone="red">
         <DistributionPanel diagnosis={diagnosis} />
       </PhaseReportSection>
 
@@ -636,11 +636,11 @@ export default function IdoneidadDiagnosisView({ diagnosis, radarData, totalResp
         </div>
       </PhaseReportSection>
 
-      <PhaseReportSection title="Factores criticos" eyebrow="Afinidad metodologica" icon={<TrendingUp size={18} />} tone="red">
+      <PhaseReportSection title="Factores criticos" eyebrow="Afinidad metodológica" icon={<TrendingUp size={18} />} tone="red">
         <FactorsPanel diagnosis={diagnosis} />
       </PhaseReportSection>
 
-      <PhaseReportSection title="Interpretacion por factores" eyebrow="Cultura - equipo - proyecto" icon={<Lightbulb size={18} />} tone="green">
+      <PhaseReportSection title="Interpretación por factores" eyebrow="Cultura - equipo - proyecto" icon={<Lightbulb size={18} />} tone="green">
         <FactorsInterpretation diagnosis={diagnosis} />
       </PhaseReportSection>
 

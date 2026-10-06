@@ -173,7 +173,7 @@ const ACTIVE_ARTIFACT_ALIASES: Record<string, string[]> = {
   'Lecciones aprendidas': ['matriz de lecciones aprendidas', 'lecciones aprendidas', 'lessons learned'],
   'Registro de cambios': ['registro de cambios', 'control de cambios', 'change log'],
   'Matriz de requisitos': ['matriz de requisitos', 'requirements matrix', 'requisitos'],
-  'Plan de direccion de proyectos': ['plan de direccion de proyectos', 'plan de dirección de proyectos', 'project management plan'],
+  'Plan de dirección de proyectos': ['plan de direccion de proyectos', 'plan de dirección de proyectos', 'project management plan'],
 };
 
 const ACTIVE_ARTIFACTS: Artifact[] = [
@@ -207,7 +207,7 @@ const ACTIVE_ARTIFACTS: Artifact[] = [
   {
     id: 'caso-negocio',
     name: 'Caso de negocio',
-    description: 'Justificacion estrategica, beneficios esperados y viabilidad de la iniciativa.',
+    description: 'Justificacion estratégica, beneficios esperados y viabilidad de la iniciativa.',
     format: 'xlsx',
     size: 'XLSX',
     category: 'other',
@@ -216,7 +216,7 @@ const ACTIVE_ARTIFACTS: Artifact[] = [
   {
     id: 'control-entregables',
     name: 'Control de entregables',
-    description: 'Control de entregables, responsables, criterios de aceptacion, validacion y estado de aprobacion.',
+    description: 'Control de entregables, responsables, criterios de aceptación, validación y estado de aprobación.',
     format: 'xlsx',
     size: 'XLSX',
     category: 'other',
@@ -243,7 +243,7 @@ const ACTIVE_ARTIFACTS: Artifact[] = [
   {
     id: 'enunciado-alcance',
     name: 'Enunciado del alcance',
-    description: 'Descripcion detallada de entregables, limites, criterios de aceptacion y trabajo incluido.',
+    description: 'Descripción detallada de entregables, límites, criterios de aceptación y trabajo incluido.',
     format: 'xlsx',
     size: 'XLSX',
     category: 'other',
@@ -287,7 +287,7 @@ const ACTIVE_ARTIFACTS: Artifact[] = [
   },
   {
     id: 'plan-direccion-proyectos',
-    name: 'Plan de direccion de proyectos',
+    name: 'Plan de dirección de proyectos',
     description: 'Documento integrador para dirigir, ejecutar, monitorear, controlar y cerrar el proyecto.',
     format: 'xlsx',
     size: 'XLSX',
@@ -306,7 +306,7 @@ const ACTIVE_ARTIFACTS: Artifact[] = [
   {
     id: 'presupuesto-hito',
     name: 'Presupuesto por hito',
-    description: 'Planificacion y control de costos asociados a hitos o entregables del proyecto.',
+    description: 'Planificación y control de costos asociados a hitos o entregables del proyecto.',
     format: 'xlsx',
     size: 'XLSX',
     category: 'other',
@@ -315,7 +315,7 @@ const ACTIVE_ARTIFACTS: Artifact[] = [
   {
     id: 'registro-cambios',
     name: 'Registro de cambios',
-    description: 'Registro para documentar solicitudes de cambio, analisis de impacto, aprobaciones y estado.',
+    description: 'Registro para documentar solicitudes de cambio, análisis de impacto, aprobaciones y estado.',
     format: 'xlsx',
     size: 'XLSX',
     category: 'other',
@@ -333,7 +333,7 @@ const ACTIVE_ARTIFACTS: Artifact[] = [
   {
     id: 'registro-riesgos',
     name: 'Registro de riesgos',
-    description: 'Identificacion, analisis, priorizacion, respuesta y seguimiento de riesgos del proyecto.',
+    description: 'Identificación, análisis, priorización, respuesta y seguimiento de riesgos del proyecto.',
     format: 'xlsx',
     size: 'XLSX',
     category: 'other',

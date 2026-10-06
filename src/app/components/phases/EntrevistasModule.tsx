@@ -37,7 +37,7 @@ function AgentErrorCard({ error }: { error: AgentErrorPayload }) {
           <AlertTriangle size={18} />
         </div>
         <div className="min-w-0">
-          <p className="text-neutral-950 text-[15px]" style={{ fontWeight: 750 }}>El agente no pudo completar el analisis</p>
+          <p className="text-neutral-950 text-[15px]" style={{ fontWeight: 750 }}>El agente no pudo completar el análisis</p>
           <p className="text-neutral-600 text-[13px] leading-relaxed mt-1">{error.message}</p>
           {error.details && <p className="text-neutral-500 text-[12px] leading-relaxed mt-2">{error.details}</p>}
           {error.code && (
@@ -132,7 +132,7 @@ export default function EntrevistasModule() {
 
     if (data?.estadoVisual === 'procesando') {
       setIsSending(false);
-      toast.info('El Agente 2 sigue en ejecucion.', {
+      toast.info('El Agente 2 sigue en ejecución.', {
         description: 'Seguiremos esperando el resultado del agente.',
       });
       return true;

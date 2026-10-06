@@ -214,7 +214,7 @@ function MaturityBISection({
           <table className="w-full border-collapse text-xs text-slate-900">
             <thead>
               <tr className="bg-[#5454e9]/[0.07]">
-                <th className="border-b border-[#5454e9]/10 px-4 py-3 text-left font-black text-[#3535a8]">Dimension</th>
+                <th className="border-b border-[#5454e9]/10 px-4 py-3 text-left font-black text-[#3535a8]">Dimensión</th>
                 <th className="border-b border-[#5454e9]/10 px-4 py-3 text-right font-black text-[#3535a8]">Promedio</th>
                 <th className="border-b border-[#5454e9]/10 px-4 py-3 text-left font-black text-[#3535a8]">Nivel</th>
               </tr>
@@ -313,21 +313,21 @@ export default function MaturityBIDashboard({ results }: { results: FullResults 
     <div className="mb-6">
       {hasValues(predictiveDomainData) && (
         <MaturityBISection
-          title="Analisis predictivo por dominio"
-          description="Lectura comparativa de capacidades predictivas por dominio de gestion."
+          title="Análisis predictivo por dominio"
+          description="Lectura comparativa de capacidades predictivas por dominio de gestión."
           rows={predictiveDomainData}
         />
       )}
       {hasValues(predictivePhaseData) && (
         <MaturityBISection
-          title="Analisis predictivo por fase"
-          description="Vista de consistencia metodologica por momento del ciclo de vida."
+          title="Análisis predictivo por fase"
+          description="Vista de consistencia metodológica por momento del ciclo de vida."
           rows={predictivePhaseData}
         />
       )}
       {hasValues(agileFactorData) && (
         <MaturityBISection
-          title="Analisis agil por factor"
+          title="Análisis ágil por factor"
           description="Lectura comparativa de capacidades agiles por cultura, equipo, producto y valor."
           rows={agileFactorData}
         />

@@ -251,7 +251,7 @@ function mapAgentResultV2(datos: any): EnfoqueResult | null {
   };
 
   // ── Derive enfoque tipo (v6 > v5 fallback) ──
-  const enfoqueType = enfoque_guia.tipo ?? ga.type ?? ga.primary_framework ?? 'Enfoque metodologico';
+  const enfoqueType = enfoque_guia.tipo ?? ga.type ?? ga.primary_framework ?? 'Enfoque metodológico';
   const enfoqueOrientacion = enfoque_guia.justificacion ?? ga.strategic_orientation ?? d.summary ?? experto.resumen_diagnostico ?? '';
 
   // ── Principios: unify v5 guide_approach + v6 enfoque_guia ──
@@ -261,18 +261,18 @@ function mapAgentResultV2(datos: any): EnfoqueResult | null {
     repo.sector ? { titulo: 'Sector', descripcion: repo.sector } : null,
     enfoque_guia.marco_primario || ga.primary_framework ? { titulo: 'Marco primario', descripcion: enfoque_guia.marco_primario ?? ga.primary_framework } : null,
     enfoque_guia.marco_secundario || ga.secondary_framework ? { titulo: 'Marco secundario', descripcion: enfoque_guia.marco_secundario ?? ga.secondary_framework } : null,
-    enfoque_guia.balance_marcos || ga.framework_balance ? { titulo: 'Balance metodologico', descripcion: enfoque_guia.balance_marcos ?? ga.framework_balance } : null,
-    (enfoque_guia.agile_weight != null) ? { titulo: 'Peso agil', descripcion: `${enfoque_guia.agile_weight}%` } : null,
+    enfoque_guia.balance_marcos || ga.framework_balance ? { titulo: 'Balance metodológico', descripcion: enfoque_guia.balance_marcos ?? ga.framework_balance } : null,
+    (enfoque_guia.agile_weight != null) ? { titulo: 'Peso ágil', descripcion: `${enfoque_guia.agile_weight}%` } : null,
     (enfoque_guia.predictive_weight != null) ? { titulo: 'Peso predictivo', descripcion: `${enfoque_guia.predictive_weight}%` } : null,
     ga.justification ? { titulo: 'Justificacion (v5)', descripcion: ga.justification } : null,
     // Fases opcionales
     fases_ciclo.tiene_preproyecto === true ? { titulo: 'Pre-proyecto', descripcion: fases_ciclo.evidencia_preproyecto ?? 'Aplica' } : null,
     fases_ciclo.tiene_postcierre === true ? { titulo: 'Post-cierre', descripcion: fases_ciclo.evidencia_postcierre ?? 'Aplica' } : null,
     // Gobernanza documental destacada
-    gov.tiene_sgc === true ? { titulo: 'Sistema de Gestion de Calidad', descripcion: gov.evidencia_sgc ?? 'SGC identificado' } : null,
+    gov.tiene_sgc === true ? { titulo: 'Sistema de Gestión de Calidad', descripcion: gov.evidencia_sgc ?? 'SGC identificado' } : null,
     gov.tiene_repositorio_digital ? { titulo: 'Repositorio digital', descripcion: gov.repositorio_herramienta ?? gov.evidencia_repositorio ?? 'Identificado' } : null,
-    pc.tone ? { titulo: 'Tono de la guia', descripcion: `${pc.tone}. ${pc.tone_justification ?? ''}`.trim() } : null,
-    pc.recommended_length ? { titulo: 'Extension recomendada', descripcion: `${pc.recommended_length}. ${pc.length_justification ?? ''}`.trim() } : null,
+    pc.tone ? { titulo: 'Tono de la guía', descripcion: `${pc.tone}. ${pc.tone_justification ?? ''}`.trim() } : null,
+    pc.recommended_length ? { titulo: 'Extensión recomendada', descripcion: `${pc.recommended_length}. ${pc.length_justification ?? ''}`.trim() } : null,
   ].filter(Boolean) as { titulo: string; descripcion: string }[];
 
   // ── Puntos débiles: prefer v6 brechas_priorizadas ──
@@ -301,7 +301,7 @@ function mapAgentResultV2(datos: any): EnfoqueResult | null {
   const govDirectrices: string[] = [
     gov.tiene_sgc != null ? `SGC: ${gov.tiene_sgc ? 'Si' : 'No'}${gov.evidencia_sgc ? ` — ${gov.evidencia_sgc}` : ''}` : '',
     gov.usa_codificacion_documental != null ? `Codificacion documental: ${gov.usa_codificacion_documental ? gov.estructura_codificacion || 'Si' : 'No'}` : '',
-    gov.practicas_gestion_cambios?.existe_proceso != null ? `Gestion de cambios: ${gov.practicas_gestion_cambios.nivel_formalidad ?? (gov.practicas_gestion_cambios.existe_proceso ? 'Existe' : 'No existe')}` : '',
+    gov.practicas_gestion_cambios?.existe_proceso != null ? `Gestión de cambios: ${gov.practicas_gestion_cambios.nivel_formalidad ?? (gov.practicas_gestion_cambios.existe_proceso ? 'Existe' : 'No existe')}` : '',
     gov.practicas_lecciones_aprendidas?.existe_proceso != null ? `Lecciones aprendidas: ${gov.practicas_lecciones_aprendidas.nivel_formalidad ?? (gov.practicas_lecciones_aprendidas.existe_proceso ? 'Existe' : 'No existe')}` : '',
     gov.tiene_auditoria_proyectos != null ? `Auditoria de proyectos: ${gov.tiene_auditoria_proyectos ? 'Si' : 'No'}` : '',
     gov.requiere_plan_contingencia != null ? `Plan de contingencia requerido: ${gov.requiere_plan_contingencia ? 'Si' : 'No'}` : '',
@@ -333,11 +333,11 @@ function mapAgentResultV2(datos: any): EnfoqueResult | null {
   ].filter(Boolean);
 
   const insumosSeccionDirectrices: string[] = [
-    insumos.introduccion_objetivo_alcance?.situacion_actual_gestion ? `Situacion actual: ${insumos.introduccion_objetivo_alcance.situacion_actual_gestion}` : '',
-    Array.isArray(insumos.politicas?.tabla_politicas) ? `Politicas candidatas: ${insumos.politicas.tabla_politicas.length}` : '',
+    insumos.introduccion_objetivo_alcance?.situacion_actual_gestion ? `Situación actual: ${insumos.introduccion_objetivo_alcance.situacion_actual_gestion}` : '',
+    Array.isArray(insumos.politicas?.tabla_politicas) ? `Políticas candidatas: ${insumos.politicas.tabla_politicas.length}` : '',
     Array.isArray(insumos.roles_y_responsabilidades?.roles_existentes) ? `Roles existentes para la guia: ${insumos.roles_y_responsabilidades.roles_existentes.length}` : '',
-    Array.isArray(insumos.comites?.comites_existentes) ? `Comites o reuniones existentes: ${insumos.comites.comites_existentes.length}` : '',
-    Array.isArray(insumos.comites?.comites_sugeridos) ? `Comites sugeridos: ${insumos.comites.comites_sugeridos.length}` : '',
+    Array.isArray(insumos.comites?.comites_existentes) ? `Comités o reuniones existentes: ${insumos.comites.comites_existentes.length}` : '',
+    Array.isArray(insumos.comites?.comites_sugeridos) ? `Comités sugeridos: ${insumos.comites.comites_sugeridos.length}` : '',
     Array.isArray(insumos.flujos_por_fase) ? `Flujos por fase: ${insumos.flujos_por_fase.length}` : '',
     Array.isArray(insumos.indicadores?.indicadores_existentes) ? `Indicadores existentes: ${insumos.indicadores.indicadores_existentes.length}` : '',
     Array.isArray(insumos.indicadores?.indicadores_sugeridos) ? `Indicadores sugeridos: ${insumos.indicadores.indicadores_sugeridos.length}` : '',
@@ -350,7 +350,7 @@ function mapAgentResultV2(datos: any): EnfoqueResult | null {
   const subagents = d.insumos_por_subagente ?? {};
   const instrucciones: InstruccionAgente7[] = [
     {
-      categoria: 'Alcance y estructura de la guia',
+      categoria: 'Alcance y estructura de la guía',
       icon: Target,
       directrices: [
         adicionales.length > 0
@@ -374,7 +374,7 @@ function mapAgentResultV2(datos: any): EnfoqueResult | null {
       directrices: repositorioDirectrices,
     } : null,
     insumosSeccionDirectrices.length > 0 ? {
-      categoria: 'Insumos por seccion de la guia',
+      categoria: 'Insumos por sección de la guía',
       icon: BookOpen,
       directrices: insumosSeccionDirectrices,
     } : null,
@@ -396,7 +396,7 @@ function mapAgentResultV2(datos: any): EnfoqueResult | null {
       ].filter(Boolean) as string[],
     },
     {
-      categoria: 'Advertencias del diagnostico',
+      categoria: 'Advertencias del diagnóstico',
       icon: ShieldAlert,
       directrices: (d.advertencias_de_entrada ?? []).length > 0
         ? d.advertencias_de_entrada
@@ -533,7 +533,7 @@ export default function EnfoqueModule() {
       datosConsolidados: rawData,
     }).catch(error => console.error('[Phase6] Error persistiendo resultado recibido:', error));
     playAgentSuccess();
-    toast.success('Agente 6 definio el enfoque metodologico', { description: mapped.enfoque.tipo });
+    toast.success('Agente 6 definio el enfoque metodológico', { description: mapped.enfoque.tipo });
     return true;
   }, [playAgentSuccess, projectId, updatePhaseStatus]);
 
@@ -633,7 +633,7 @@ export default function EnfoqueModule() {
       if (data?.estado_visual === 'procesando' && !hasUsablePhase6Data(data?.datos_consolidados)) {
         if (!isPhase6ProcessingMarker(data?.datos_consolidados)) {
           if (Date.now() < guardUntil) return;
-          await failPhase6('El Agente 6 no inicio una ejecucion real en la Edge Function. Reintente manualmente.', {
+          await failPhase6('El Agente 6 no inicio una ejecución real en la Edge Function. Reintente manualmente.', {
             persistPayload: true,
           });
           return;
@@ -862,7 +862,7 @@ export default function EnfoqueModule() {
 
   if (!project || !phase) {
     return isLoading
-      ? <LoadingRouteState message="Cargando el proyecto y el enfoque metodologico..." />
+      ? <LoadingRouteState message="Cargando el proyecto y el enfoque metodológico..." />
       : <MissingProjectState title="Fase no disponible" description="No pudimos encontrar el proyecto o la fase de enfoque." />;
   }
 
@@ -1114,7 +1114,7 @@ export default function EnfoqueModule() {
                 El Agente 6 no pudo entregar un resultado usable
               </h2>
               <p className="text-neutral-500 text-[13px] max-w-md leading-relaxed mb-8">
-                {errorMessage || 'La ejecucion se detuvo para evitar reintentos automaticos y consumo adicional de tokens.'}
+                {errorMessage || 'La ejecución se detuvo para evitar reintentos automaticos y consumo adicional de tokens.'}
               </p>
               <BlockedActionHint reason={depsReason}>
               <button

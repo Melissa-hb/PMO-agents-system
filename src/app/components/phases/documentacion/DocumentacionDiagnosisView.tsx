@@ -166,7 +166,7 @@ function ContextPanel({ diagnosis }: { diagnosis: AgentDiagnosis }) {
 
       {diagnosis.descripcion_negocio && (
         <div className="rounded-2xl border border-blue-100 bg-blue-50/30 p-4">
-          <p className="text-[10px] uppercase tracking-[0.14em] text-blue-600 mb-2" style={{ fontWeight: 800 }}>Descripcion del negocio</p>
+          <p className="text-[10px] uppercase tracking-[0.14em] text-blue-600 mb-2" style={{ fontWeight: 800 }}>Descripción del negocio</p>
           <p className="text-neutral-700 text-[13px] leading-relaxed">{diagnosis.descripcion_negocio}</p>
         </div>
       )}
@@ -409,7 +409,7 @@ function InventoryTable({ diagnosis }: { diagnosis: AgentDiagnosis }) {
 
   const missingSet = new Set((diagnosis.missing_documents ?? []).map((code) => code.trim().toUpperCase()));
   const stateLabel: Record<string, string> = {
-    util_para_analisis: 'Util para analisis',
+    util_para_analisis: 'Util para análisis',
     critico_para_gp: 'Critico',
     incompleto: 'Incompleto',
     no_legible: 'No legible',
@@ -426,7 +426,7 @@ function InventoryTable({ diagnosis }: { diagnosis: AgentDiagnosis }) {
         <table className="w-full text-left border-collapse">
           <thead>
             <tr className="border-b border-neutral-100 bg-[#f7f8ff]">
-              <th className="px-4 py-3 text-[10px] uppercase tracking-wider text-neutral-500 font-semibold">Codigo</th>
+              <th className="px-4 py-3 text-[10px] uppercase tracking-wider text-neutral-500 font-semibold">Código</th>
               <th className="px-4 py-3 text-[10px] uppercase tracking-wider text-neutral-500 font-semibold">Documento esperado</th>
               <th className="px-4 py-3 text-[10px] uppercase tracking-wider text-neutral-500 font-semibold">Archivo PDF / CSV</th>
               <th className="px-4 py-3 text-[10px] uppercase tracking-wider text-neutral-500 font-semibold">Estado</th>
@@ -502,9 +502,9 @@ function Agent4Inputs({ diagnosis, lookup }: { diagnosis: AgentDiagnosis; lookup
   return (
     <div className="space-y-5">
       <PhaseReportKeyValueGrid rows={[
-        { label: 'Nivel estandarizacion', value: inputs?.nivel_estandarizacion },
+        { label: 'Nivel estandarización', value: inputs?.nivel_estandarizacion },
         { label: 'Nivel calidad documental', value: inputs?.nivel_calidad_documental },
-        { label: 'Listo para integracion', value: diagnosis.listo_para_integracion },
+        { label: 'Listo para integración', value: diagnosis.listo_para_integracion },
         { label: 'Preproyecto', value: inputs?.tiene_preproyecto },
         { label: 'Postcierre', value: inputs?.tiene_postcierre },
       ]} />
@@ -529,7 +529,7 @@ function Agent4Inputs({ diagnosis, lookup }: { diagnosis: AgentDiagnosis; lookup
             {(inputs?.metodologias_mencionadas?.length ? inputs.metodologias_mencionadas : [{ nombre: EMPTY_VALUE, documento_fuente: EMPTY_VALUE, nivel_adopcion_visible: EMPTY_VALUE }]).map((met, i) => (
               <div key={i} className="rounded-2xl border border-[#865cf0]/20 bg-[#865cf0]/10 p-4">
                 <p className="text-neutral-950 text-[14px]" style={{ fontWeight: 800 }}>{valueOrEmpty(met.nombre)}</p>
-                <p className="mt-1 text-[12px] text-neutral-600">Adopcion visible: <span className="text-[#5d3bbd]" style={{ fontWeight: 800 }}>{valueOrEmpty(met.nivel_adopcion_visible)}</span></p>
+                <p className="mt-1 text-[12px] text-neutral-600">Adopción visible: <span className="text-[#5d3bbd]" style={{ fontWeight: 800 }}>{valueOrEmpty(met.nivel_adopcion_visible)}</span></p>
                 <div className="mt-3"><PhaseReportBadgeList items={[met.documento_fuente]} mapItem={mapReference} tone="purple" /></div>
               </div>
             ))}
@@ -538,7 +538,7 @@ function Agent4Inputs({ diagnosis, lookup }: { diagnosis: AgentDiagnosis; lookup
         <div className="space-y-3">
           <p className="text-[10px] uppercase tracking-[0.14em] text-neutral-400" style={{ fontWeight: 800 }}>Senales de enfoque</p>
           {(inputs?.senales_flexibilidad_agil ?? []).map((senal, i) => (
-            <PhaseReportEvidenceCard key={`agil-${i}`} title="Flexibilidad agil" subtitle={senal.nivel_evidencia} description={senal.descripcion} references={senal.documentos_fuente} tone="green" mapText={mapText} mapReference={mapReference} />
+            <PhaseReportEvidenceCard key={`agil-${i}`} title="Flexibilidad ágil" subtitle={senal.nivel_evidencia} description={senal.descripcion} references={senal.documentos_fuente} tone="green" mapText={mapText} mapReference={mapReference} />
           ))}
           {(inputs?.senales_estructuracion_formal ?? []).map((senal, i) => (
             <PhaseReportEvidenceCard key={`formal-${i}`} title="Estructuracion formal" subtitle={senal.nivel_evidencia} description={senal.descripcion} references={senal.documentos_fuente} tone="blue" mapText={mapText} mapReference={mapReference} />
@@ -571,8 +571,8 @@ export default function DocumentacionDiagnosisView({ diagnosis }: { diagnosis: A
               <Sparkles size={18} />
             </div>
             <div>
-              <p className="text-[10px] uppercase tracking-[0.16em] text-white/70" style={{ fontWeight: 800 }}>Agente 1 - Gestion documental</p>
-              <h2 className="text-[22px] tracking-tight" style={{ fontWeight: 850 }}>Diagnostico documental consolidado</h2>
+              <p className="text-[10px] uppercase tracking-[0.16em] text-white/70" style={{ fontWeight: 800 }}>Agente 1 - Gestión documental</p>
+              <h2 className="text-[22px] tracking-tight" style={{ fontWeight: 850 }}>Diagnóstico documental consolidado</h2>
             </div>
           </div>
           <p className="text-white/88 text-[14px] leading-relaxed max-w-4xl">{mapText(d.summary)}</p>
@@ -583,7 +583,7 @@ export default function DocumentacionDiagnosisView({ diagnosis }: { diagnosis: A
         <CoverageChart diagnosis={d} />
       </PhaseReportSection>
 
-      <PhaseReportSection title="Contexto y organizacion" eyebrow="Lectura base" icon={<Globe size={18} />} tone="slate">
+      <PhaseReportSection title="Contexto y organización" eyebrow="Lectura base" icon={<Globe size={18} />} tone="slate">
         <ContextPanel diagnosis={d} />
       </PhaseReportSection>
 
@@ -613,7 +613,7 @@ export default function DocumentacionDiagnosisView({ diagnosis }: { diagnosis: A
         </div>
       </PhaseReportSection>
 
-      <PhaseReportSection title="Brechas documentales" eyebrow="Riesgos de informacion" icon={<ShieldAlert size={18} />} tone="orange">
+      <PhaseReportSection title="Brechas documentales" eyebrow="Riesgos de información" icon={<ShieldAlert size={18} />} tone="orange">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
           {(d.brechas_documentales?.length ? d.brechas_documentales : [{ id: EMPTY_VALUE, impacto: EMPTY_VALUE, descripcion: EMPTY_VALUE, dimension_o_area: EMPTY_VALUE, evidencia_o_ausencia: EMPTY_VALUE, documentos_fuente_o_ausentes: [] }]).map((brecha, i) => (
             <PhaseReportEvidenceCard
@@ -631,7 +631,7 @@ export default function DocumentacionDiagnosisView({ diagnosis }: { diagnosis: A
         </div>
       </PhaseReportSection>
 
-      <PhaseReportSection title="Dimensiones de gestion de proyectos" eyebrow="Capacidades observadas" icon={<Target size={18} />} tone="green">
+      <PhaseReportSection title="Dimensiones de gestión de proyectos" eyebrow="Capacidades observadas" icon={<Target size={18} />} tone="green">
         <div className="grid grid-cols-1 gap-3">
           {dimensiones.map(([key, label], i) => (
             <DimensionCard key={key} label={label} dim={d.dimensiones_gestion_proyectos?.[key]} lookup={lookup} index={i} />
@@ -665,7 +665,7 @@ export default function DocumentacionDiagnosisView({ diagnosis }: { diagnosis: A
         <GobernanzaPanel diagnosis={d} lookup={lookup} />
       </PhaseReportSection>
 
-      <PhaseReportSection title="Limitaciones" eyebrow="Confiabilidad del diagnostico" icon={<AlertCircle size={18} />} tone="red">
+      <PhaseReportSection title="Limitaciones" eyebrow="Confiabilidad del diagnóstico" icon={<AlertCircle size={18} />} tone="red">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           {(d.limitaciones?.length ? d.limitaciones : [{ tipo: EMPTY_VALUE, descripcion: EMPTY_VALUE, impacto_confiabilidad: EMPTY_VALUE, dimensiones_afectadas: [] }]).map((lim, i) => {
             const tone = levelTone(lim.impacto_confiabilidad);

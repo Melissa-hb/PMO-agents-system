@@ -116,7 +116,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       fetchCurrentUser();
       // Configuracion de fases (dependencias y categorias de documentos) desde la base de datos.
       loadPhaseConfig().catch(err => {
-        console.error('[AppContext] Error cargando la configuracion de fases:', err);
+        console.error('[AppContext] Error cargando la configuración de fases:', err);
         toast.error('No se pudo cargar la configuración de las fases', {
           description: 'Las acciones que dependen de otras fases quedan bloqueadas hasta recargar la página.',
         });
