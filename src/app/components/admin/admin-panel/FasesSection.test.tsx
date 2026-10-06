@@ -51,7 +51,16 @@ describe('Administracion > Fases y agentes', () => {
     fireEvent.click(screen.getAllByRole('button', { name: 'F4' })[0]);
     fireEvent.click(screen.getByRole('button', { name: /Guardar/ }));
 
-    expect(hook.updatePhase).toHaveBeenCalledWith(5, { nombre: 'Madurez', requiereCompletas: [], leeResultadoDe: [4] });
+    expect(hook.updatePhase).toHaveBeenCalledWith(5, { nombre: 'Madurez', nombreCorto: '', requiereCompletas: [], leeResultadoDe: [4] });
+  });
+
+  it('edita el nombre corto que se ve en la barra de fases', () => {
+    render(<FasesSection />);
+
+    fireEvent.change(screen.getAllByLabelText('Nombre corto')[0], { target: { value: 'Idoneidad' } });
+    fireEvent.click(screen.getByRole('button', { name: /Guardar/ }));
+
+    expect(hook.updatePhase).toHaveBeenCalledWith(4, expect.objectContaining({ nombreCorto: 'Idoneidad' }));
   });
 
   it('edita los parametros de un agente', () => {

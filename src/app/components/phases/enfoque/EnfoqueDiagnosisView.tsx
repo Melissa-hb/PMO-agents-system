@@ -73,7 +73,7 @@ function directrizCount(result: any) {
 
 function VersionBadge({ result, approved }: { result: any; approved?: boolean }) {
   return (
-    <div className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl text-[12px] border whitespace-nowrap ${result.version === 'reprocesado' ? 'bg-neutral-900 border-neutral-900 text-white' : 'bg-white border-[#5454e9]/20 text-neutral-700'}`} style={{ fontWeight: 750 }}>
+    <div className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl text-[12px] border whitespace-nowrap ${result.version === 'reprocesado' ? 'bg-neutral-900 border-neutral-900 text-white' : 'bg-white border-[#5454e9]/20 text-neutral-700'}`} style={{ fontWeight: 600 }}>
       {result.version === 'reprocesado' ? <RefreshCw size={12} /> : <Sparkles size={12} className="text-[#5454e9]" />}
       <span>Enfoque {result.version === 'reprocesado' ? 'reprocesado' : 'original'}</span>
       <span className="opacity-50">·</span>
@@ -85,12 +85,11 @@ function VersionBadge({ result, approved }: { result: any; approved?: boolean })
 function EnfoqueHero({ result, pmoType, pmoColor, maturityLevel, approved, completedAt }: EnfoqueDiagnosisViewProps) {
   return (
     <section className="overflow-hidden rounded-[1.5rem] border border-[#5454e9]/20 bg-white" style={{ boxShadow: '0 24px 60px -38px rgba(84,84,233,0.45)' }}>
-      <div className="h-2 bg-[#5454e9]" />
       <div className="p-7">
         <div className="flex flex-col xl:flex-row xl:items-start xl:justify-between gap-4 mb-7">
           <div className="min-w-0">
-            <p className="text-[10px] uppercase tracking-[0.18em] text-neutral-500 mb-2" style={{ fontWeight: 800 }}>Fase 6 · PMO {pmoType} · Nivel {maturityLevel}</p>
-            <h1 className="text-neutral-950 tracking-tight" style={{ fontWeight: 850, fontSize: '2.35rem', lineHeight: 1.02 }}>
+            <p className="text-[12px] text-neutral-500 mb-2" style={{ fontWeight: 600 }}>Fase 6 · PMO {pmoType} · Nivel {maturityLevel}</p>
+            <h1 className="text-neutral-950 tracking-tight" style={{ fontWeight: 500, fontSize: '1.75rem', lineHeight: 1.15, letterSpacing: '-0.015em' }}>
               {approved ? 'Enfoque metodológico aprobado' : 'Enfoque metodológico'}
             </h1>
             <p className="mt-3 max-w-4xl text-[14px] leading-relaxed text-neutral-600">
@@ -109,8 +108,8 @@ function EnfoqueHero({ result, pmoType, pmoColor, maturityLevel, approved, compl
                 <GitMerge size={22} />
               </div>
               <div>
-                <p className="text-[10px] uppercase tracking-[0.16em] text-[#3535a8] mb-1" style={{ fontWeight: 850 }}>Tipo de guía recomendado</p>
-                <h2 className="text-neutral-950 text-[20px] leading-tight" style={{ fontWeight: 850 }}>{valueOrEmpty(result.enfoque?.tipo)}</h2>
+                <p className="text-[12px] text-[#3535a8] mb-1" style={{ fontWeight: 600 }}>Tipo de guía recomendado</p>
+                <h2 className="text-neutral-950 text-[20px] leading-tight" style={{ fontWeight: 600 }}>{valueOrEmpty(result.enfoque?.tipo)}</h2>
                 <p className="mt-3 text-[13px] leading-relaxed text-neutral-700">{valueOrEmpty(result.enfoque?.orientacion)}</p>
               </div>
             </div>
@@ -125,7 +124,7 @@ function EnfoqueHero({ result, pmoType, pmoColor, maturityLevel, approved, compl
         </div>
 
         {approved && completedAt && (
-          <div className="mt-5 inline-flex items-center gap-2 rounded-full bg-[#4cb979]/10 border border-[#4cb979]/20 px-3 py-1.5 text-[12px] text-[#22794b]" style={{ fontWeight: 750 }}>
+          <div className="mt-5 inline-flex items-center gap-2 rounded-full bg-[#4cb979]/10 border border-[#4cb979]/20 px-3 py-1.5 text-[12px] text-[#22794b]" style={{ fontWeight: 600 }}>
             <CheckCircle2 size={13} />
             Aprobado el {completedAt}
           </div>
@@ -145,12 +144,11 @@ function PrincipiosSection({ result }: { result: any }) {
           const toneClass = phaseReportToneStyles[tone];
           return (
             <article key={`${principio.titulo}-${index}`} className={`rounded-2xl border ${toneClass.border} bg-white overflow-hidden`}>
-              <div className={`h-1 ${toneClass.bar}`} />
               <div className="p-4">
                 <div className="flex items-start gap-3">
-                  <span className={`w-7 h-7 rounded-full ${toneClass.bg} text-white flex items-center justify-center flex-shrink-0 text-[12px]`} style={{ fontWeight: 900 }}>{index + 1}</span>
+                  <span className={`w-7 h-7 rounded-full ${toneClass.bg} text-white flex items-center justify-center flex-shrink-0 text-[12px]`} style={{ fontWeight: 600 }}>{index + 1}</span>
                   <div>
-                    <p className="text-neutral-950 text-[15px]" style={{ fontWeight: 850 }}>{valueOrEmpty(principio.titulo)}</p>
+                    <p className="text-neutral-950 text-[15px]" style={{ fontWeight: 600 }}>{valueOrEmpty(principio.titulo)}</p>
                     <p className="mt-2 text-[13px] leading-relaxed text-neutral-600">{valueOrEmpty(principio.descripcion)}</p>
                   </div>
                 </div>
@@ -173,18 +171,17 @@ function DebilidadesSection({ result }: { result: any }) {
           const toneClass = phaseReportToneStyles[tone];
           return (
             <article key={`${punto.area}-${index}`} className={`rounded-2xl border ${toneClass.border} bg-white overflow-hidden`}>
-              <div className={`h-1 ${toneClass.bar}`} />
               <div className="p-4">
                 <div className="flex items-start justify-between gap-3">
                   <div>
-                    <p className="text-neutral-950 text-[15px]" style={{ fontWeight: 850 }}>{valueOrEmpty(punto.area)}</p>
-                    <p className={`mt-1 text-[11px] uppercase tracking-[0.1em] ${toneClass.text}`} style={{ fontWeight: 850 }}>{valueOrEmpty(punto.criticidad)}</p>
+                    <p className="text-neutral-950 text-[15px]" style={{ fontWeight: 600 }}>{valueOrEmpty(punto.area)}</p>
+                    <p className={`mt-1 text-[12px] ${toneClass.text}`} style={{ fontWeight: 600 }}>{valueOrEmpty(punto.criticidad)}</p>
                   </div>
                   <AlertTriangle size={17} className={toneClass.icon} />
                 </div>
                 <p className="mt-3 text-[13px] leading-relaxed text-neutral-600">{valueOrEmpty(punto.descripcion)}</p>
                 {punto.impacto && (
-                  <p className={`mt-3 rounded-xl ${toneClass.soft} border ${toneClass.border} px-3 py-2 text-[12px] leading-relaxed ${toneClass.text}`} style={{ fontWeight: 700 }}>
+                  <p className={`mt-3 rounded-xl ${toneClass.soft} border ${toneClass.border} px-3 py-2 text-[12px] leading-relaxed ${toneClass.text}`} style={{ fontWeight: 600 }}>
                     Impacto: {punto.impacto}
                   </p>
                 )}
@@ -205,7 +202,7 @@ function InstruccionesSection({ result }: { result: any }) {
       <div className="rounded-2xl border border-[#5454e9]/20 bg-white overflow-hidden">
         <div className="bg-[#5454e9] px-5 py-3 flex flex-wrap items-center gap-2 text-white">
           <Code2 size={15} />
-          <span className="text-[11px] uppercase tracking-[0.14em]" style={{ fontWeight: 850 }}>Instrucciones de construcción de guía</span>
+          <span className="text-[12px]" style={{ fontWeight: 600 }}>Instrucciones de construcción de guía</span>
           <span className="ml-auto text-[11px] text-white/70">Generado por Agente 6</span>
         </div>
 
@@ -220,7 +217,7 @@ function InstruccionesSection({ result }: { result: any }) {
                     <Icon size={16} />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-neutral-950 text-[14px]" style={{ fontWeight: 850 }}>{valueOrEmpty(instr.categoria)}</p>
+                    <p className="text-neutral-950 text-[14px]" style={{ fontWeight: 600 }}>{valueOrEmpty(instr.categoria)}</p>
                     <p className="text-neutral-500 text-[11px]">{instr.directrices?.length ?? 0} directrices</p>
                   </div>
                   <ChevronRight size={16} className="text-neutral-400 transition-transform" style={{ transform: isOpen ? 'rotate(90deg)' : 'rotate(0deg)' }} />
@@ -231,7 +228,7 @@ function InstruccionesSection({ result }: { result: any }) {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3 rounded-2xl border border-neutral-100 bg-neutral-50 p-4">
                       {(instr.directrices ?? []).map((item: string, itemIndex: number) => (
                         <div key={`${item}-${itemIndex}`} className="flex items-start gap-3 rounded-xl bg-white border border-neutral-100 p-3">
-                          <span className="w-6 h-6 rounded-full bg-[#5454e9] text-white flex items-center justify-center flex-shrink-0 text-[11px]" style={{ fontWeight: 900 }}>{itemIndex + 1}</span>
+                          <span className="w-6 h-6 rounded-full bg-[#5454e9] text-white flex items-center justify-center flex-shrink-0 text-[11px]" style={{ fontWeight: 600 }}>{itemIndex + 1}</span>
                           <p className="text-[13px] leading-relaxed text-neutral-700">{item}</p>
                         </div>
                       ))}
@@ -274,7 +271,7 @@ function DiagnosticSummarySection({ result }: { result: any }) {
         {ga?.justification && <PhaseReportList items={[ga.justification]} tone="orange" />}
         {roles?.length > 0 && (
           <div>
-            <p className="text-[10px] uppercase tracking-[0.14em] text-neutral-400 mb-2" style={{ fontWeight: 800 }}>Roles identificados</p>
+            <p className="text-[12px] text-neutral-400 mb-2" style={{ fontWeight: 600 }}>Roles identificados</p>
             <PhaseReportBadgeList items={roles.map((role: any, index: number) => role.nombre_cargo || role.cargo || role.nombre || `Rol ${index + 1}`)} tone="blue" />
           </div>
         )}
@@ -296,14 +293,14 @@ function CommentsSection({
     <section className="rounded-[1.35rem] border border-neutral-200 bg-white p-6">
       <div className="flex items-center gap-2 mb-1">
         <MessageSquare size={15} className="text-neutral-500" />
-        <h3 className="text-neutral-900 text-sm" style={{ fontWeight: 750 }}>Ajustes a las instrucciones</h3>
+        <h3 className="text-neutral-900 text-sm" style={{ fontWeight: 600 }}>Ajustes a las instrucciones</h3>
       </div>
       <p className="text-neutral-500 text-xs mb-3">
         Indique cambios, matices o contexto adicional para el brief que recibira el Agente 7.
       </p>
       {savedComment && (
         <div className="mb-3 px-3 py-2.5 rounded-xl bg-[#5454e9]/[0.06] border border-[#5454e9]/15 text-[13px] text-neutral-700">
-          <p className="text-[#3535a8] text-xs mb-1" style={{ fontWeight: 800 }}>Último ajuste guardado</p>
+          <p className="text-[#3535a8] text-xs mb-1" style={{ fontWeight: 600 }}>Último ajuste guardado</p>
           <p className="leading-relaxed">{savedComment}</p>
         </div>
       )}
@@ -315,14 +312,14 @@ function CommentsSection({
         className="w-full px-3 py-2.5 border border-neutral-200 rounded-xl text-sm outline-none focus:border-[#5454e9]/60 focus:ring-2 focus:ring-[#5454e9]/10 transition-all resize-y leading-relaxed bg-white mb-3"
       />
       <div className="flex flex-wrap items-center gap-3">
-        <button onClick={onSaveComment} disabled={isSavingComment || !comment?.trim()} className="flex items-center gap-2 px-4 py-2 rounded-xl border border-neutral-200 text-neutral-600 text-sm hover:bg-neutral-50 disabled:opacity-40 disabled:cursor-not-allowed transition-all" style={{ fontWeight: 650 }}>
+        <button onClick={onSaveComment} disabled={isSavingComment || !comment?.trim()} className="flex items-center gap-2 px-4 py-2 rounded-xl border border-neutral-200 text-neutral-600 text-sm hover:bg-neutral-50 disabled:opacity-40 disabled:cursor-not-allowed transition-all" style={{ fontWeight: 500 }}>
           {isSavingComment ? <Loader2 size={13} className="animate-spin" /> : <Save size={13} />} Guardar ajuste
         </button>
-        <button onClick={onReprocess} disabled={!comment?.trim()} className="flex items-center gap-2 px-4 py-2 rounded-xl border border-[#5454e9]/25 text-[#3535a8] bg-[#5454e9]/[0.06] text-sm disabled:opacity-40 disabled:cursor-not-allowed transition-all hover:bg-[#5454e9]/10" style={{ fontWeight: 650 }}>
+        <button onClick={onReprocess} disabled={!comment?.trim()} className="flex items-center gap-2 px-4 py-2 rounded-xl border border-[#5454e9]/25 text-[#3535a8] bg-[#5454e9]/[0.06] text-sm disabled:opacity-40 disabled:cursor-not-allowed transition-all hover:bg-[#5454e9]/10" style={{ fontWeight: 500 }}>
           <RefreshCw size={13} /> Reprocesar instrucciones
         </button>
         <div className="flex-1" />
-        <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }} onClick={onApprove} className="flex items-center gap-2 px-5 py-2 rounded-xl text-white text-sm transition-all" style={{ background: '#5454e9', fontWeight: 750, boxShadow: '0 10px 28px -16px rgba(84,84,233,0.7)' }}>
+        <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }} onClick={onApprove} className="flex items-center gap-2 px-5 py-2 rounded-xl text-white text-sm transition-all" style={{ background: '#5454e9', fontWeight: 600, boxShadow: '0 10px 28px -16px rgba(84,84,233,0.7)' }}>
           <ThumbsUp size={14} /> Aprobar instrucciones
         </motion.button>
       </div>

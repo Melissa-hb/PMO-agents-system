@@ -154,7 +154,7 @@ export function DetailPanel({ entrevista, onEdit, onDelete }: DetailPanelProps) 
 
       {entrevista.fileName && (
         <div className="mb-6">
-          <p className="text-[11px] uppercase tracking-[0.14em] text-neutral-400 mb-2.5" style={{ fontWeight: 500 }}>Archivo adjunto</p>
+          <p className="text-[12px] text-neutral-400 mb-2.5" style={{ fontWeight: 500 }}>Archivo adjunto</p>
           <button
             onClick={async () => {
               try {
@@ -191,7 +191,7 @@ export function DetailPanel({ entrevista, onEdit, onDelete }: DetailPanelProps) 
       <div className="flex-1">
         <div className="flex items-center gap-2 mb-3">
           <FileText size={12} className="text-neutral-400" strokeWidth={1.75} />
-          <p className="text-[11px] uppercase tracking-[0.14em] text-neutral-400" style={{ fontWeight: 500 }}>
+          <p className="text-[12px] text-neutral-400" style={{ fontWeight: 500 }}>
             Notas / Transcripción
           </p>
         </div>
@@ -308,7 +308,7 @@ export function FormPanel({ mode, formData, formErrors, onChange, onSave, onCanc
       <div className="flex flex-col gap-4 flex-1">
         {/* Nombre */}
         <div className="flex flex-col gap-1.5">
-          <label className="text-[11px] uppercase tracking-[0.14em] text-neutral-500 flex items-center gap-1.5" style={{ fontWeight: 500 }}>
+          <label className="text-[12px] text-neutral-500 flex items-center gap-1.5" style={{ fontWeight: 500 }}>
             {isBanco ? <FileUp size={11} strokeWidth={1.75} /> : <User size={11} strokeWidth={1.75} />} 
             {isBanco ? 'Nombre del documento o lote' : 'Nombre del entrevistado'}
           </label>
@@ -328,7 +328,7 @@ export function FormPanel({ mode, formData, formErrors, onChange, onSave, onCanc
         {!isBanco && (
           <div className="grid grid-cols-2 gap-3">
             <div className="flex flex-col gap-1.5">
-              <label className="text-[11px] uppercase tracking-[0.14em] text-neutral-500 flex items-center gap-1.5" style={{ fontWeight: 500 }}>
+              <label className="text-[12px] text-neutral-500 flex items-center gap-1.5" style={{ fontWeight: 500 }}>
                 <Briefcase size={11} strokeWidth={1.75} /> Cargo / Rol
               </label>
               <input
@@ -343,7 +343,7 @@ export function FormPanel({ mode, formData, formErrors, onChange, onSave, onCanc
               {formErrors.cargo && <p className="text-rose-500 text-[11px]">{formErrors.cargo}</p>}
             </div>
             <div className="flex flex-col gap-1.5">
-              <label className="text-[11px] uppercase tracking-[0.14em] text-neutral-500" style={{ fontWeight: 500 }}>Área / Departamento</label>
+              <label className="text-[12px] text-neutral-500" style={{ fontWeight: 500 }}>Área / Departamento</label>
               <input
                 type="text"
                 value={formData.area}
@@ -359,7 +359,7 @@ export function FormPanel({ mode, formData, formErrors, onChange, onSave, onCanc
         <div className="flex flex-col gap-1.5 flex-1">
           {/* Label row */}
           <div className="flex items-center justify-between">
-            <label className="text-[11px] uppercase tracking-[0.14em] text-neutral-500 flex items-center gap-1.5" style={{ fontWeight: 500 }}>
+            <label className="text-[12px] text-neutral-500 flex items-center gap-1.5" style={{ fontWeight: 500 }}>
               <FileText size={11} strokeWidth={1.75} /> Notas / Transcripción
             </label>
             {/* Upload button */}

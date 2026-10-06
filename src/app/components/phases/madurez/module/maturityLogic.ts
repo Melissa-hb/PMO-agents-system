@@ -2,11 +2,11 @@ import { Layers } from 'lucide-react';
 import type { DomainScore, FullResults, MaturityResult, MaturityRow, PmoType } from './types';
 
 export const MATURITY_LEVELS = [
-  { level: 1, name: 'Informal',   color: '#64748b', bg: '#f8fafc', desc: 'Practicas inexistentes o completamente ad hoc. No hay conciencia metodologica.' },
-  { level: 2, name: 'Basico',     color: '#e9683b', bg: '#fff1eb', desc: 'Practicas emergentes, inconsistentes y dependientes de personas clave.' },
-  { level: 3, name: 'Estandar',   color: '#9aa100', bg: '#fbfdd7', desc: 'Practicas definidas y aplicadas de forma relativamente consistente.' },
-  { level: 4, name: 'Avanzado',   color: '#4cb979', bg: '#ecfdf3', desc: 'Practicas consolidadas, medibles y gestionadas con criterio.' },
-  { level: 5, name: 'Excelencia', color: '#5454e9', bg: '#eceeff', desc: 'Practicas optimizadas, integradas a la estrategia y en mejora continua.' },
+  { level: 1, name: 'Informal',   color: '#64748b', bg: '#f8fafc', desc: 'Prácticas inexistentes o completamente ad hoc. No hay conciencia metodológica.' },
+  { level: 2, name: 'Básico',     color: '#e9683b', bg: '#fff1eb', desc: 'Prácticas emergentes, inconsistentes y dependientes de personas clave.' },
+  { level: 3, name: 'Estándar',   color: '#9aa100', bg: '#fbfdd7', desc: 'Prácticas definidas y aplicadas de forma relativamente consistente.' },
+  { level: 4, name: 'Avanzado',   color: '#4cb979', bg: '#ecfdf3', desc: 'Prácticas consolidadas, medibles y gestionadas con criterio.' },
+  { level: 5, name: 'Excelencia', color: '#5454e9', bg: '#eceeff', desc: 'Prácticas optimizadas, integradas a la estrategia y en mejora continua.' },
 ];
 
 // No local mock results are used in this module; all diagnostics come from fases_estado.

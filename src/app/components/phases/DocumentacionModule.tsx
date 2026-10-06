@@ -31,16 +31,15 @@ type Documento = DocumentoLocal;
 function AgentErrorCard({ error }: { error: AgentErrorPayload }) {
   return (
     <div className="mt-6 rounded-2xl border border-[#ef4444]/25 bg-white overflow-hidden" style={{ boxShadow: '0 18px 44px -30px rgba(239,68,68,0.35)' }}>
-      <div className="h-1.5 bg-[#ef4444]" />
       <div className="p-5 flex gap-4">
         <div className="w-10 h-10 rounded-2xl bg-[#ef4444]/10 text-[#ef4444] border border-[#ef4444]/20 flex items-center justify-center flex-shrink-0">
           <AlertTriangle size={18} />
         </div>
         <div className="min-w-0">
-          <p className="text-[10px] uppercase tracking-[0.16em] text-[#b91c1c] mb-1" style={{ fontWeight: 800 }}>
+          <p className="text-[12px] text-[#b91c1c] mb-1" style={{ fontWeight: 600 }}>
             {error.code ?? 'Error del agente'}
           </p>
-          <p className="text-neutral-950 text-[15px] leading-snug" style={{ fontWeight: 800 }}>{error.message}</p>
+          <p className="text-neutral-950 text-[15px] leading-snug" style={{ fontWeight: 600 }}>{error.message}</p>
           {error.details && <p className="mt-2 text-neutral-600 text-[13px] leading-relaxed">{error.details}</p>}
           {typeof error.retryable === 'boolean' && (
             <p className="mt-3 text-[11px] text-neutral-500">

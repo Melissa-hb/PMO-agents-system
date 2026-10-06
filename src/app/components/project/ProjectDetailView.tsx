@@ -1,13 +1,14 @@
 import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router';
 import { motion, AnimatePresence } from 'motion/react';
-import { ArrowLeft, BarChart3, CheckCircle2, X, Sparkles, MoreVertical, Edit2, Trash2, Square, Loader2 } from 'lucide-react';
+import { ArrowLeft, X, Sparkles, MoreVertical, Edit2, Trash2, Square, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useApp } from '../../context/AppContext';
 import { apiPost } from '../../lib/api';
-import PhaseCard from './PhaseCard';
+import PhaseRow from './PhaseRow';
+import ExecutiveOverview from './ExecutiveOverview';
+import { usePhaseConfig } from '../../lib/phaseConfig';
 import EditProjectModal from '../dashboard/EditProjectModal';
-import IcesiLogo from '../brand/IcesiLogo';
 import { LoadingRouteState, MissingProjectState } from '../layout/RouteState';
 
 export default function ProjectDetailView() {
@@ -20,6 +21,7 @@ export default function ProjectDetailView() {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const phaseConfig = usePhaseConfig();
 
   // TODO: Realtime - subscribe to 'fases_estado' where proyecto_id = current_id
   // RF-PROJ-04: Mapear el ENUM de base de datos 'public.estado_fase' a las props del componente
@@ -47,11 +49,6 @@ export default function ProjectDetailView() {
   }
 
   */
-  const completedCount = project.phases.filter(p => p.status === 'completado').length;
-  const totalPhases = project.phases.length;
-  const progressPct = (completedCount / totalPhases) * 100;
-  const isComplete = completedCount === totalPhases;
-
   const handleRetry = async (phaseNumber: number) => {
     await reprocessPhase(project.id, phaseNumber);
     toast.success(`Fase ${phaseNumber} reiniciada`, { description: 'Se restablecieron esta fase y las que usan su resultado.' });
@@ -89,69 +86,46 @@ export default function ProjectDetailView() {
   const startDate = new Date(project.startDate).toLocaleDateString('es-CO', {
     year: 'numeric', month: 'long', day: 'numeric',
   });
+  const consultants = project.auditors.map(a => a.name).filter(name => name && name !== 'Sin asignar');
 
   return (
-    <div className="min-h-screen bg-[#f7f8ff]">
-      {/* Sticky header */}
-      <div className="sticky top-0 z-20 bg-[#f7f8ff]/85 backdrop-blur-md border-b border-neutral-200/60">
-        <div className="max-w-[1100px] mx-auto px-10 pt-6 pb-5">
-          <div className="flex items-center justify-between gap-4 mb-5">
-            <button
-              onClick={() => navigate('/dashboard')}
-              className="group inline-flex items-center gap-2 pl-2 pr-3.5 py-1.5 rounded-full bg-white border border-neutral-200/80 text-neutral-700 hover:border-neutral-300 hover:text-neutral-900 text-[13px] transition-all"
-              style={{ fontWeight: 500, boxShadow: '0 1px 2px rgba(0,0,0,0.04)' }}
-            >
-              <span className="w-5 h-5 rounded-full bg-neutral-100 group-hover:bg-neutral-200 flex items-center justify-center transition-colors">
-                <ArrowLeft size={11} strokeWidth={2} className="transition-transform group-hover:-translate-x-px" />
-              </span>
-              Mis proyectos
-            </button>
-            <IcesiLogo variant="positive" className="brand-logo-mark hidden sm:block h-9 w-auto" />
-          </div>
+    <div className="min-h-screen bg-[#fafafa]">
+      {/* Encabezado */}
+      <div className="bg-white border-b border-neutral-200/70">
+        <div className="max-w-[1100px] mx-auto px-10 pt-6 pb-7">
+          <button
+            onClick={() => navigate('/dashboard')}
+            className="inline-flex items-center gap-1.5 text-neutral-500 hover:text-neutral-900 text-[13px] transition-colors mb-6"
+          >
+            <ArrowLeft size={14} strokeWidth={1.75} />
+            Proyectos
+          </button>
 
-          <div className="flex items-end justify-between gap-6 flex-wrap">
+          <div className="flex items-start justify-between gap-6 flex-wrap">
             <div className="min-w-0">
-              <p className="text-[11px] uppercase tracking-[0.18em] text-neutral-400 mb-3" style={{ fontWeight: 500 }}>
-                {project.companyName}
-              </p>
-              <h1 className="text-neutral-900 tracking-tight" style={{ fontWeight: 500, fontSize: '2rem', lineHeight: 1.1, letterSpacing: '-0.02em' }}>
+              <p className="text-[13px] text-neutral-500 mb-1.5">{project.companyName}</p>
+              <h1 className="text-neutral-900" style={{ fontWeight: 500, fontSize: '1.75rem', lineHeight: 1.15, letterSpacing: '-0.015em' }}>
                 {project.projectName}
               </h1>
-              <div className="flex items-center gap-4 mt-4 text-[12px] text-neutral-500">
-                <span>Inicio · {startDate}</span>
-                <span className="text-neutral-300">·</span>
-                <div className="flex items-center gap-2">
-                  <div className="flex -space-x-1.5">
-                    {project.auditors.slice(0, 5).map(a => (
-                      <div
-                        key={a.id}
-                        title={a.name}
-                        className="w-6 h-6 rounded-full flex items-center justify-center text-white ring-2 ring-[#f7f8ff]"
-                        style={{ background: a.color, fontSize: '0.625rem', fontWeight: 600 }}
-                      >
-                        {a.initials}
-                      </div>
-                    ))}
-                  </div>
-                  <span>{project.auditors.length} auditor{project.auditors.length !== 1 ? 'es' : ''}</span>
-                </div>
-              </div>
+              <p className="mt-3 text-[13px] text-neutral-500">
+                Inicio: {startDate}
+                {consultants.length > 0 && <> · Consultor{consultants.length > 1 ? 'es' : ''}: {consultants.join(', ')}</>}
+              </p>
             </div>
 
             <div className="flex items-center gap-2">
               <button
                 onClick={() => setShowSummary(s => !s)}
-                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-full text-[13px] border border-neutral-200/80 bg-white text-neutral-700 hover:border-neutral-300 hover:text-neutral-900 transition-all"
-                style={{ fontWeight: 500 }}
+                className="inline-flex items-center gap-2 px-3.5 py-2 rounded-lg text-[13px] border border-neutral-200 bg-white text-neutral-700 hover:border-neutral-300 hover:text-neutral-900 transition-colors"
               >
-                <Sparkles size={13} strokeWidth={1.75} />
-                Diagnósticos
+                Diagnósticos por fase
               </button>
 
-              <div className="relative ml-2">
+              <div className="relative">
                 <button
                   onClick={() => setShowMenu(!showMenu)}
-                  className="w-[40px] h-[40px] rounded-full border border-neutral-200/80 bg-white hover:bg-neutral-50 flex items-center justify-center text-neutral-400 hover:text-neutral-900 hover:border-neutral-300 transition-all shadow-sm"
+                  aria-label="Más acciones"
+                  className="w-9 h-9 rounded-lg border border-neutral-200 bg-white hover:bg-neutral-50 flex items-center justify-center text-neutral-500 hover:text-neutral-900 transition-colors"
                 >
                   <MoreVertical size={16} strokeWidth={1.75} />
                 </button>
@@ -195,38 +169,6 @@ export default function ProjectDetailView() {
             </div>
           </div>
 
-          {/* Progress */}
-          <div className="mt-8">
-            <div className="flex items-baseline justify-between mb-2.5">
-              <span className="text-[11px] uppercase tracking-[0.14em] text-neutral-400" style={{ fontWeight: 500 }}>
-                Progreso global
-              </span>
-              <div className="flex items-baseline gap-2">
-                {isComplete && (
-                  <span className="inline-flex items-center gap-1 text-emerald-600 text-[12px]" style={{ fontWeight: 500 }}>
-                    <CheckCircle2 size={13} /> Proyecto completado
-                  </span>
-                )}
-                {!isComplete && (
-                  <span className="text-[12px] text-neutral-500 tabular-nums">
-                    {completedCount} de {totalPhases} fases
-                  </span>
-                )}
-                <span className="text-neutral-900 tabular-nums" style={{ fontWeight: 500, fontSize: '0.9375rem', letterSpacing: '-0.01em' }}>
-                  {Math.round(progressPct)}%
-                </span>
-              </div>
-            </div>
-            <div className="w-full h-1 bg-neutral-200/70 rounded-full overflow-hidden">
-              <motion.div
-                initial={{ width: 0 }}
-                animate={{ width: `${progressPct}%` }}
-                transition={{ duration: 0.9, ease: [0.16, 1, 0.3, 1] }}
-                className="h-full rounded-full"
-                style={{ background: isComplete ? '#10b981' : '#5454e9' }}
-              />
-            </div>
-          </div>
         </div>
       </div>
 
@@ -248,7 +190,7 @@ export default function ProjectDetailView() {
                     <div className="w-7 h-7 rounded-lg bg-neutral-50 border border-neutral-200/80 flex items-center justify-center">
                       <Sparkles size={13} className="text-neutral-700" strokeWidth={1.75} />
                     </div>
-                    <h3 className="text-neutral-900 text-[13px]" style={{ fontWeight: 500 }}>Diagnósticos del agente IA</h3>
+                    <h3 className="text-neutral-900 text-[13px]" style={{ fontWeight: 500 }}>Diagnósticos por fase</h3>
                   </div>
                   <button onClick={() => setShowSummary(false)} className="w-7 h-7 rounded-full hover:bg-neutral-100 flex items-center justify-center text-neutral-400 hover:text-neutral-700 transition-colors">
                     <X size={14} strokeWidth={1.75} />
@@ -281,34 +223,24 @@ export default function ProjectDetailView() {
           )}
         </AnimatePresence>
 
-        {/* Pipeline */}
-        <div className="flex flex-wrap items-end justify-between gap-x-4 gap-y-2 mb-6">
-          <div>
-            <p className="text-[11px] uppercase tracking-[0.18em] text-neutral-400" style={{ fontWeight: 500 }}>
-              Pipeline
-            </p>
-            <h2 className="text-neutral-900 mt-1.5 tracking-tight" style={{ fontWeight: 500, fontSize: '1.125rem', letterSpacing: '-0.01em' }}>
-              Fases del proyecto
-            </h2>
-          </div>
-          <span className="text-[12px] text-neutral-400">
-            Haga clic en cualquier fase para ingresar
-          </span>
-        </div>
+        <ExecutiveOverview projectId={project.id} phases={project.phases} config={phaseConfig} />
 
-        {/* Todas las fases — cualquiera se puede abrir; las dependencias se indican en cada tarjeta */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          {project.phases.map((phase, i) => (
-            <PhaseCard
-              key={phase.number}
-              phase={phase}
-              phases={project.phases}
-              projectId={project.id}
-              onRetry={handleRetry}
-              index={i}
-            />
-          ))}
-        </div>
+        {/* Avance por fase: cualquier fase se puede abrir; las dependencias se indican en cada fila */}
+        <section className="mt-12">
+          <h2 className="text-neutral-900 mb-4" style={{ fontWeight: 500, fontSize: '1.0625rem' }}>Avance por fase</h2>
+          <div className="bg-white rounded-xl border border-neutral-200/70 divide-y divide-neutral-100 overflow-hidden">
+            {project.phases.map((phase, i) => (
+              <PhaseRow
+                key={phase.number}
+                phase={phase}
+                phases={project.phases}
+                projectId={project.id}
+                onRetry={handleRetry}
+                index={i}
+              />
+            ))}
+          </div>
+        </section>
       </div>
 
       {/* Delete Confirmation Modal */}

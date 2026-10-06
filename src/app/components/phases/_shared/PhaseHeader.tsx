@@ -7,6 +7,7 @@ import { useApp } from '../../../context/AppContext';
 import { useCancelAgent } from '../../../hooks/useCancelAgent';
 import IcesiLogo from '../../brand/IcesiLogo';
 import { PhaseDependencyNotice, usePhaseDependencies } from './PhaseDependencyNotice';
+import PhaseStepper from './PhaseStepper';
 
 interface PhaseHeaderProps {
   projectId: string;
@@ -96,7 +97,7 @@ export default function PhaseHeader({
 
   return (
     <>
-      <div className="fixed inset-x-0 top-0 z-[70] bg-[#f7f8ff]/95 backdrop-blur-md border-b border-neutral-200/60 shadow-[0_1px_0_rgba(255,255,255,0.65)] print:hidden">
+      <div className="fixed left-[72px] right-0 top-0 z-[70] print:left-0 bg-white/95 backdrop-blur-md border-b border-neutral-200/60 shadow-[0_1px_0_rgba(255,255,255,0.65)] print:hidden">
         <div className="max-w-full mx-auto px-6 py-3 grid grid-cols-3 items-center gap-4">
           <div className="flex items-center gap-3 min-w-0 justify-start">
             {/* Back button */}
@@ -114,7 +115,7 @@ export default function PhaseHeader({
             <span className="text-neutral-300 print:hidden">/</span>
 
             <div className="flex items-center gap-2 min-w-0">
-              <span className={`inline-flex items-center justify-center w-5 h-5 rounded-md text-white text-[10px] tabular-nums flex-shrink-0 ${phase?.status === 'completado' ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.2)]' : 'bg-neutral-900'}`} style={{ fontWeight: 600 }}>
+              <span className={`inline-flex items-center justify-center w-5 h-5 rounded-md text-white text-[10px] tabular-nums flex-shrink-0 bg-[#5454e9]`} style={{ fontWeight: 500 }}>
                 {phaseNumber}
               </span>
               <span className="text-neutral-900 text-[13px] truncate" style={{ fontWeight: 500 }}>
@@ -123,7 +124,7 @@ export default function PhaseHeader({
               {eyebrow && (
                 <>
                   <span className="text-neutral-300">·</span>
-                  <span className="text-[11px] uppercase tracking-[0.14em] text-neutral-400" style={{ fontWeight: 500 }}>
+                  <span className="text-[12px] text-neutral-500">
                     {eyebrow}
                   </span>
                 </>
@@ -343,52 +344,10 @@ export default function PhaseHeader({
           </div>
         </div>
 
-        {/* ── Phase sub-navigation navbar ── */}
-        {project && (
-          <div className="border-t border-neutral-200/60 select-none overflow-x-auto bg-white/40 backdrop-blur-sm print:hidden">
-            <div className="max-w-full mx-auto px-6 py-2 flex items-center justify-between gap-1.5 min-w-[700px]">
-              {project.phases.map((p) => {
-                const isCurrent = p.number === phaseNumber;
-                const isCompleted = p.status === 'completado';
-
-                let itemClass = "";
-                if (isCurrent) {
-                  itemClass = "bg-neutral-900 border-neutral-900 text-white font-medium shadow-sm hover:bg-neutral-800";
-                } else if (isCompleted) {
-                  itemClass = "bg-neutral-100/60 border-neutral-200/60 text-neutral-900 hover:bg-neutral-100 hover:border-neutral-300";
-                } else {
-                  itemClass = "bg-white/50 border-neutral-200/60 text-neutral-600 hover:bg-white hover:border-neutral-300";
-                }
-
-                return (
-                  <button
-                    key={p.number}
-                    onClick={() => navigate(`/dashboard/project/${projectId}/phase/${p.number}`)}
-                    className={`flex-1 flex items-center gap-2 px-2.5 py-1.5 rounded-xl border text-[11px] text-left transition-all truncate flex-shrink-0 ${itemClass}`}
-                    style={{ fontWeight: isCurrent ? 500 : 400 }}
-                  >
-                    <span
-                      className={`flex items-center justify-center w-4 h-4 rounded text-[9px] tabular-nums font-semibold flex-shrink-0 ${
-                        isCurrent
-                          ? "bg-white/20 text-white"
-                          : isCompleted
-                          ? "bg-emerald-500 text-white shadow-[0_0_8px_rgba(16,185,129,0.2)]"
-                          : "bg-neutral-100 text-neutral-600"
-                      }`}
-                    >
-                      {p.number}
-                    </span>
-                    <span className="truncate flex-1 leading-tight">
-                      {p.name}
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        )}
+        {/* ── Progreso de fases ── */}
+        {project && <PhaseStepper projectId={projectId} phases={project.phases} currentPhase={phaseNumber} />}
       </div>
-      <div className="h-[100px] flex-shrink-0 print:hidden" aria-hidden="true" />
+      <div className="h-[118px] flex-shrink-0 print:hidden" aria-hidden="true" />
       <PhaseDependencyNotice projectId={projectId} phaseNumber={phaseNumber} />
 
       {/* ── Modal de confirmación ─────────────────────────────────────────── */}

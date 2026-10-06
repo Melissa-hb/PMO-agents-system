@@ -50,7 +50,7 @@ function ScoreRing({ score, label, color }: { score: number; label: string; colo
           />
         </svg>
         <div className="absolute inset-0 flex items-center justify-center">
-          <span style={{ fontWeight: 700, fontSize: '1.25rem', color }}>{score}</span>
+          <span style={{ fontWeight: 600, fontSize: '1.25rem', color }}>{score}</span>
         </div>
       </div>
       <span className="text-gray-600 text-xs text-center" style={{ fontWeight: 500 }}>{label}</span>
@@ -61,7 +61,7 @@ function ScoreRing({ score, label, color }: { score: number; label: string; colo
 function SectionDivider({ title }: { title: string }) {
   return (
     <div className="flex items-center gap-4 mb-6">
-      <h2 className="text-gray-900 whitespace-nowrap" style={{ fontWeight: 700, fontSize: '1.125rem' }}>{title}</h2>
+      <h2 className="text-gray-900 whitespace-nowrap" style={{ fontWeight: 600, fontSize: '1.125rem' }}>{title}</h2>
       <div className="flex-1 h-px bg-gray-200" />
     </div>
   );
@@ -201,8 +201,8 @@ export default function ProjectSummaryView() {
             <div className="flex items-center gap-3 mb-6">
               <IcesiLogo variant="positive" className="brand-logo-mark h-14 w-auto" />
               <div>
-                <p className="text-xs text-gray-400 uppercase tracking-widest" style={{ fontWeight: 600 }}>Universidad Icesi · Consultoría en Gestión de Proyectos</p>
-                <h1 className="text-gray-900" style={{ fontWeight: 800, fontSize: '1.75rem' }}>
+                <p className="text-[12px] text-gray-400" style={{ fontWeight: 600 }}>Universidad Icesi · Consultoría en Gestión de Proyectos</p>
+                <h1 className="text-gray-900" style={{ fontWeight: 600, fontSize: '1.75rem' }}>
                   Diagnóstico Consolidado de PMO
                 </h1>
               </div>
@@ -248,7 +248,7 @@ export default function ProjectSummaryView() {
             </div>
             <div className="col-span-3 space-y-3">
               <div className="bg-gray-50 rounded-xl p-4 border border-gray-100">
-                <p className="text-gray-600 text-xs mb-2 uppercase tracking-wide" style={{ fontWeight: 600 }}>Diagnóstico del Agente 1 — Idoneidad</p>
+                <p className="text-gray-600 text-[12px] mb-2" style={{ fontWeight: 600 }}>Diagnóstico del Agente 1 — Idoneidad</p>
                 <p className="text-gray-700 text-sm leading-relaxed">
                   {idoneidadPhase?.agentDiagnosis ?? 'La organización presenta condiciones favorables para la implementación de una PMO. Score de idoneidad 78/100.'}
                 </p>
@@ -265,7 +265,7 @@ export default function ProjectSummaryView() {
                     </div>
                     <div>
                       <p className="text-gray-400 text-xs">{item.label}</p>
-                      <p className="text-gray-800" style={{ fontWeight: 700 }}>{item.value}</p>
+                      <p className="text-gray-800" style={{ fontWeight: 600 }}>{item.value}</p>
                     </div>
                   </div>
                 ))}
@@ -280,7 +280,7 @@ export default function ProjectSummaryView() {
           <div className="grid grid-cols-2 gap-8">
             {/* Spider Chart */}
             <div>
-              <p className="text-gray-500 text-xs uppercase tracking-wide mb-4" style={{ fontWeight: 600 }}>
+              <p className="text-gray-500 text-[12px] mb-4" style={{ fontWeight: 600 }}>
                 Spider Chart — Dimensiones de Madurez
               </p>
               <div className="flex items-center justify-center" style={{ height: 260 }}>
@@ -291,8 +291,8 @@ export default function ProjectSummaryView() {
             {/* PMO Type */}
             <div className="flex flex-col gap-4">
               <div className="bg-zinc-900 rounded-2xl p-6 text-white">
-                <p className="text-zinc-400 text-xs uppercase tracking-wider mb-2" style={{ fontWeight: 600 }}>Tipo de PMO Recomendada</p>
-                <h3 className="text-white mb-2" style={{ fontWeight: 800, fontSize: '1.5rem' }}>PMO Híbrida</h3>
+                <p className="text-zinc-400 text-[12px] mb-2" style={{ fontWeight: 600 }}>Tipo de PMO Recomendada</p>
+                <h3 className="text-white mb-2" style={{ fontWeight: 600, fontSize: '1.5rem' }}>PMO Híbrida</h3>
                 <p className="text-zinc-300 text-sm leading-relaxed">
                   Combinación de metodologías predictivas para proyectos complejos y marcos ágiles para iniciativas de innovación.
                 </p>
@@ -345,10 +345,10 @@ export default function ProjectSummaryView() {
           <table className="w-full text-sm border-collapse">
             <thead>
               <tr className="border-b-2 border-gray-200">
-                <th className="text-left text-gray-500 pb-3 text-xs uppercase tracking-wide" style={{ fontWeight: 600 }}>Documento</th>
-                <th className="text-left text-gray-500 pb-3 text-xs uppercase tracking-wide" style={{ fontWeight: 600 }}>Fase</th>
-                <th className="text-left text-gray-500 pb-3 text-xs uppercase tracking-wide" style={{ fontWeight: 600 }}>Formato</th>
-                <th className="text-right text-gray-500 pb-3 text-xs uppercase tracking-wide print:hidden" style={{ fontWeight: 600 }}>Descarga</th>
+                <th className="text-left text-gray-500 pb-3 text-[12px]" style={{ fontWeight: 600 }}>Documento</th>
+                <th className="text-left text-gray-500 pb-3 text-[12px]" style={{ fontWeight: 600 }}>Fase</th>
+                <th className="text-left text-gray-500 pb-3 text-[12px]" style={{ fontWeight: 600 }}>Formato</th>
+                <th className="text-right text-gray-500 pb-3 text-[12px] print:hidden" style={{ fontWeight: 600 }}>Descarga</th>
               </tr>
             </thead>
             <tbody>

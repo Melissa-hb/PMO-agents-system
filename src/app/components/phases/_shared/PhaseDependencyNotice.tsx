@@ -26,52 +26,49 @@ export function usePhaseDependencies(projectId: string | undefined, phaseNumber:
   };
 }
 
-/** Aviso informativo (no de error) que se muestra arriba de la fase si faltan dependencias. */
+/**
+ * Aviso de una linea arriba de la fase cuando faltan dependencias. Solo aparece si la fase
+ * todavia no tiene resultados: si ya los tiene, el bloqueo solo afecta a reprocesar y eso lo
+ * explica el tooltip del boton (BlockedActionHint).
+ */
 export function PhaseDependencyNotice({ projectId, phaseNumber }: { projectId: string; phaseNumber: number }) {
   const navigate = useNavigate();
+  const { getProject } = useApp();
   const { pending } = usePhaseDependencies(projectId, phaseNumber);
-  if (pending.length === 0) return null;
+  const phase = getProject(projectId)?.phases.find(p => p.number === phaseNumber);
+  const hasResults = phase?.status === 'completado' || hasAgentResult(phase?.agentData);
+  if (pending.length === 0 || hasResults) return null;
 
   return (
-    <div className="max-w-[1100px] w-full mx-auto px-4 sm:px-10 pt-6 flex-shrink-0 print:hidden">
-      <div
-        role="status"
-        className="flex items-start gap-3.5 rounded-2xl border border-[#5454e9]/20 bg-[#5454e9]/[0.05] px-5 py-4"
-      >
-        <div className="w-8 h-8 rounded-xl bg-white border border-[#5454e9]/20 flex items-center justify-center flex-shrink-0 text-[#5454e9]">
-          <Info size={15} strokeWidth={1.75} />
-        </div>
-        <div className="min-w-0 flex-1">
-          <p className="text-neutral-900 text-[13px]" style={{ fontWeight: 500 }}>
-            Para ejecutar esta fase necesitas completar primero:
-          </p>
-          <ul className="mt-2 space-y-1.5">
-            {pending.map(p => (
-              <li key={p.number} className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[13px] text-neutral-700">
-                <span className="flex items-center gap-2">
-                  <span className="w-1 h-1 rounded-full bg-neutral-400" aria-hidden="true" />
-                  <span style={{ fontWeight: 500 }}>F{p.number} – {p.name}</span>
-                  <span className="text-neutral-400">({p.status === 'procesando' ? 'en progreso' : 'pendiente'})</span>
-                </span>
-                <button
-                  type="button"
-                  onClick={() => navigate(`/dashboard/project/${projectId}/phase/${p.number}`)}
-                  className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-white border border-[#5454e9]/25 text-[#5454e9] text-[12px] hover:bg-[#5454e9] hover:text-white hover:border-[#5454e9] transition-colors outline-none focus-visible:ring-2 focus-visible:ring-[#5454e9]/40"
-                  style={{ fontWeight: 500 }}
-                >
-                  Ir a F{p.number}
-                  <ArrowRight size={11} strokeWidth={2} />
-                </button>
-              </li>
-            ))}
-          </ul>
-          <p className="text-neutral-500 text-[12px] mt-2.5">
-            Esta fase usa los resultados de esas etapas como insumo.
-          </p>
-        </div>
-      </div>
+    <div className="max-w-[1100px] w-full mx-auto px-4 sm:px-10 pt-5 flex-shrink-0 print:hidden">
+      <p role="status" className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[13px] text-neutral-500">
+        <Info size={14} strokeWidth={1.75} className="text-neutral-400 flex-shrink-0" aria-hidden="true" />
+        <span>Esta fase usa los resultados de</span>
+        {pending.map((p, i) => (
+          <span key={p.number} className="inline-flex items-center gap-1">
+            <button
+              type="button"
+              onClick={() => navigate(`/dashboard/project/${projectId}/phase/${p.number}`)}
+              className="inline-flex items-center gap-0.5 text-[13px] text-[#5454e9] hover:underline underline-offset-2 outline-none focus-visible:ring-2 focus-visible:ring-[#5454e9]/40 rounded"
+              title={p.status === 'procesando' ? 'En progreso' : 'Pendiente'}
+            >
+              F{p.number} {p.name}
+              <ArrowRight size={11} strokeWidth={2} />
+            </button>
+            {i < pending.length - 1 && <span>{i === pending.length - 2 ? ' y' : ','}</span>}
+          </span>
+        ))}
+        <span>— complétala{pending.length > 1 ? 's' : ''} para ejecutar el agente.</span>
+      </p>
     </div>
   );
+}
+
+function hasAgentResult(agentData: unknown): boolean {
+  if (!agentData || typeof agentData !== 'object') return false;
+  const data = agentData as Record<string, unknown>;
+  if (data._processing || data._error) return false;
+  return Object.keys(data).some(k => !k.startsWith('_') || k === '_current');
 }
 
 /**
@@ -100,14 +97,14 @@ export function PhaseWaitingPanel({ agentLabel, reason }: { agentLabel: string; 
         <div className="w-14 h-14 rounded-2xl bg-amber-50 border border-amber-100 flex items-center justify-center mb-5 text-amber-600">
           <Hourglass size={20} strokeWidth={1.75} />
         </div>
-        <p className="text-[11px] uppercase tracking-[0.18em] text-neutral-400 mb-2" style={{ fontWeight: 500 }}>
+        <p className="text-[12px] text-neutral-400 mb-2" style={{ fontWeight: 500 }}>
           Requiere fases previas
         </p>
         <h2 className="text-neutral-900 tracking-tight mb-2" style={{ fontWeight: 500, fontSize: '1.25rem', letterSpacing: '-0.01em' }}>
           {agentLabel} está en espera
         </h2>
         <p className="text-neutral-500 text-[13px] max-w-md leading-relaxed mb-6">
-          El agente se ejecutará cuando las fases requeridas estén completas. Mientras tanto puedes revisar esta fase o avanzar en las pendientes desde el aviso de arriba.
+          El agente se ejecutará cuando las fases requeridas estén completas. Mientras tanto puedes revisar esta fase o avanzar en las fases pendientes desde el enlace de arriba.
         </p>
         <BlockedActionHint reason={reason}>
           <button

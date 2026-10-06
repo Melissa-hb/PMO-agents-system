@@ -11,8 +11,8 @@ function CustomRadarTooltip({ active, payload }: any) {
   return (
     <div className="bg-white border border-neutral-200/80 p-3.5 rounded-xl" style={{ boxShadow: '0 4px 24px -6px rgba(0,0,0,0.12)' }}>
       <div className="mb-2.5 pb-2 border-b border-neutral-100">
-        <p className="text-[10px] uppercase tracking-wider text-neutral-400 font-bold mb-0.5">{data.dimension}</p>
-        <p className="text-[12px] text-neutral-900 leading-tight" style={{ fontWeight: 700 }}>{data.fullLabel}</p>
+        <p className="text-[12px] text-neutral-400 font-semibold mb-0.5">{data.dimension}</p>
+        <p className="text-[12px] text-neutral-900 leading-tight" style={{ fontWeight: 600 }}>{data.fullLabel}</p>
       </div>
       {payload.filter((p: any) => p.dataKey === 'Puntaje').map((entry: any, index: number) => (
         <div key={index} className="flex items-center justify-between gap-6">
@@ -20,7 +20,7 @@ function CustomRadarTooltip({ active, payload }: any) {
             <span className="w-2 h-2 rounded-full" style={{ background: entry.color }} />
             {entry.name}
           </span>
-          <span className="text-[13px] tabular-nums font-bold" style={{ color: entry.color }}>{Number(entry.value).toFixed(1)}</span>
+          <span className="text-[13px] tabular-nums font-semibold" style={{ color: entry.color }}>{Number(entry.value).toFixed(1)}</span>
         </div>
       ))}
     </div>
@@ -33,15 +33,14 @@ export default function TipoProyectosIdoneidadAnnex({ phase3AgentData, radarData
 
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="rounded-[1.35rem] border border-neutral-200 bg-white overflow-hidden">
-      <div className="h-1.5 bg-neutral-900" />
       <div className="p-6">
         <div className="mb-6 flex items-center gap-3">
           <div className="w-10 h-10 rounded-2xl bg-neutral-50 flex items-center justify-center border border-neutral-200">
             <BarChart2 size={17} className="text-neutral-700" />
           </div>
           <div>
-            <p className="text-[10px] uppercase tracking-[0.16em] text-neutral-400 mb-1" style={{ fontWeight: 700 }}>Anexo fase 3</p>
-            <h2 className="text-neutral-950 text-[18px] tracking-tight" style={{ fontWeight: 750 }}>Resultados de idoneidad</h2>
+            <p className="text-[12px] text-neutral-400 mb-1" style={{ fontWeight: 600 }}>Anexo fase 3</p>
+            <h2 className="text-neutral-950 text-[18px] tracking-tight" style={{ fontWeight: 600 }}>Resultados de idoneidad</h2>
           </div>
         </div>
 
@@ -51,7 +50,7 @@ export default function TipoProyectosIdoneidadAnnex({ phase3AgentData, radarData
               <ResponsiveContainer width="100%" height="100%">
                 <RadarChart cx="50%" cy="50%" outerRadius="75%" data={radarData}>
                   <PolarGrid stroke="#e5e7eb" />
-                  <PolarAngleAxis dataKey="subject" tick={{ fill: '#374151', fontSize: 11, fontWeight: 700 }} />
+                  <PolarAngleAxis dataKey="subject" tick={{ fill: '#374151', fontSize: 11, fontWeight: 600 }} />
                   <PolarRadiusAxis angle={90} domain={[0, 10]} tick={{ fill: '#9ca3af', fontSize: 10 }} axisLine={false} tickCount={6} />
                   <Radar name="Zona Predictiva (7-10)" dataKey="PredictiveZone" stroke="#5454e9" strokeWidth={1.5} strokeDasharray="5 3" fill="#5454e9" fillOpacity={0.12} isAnimationActive={false} />
                   <Radar name="Zona de transición (3.1-6.9)" dataKey="TransitionZone" stroke="#f59e0b" strokeWidth={1.5} strokeDasharray="5 3" fill="#f59e0b" fillOpacity={0.18} isAnimationActive={false} />
@@ -75,10 +74,10 @@ export default function TipoProyectosIdoneidadAnnex({ phase3AgentData, radarData
               return (
                 <div key={dim} className="bg-neutral-50 p-3 rounded-xl border border-neutral-200/50 flex items-center justify-between">
                   <div>
-                    <p className="text-[10px] uppercase tracking-wider text-neutral-500 font-semibold mb-0.5">{dim}</p>
+                    <p className="text-[12px] text-neutral-500 font-semibold mb-0.5">{dim}</p>
                     <p className="text-[10px] text-neutral-400">Coherencia: {data.coherencia_interna}</p>
                   </div>
-                  <p className="text-neutral-900 font-bold text-lg tabular-nums">
+                  <p className="text-neutral-900 font-semibold text-lg tabular-nums">
                     {typeof data.promedio === 'number' ? Number(data.promedio.toFixed(1)) : data.promedio}
                   </p>
                 </div>
@@ -87,7 +86,7 @@ export default function TipoProyectosIdoneidadAnnex({ phase3AgentData, radarData
           </div>
 
           <div className="mt-6 pt-5 border-t border-neutral-100">
-            <h4 className="text-[10px] uppercase tracking-[0.12em] text-neutral-400 font-semibold mb-3">Detalle por factor</h4>
+            <h4 className="text-[12px] text-neutral-400 font-semibold mb-3">Detalle por factor</h4>
             <div className="overflow-hidden rounded-xl border border-neutral-200/50 bg-white print:overflow-visible print:border-none print:break-inside-avoid">
               <table className="w-full text-left text-[11px]">
                 <thead className="bg-neutral-50/80 border-b border-neutral-200/60">
@@ -123,7 +122,7 @@ export default function TipoProyectosIdoneidadAnnex({ phase3AgentData, radarData
                     ].filter((group) => group.items.length > 0).map((group, groupIndex) => (
                       <Fragment key={groupIndex}>
                         <tr className="bg-neutral-50/30">
-                          <td className="px-3 py-1.5 font-bold text-neutral-800 uppercase tracking-tight text-[9px] bg-neutral-50/50" colSpan={5}>{group.name}</td>
+                          <td className="px-3 py-1.5 font-semibold text-neutral-800 tracking-tight text-[12px] bg-neutral-50/50" colSpan={5}>{group.name}</td>
                         </tr>
                         {group.items.map((res: any, index: number) => {
                           const score = getIdoneidadItemScore(res) ?? res.promedio;
@@ -142,9 +141,9 @@ export default function TipoProyectosIdoneidadAnnex({ phase3AgentData, radarData
                               </td>
                               <td className="px-3 py-2"><span className="text-neutral-800 font-medium leading-tight">{factorInfo.name}</span></td>
                               <td className="px-3 py-2"><p className="text-[10px] text-neutral-500 leading-snug">{factorInfo.description}</p></td>
-                              <td className="px-3 py-2 tabular-nums text-right font-bold text-neutral-900" style={{ fontSize: '13px' }}>{valueOrEmpty(score)}</td>
+                              <td className="px-3 py-2 tabular-nums text-right font-semibold text-neutral-900" style={{ fontSize: '13px' }}>{valueOrEmpty(score)}</td>
                               <td className="px-3 py-2 text-center">
-                                <span className={`inline-block px-2 py-0.5 text-[9px] uppercase font-bold tracking-wider rounded-md border ${zoneColor}`}>{zoneText}</span>
+                                <span className={`inline-block px-2 py-0.5 text-[12px] font-semibold rounded-md border ${zoneColor}`}>{zoneText}</span>
                               </td>
                             </tr>
                           );

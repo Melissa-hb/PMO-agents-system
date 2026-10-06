@@ -64,7 +64,7 @@ function VersionBadge({ diagnosis, approved }: { diagnosis: any; approved?: bool
   const timestamp = diagnosis.timestamp ? new Date(diagnosis.timestamp) : null;
   return (
     <div className="flex flex-wrap items-center gap-2">
-      <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-[11px] ${approved ? 'bg-[#4cb979]/10 text-[#22794b] border-[#4cb979]/25' : 'bg-[#865cf0]/10 text-[#5d3bbd] border-[#865cf0]/25'}`} style={{ fontWeight: 750 }}>
+      <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-[11px] ${approved ? 'bg-[#4cb979]/10 text-[#22794b] border-[#4cb979]/25' : 'bg-[#865cf0]/10 text-[#5d3bbd] border-[#865cf0]/25'}`} style={{ fontWeight: 600 }}>
         {approved ? <CheckCircle2 size={12} /> : <Sparkles size={12} />}
         {approved ? 'Diagnóstico aprobado' : diagnosis.version === 'reprocesado' ? 'Diagnóstico reprocesado' : 'Diagnóstico original'}
       </span>
@@ -91,21 +91,21 @@ function PmoHero({ diagnosis, approved }: { diagnosis: any; approved?: boolean }
                 {typeIcon(diagnosis.pmoType)}
               </div>
               <div>
-                <p className="text-[10px] uppercase tracking-[0.16em] text-white/70" style={{ fontWeight: 800 }}>Agente 4 - Clasificación de proyectos</p>
-                <h2 className="text-[22px] tracking-tight" style={{ fontWeight: 850 }}>PMO {valueOrEmpty(diagnosis.pmoType)}</h2>
+                <p className="text-[12px] text-white/70" style={{ fontWeight: 600 }}>Agente 4 - Clasificación de proyectos</p>
+                <h2 className="text-[22px] tracking-tight" style={{ fontWeight: 600 }}>PMO {valueOrEmpty(diagnosis.pmoType)}</h2>
               </div>
             </div>
             <p className="text-white/88 text-[14px] leading-relaxed max-w-4xl">{typeTagline(diagnosis.pmoType)}</p>
           </div>
           <div className="w-24 h-24 rounded-full bg-white/14 border border-white/20 flex flex-col items-center justify-center flex-shrink-0">
-            <span className="text-[26px] tabular-nums tracking-tight" style={{ fontWeight: 850 }}>{confidence}</span>
+            <span className="text-[26px] tabular-nums tracking-tight" style={{ fontWeight: 600 }}>{confidence}</span>
             <span className="text-[10px] text-white/70">% confianza</span>
           </div>
         </div>
       </div>
       <div className={`px-6 py-3 ${toneClass.soft} border-t ${toneClass.border} flex flex-wrap items-center justify-between gap-3`}>
         <VersionBadge diagnosis={diagnosis} approved={approved} />
-        <span className={`px-2.5 py-1 rounded-full ${toneClass.bg} text-white text-[10px]`} style={{ fontWeight: 850 }}>
+        <span className={`px-2.5 py-1 rounded-full ${toneClass.bg} text-white text-[10px]`} style={{ fontWeight: 600 }}>
           {valueOrEmpty(diagnosis.confidence_label)}
         </span>
       </div>
@@ -132,7 +132,7 @@ function BreakdownPanel({ diagnosis }: { diagnosis: any }) {
       </div>
       {String(breakdown.hybrid_rationale ?? '').trim() && (
         <div className="rounded-2xl border border-[#e4eb60]/50 bg-[#e4eb60]/25 p-4">
-          <p className="text-[10px] uppercase tracking-[0.14em] text-[#7a7f1e] mb-2" style={{ fontWeight: 850 }}>Racional híbrido</p>
+          <p className="text-[12px] text-[#7a7f1e] mb-2" style={{ fontWeight: 600 }}>Racional híbrido</p>
           <p className="text-neutral-700 text-[13px] leading-relaxed">{breakdown.hybrid_rationale}</p>
         </div>
       )}
@@ -157,15 +157,14 @@ function SourceOrientations({ diagnosis }: { diagnosis: any }) {
         const toneClass = phaseReportToneStyles[tone];
         return (
           <article key={source} className={`rounded-2xl border ${toneClass.border} bg-white overflow-hidden`}>
-            <div className={`h-1 ${toneClass.bar}`} />
             <div className="p-4">
-              <p className="text-[10px] uppercase tracking-[0.14em] text-neutral-400 mb-2" style={{ fontWeight: 800 }}>{labels[source]}</p>
-              <span className={`inline-flex px-2.5 py-1 rounded-full ${toneClass.soft} ${toneClass.text} border ${toneClass.border} text-[10px] mb-3`} style={{ fontWeight: 850 }}>
+              <p className="text-[12px] text-neutral-400 mb-2" style={{ fontWeight: 600 }}>{labels[source]}</p>
+              <span className={`inline-flex px-2.5 py-1 rounded-full ${toneClass.soft} ${toneClass.text} border ${toneClass.border} text-[10px] mb-3`} style={{ fontWeight: 600 }}>
                 {valueOrEmpty(data.orientacion)}
               </span>
               <p className="text-neutral-700 text-[13px] leading-relaxed">{valueOrEmpty(data.evidencia_principal)}</p>
               {Number(data.promedio_general) > 0 && (
-                <p className="text-neutral-500 text-[11px] mt-3">Promedio: <span className="tabular-nums" style={{ fontWeight: 800 }}>{data.promedio_general}</span></p>
+                <p className="text-neutral-500 text-[11px] mt-3">Promedio: <span className="tabular-nums" style={{ fontWeight: 600 }}>{data.promedio_general}</span></p>
               )}
             </div>
           </article>
@@ -180,11 +179,10 @@ function TensionCard({ tension, index }: { tension: any; index: number }) {
   const toneClass = phaseReportToneStyles[tone];
   return (
     <article className={`rounded-2xl border ${toneClass.border} bg-white overflow-hidden`}>
-      <div className={`h-1 ${toneClass.bar}`} />
       <div className="p-4">
         <div className="flex items-start justify-between gap-3">
-          <p className="text-neutral-950 text-[15px] leading-snug" style={{ fontWeight: 850 }}>{valueOrEmpty(tension.tipo)}</p>
-          <span className={`px-2.5 py-1 rounded-full ${toneClass.soft} ${toneClass.text} border ${toneClass.border} text-[10px] flex-shrink-0`} style={{ fontWeight: 850 }}>
+          <p className="text-neutral-950 text-[15px] leading-snug" style={{ fontWeight: 600 }}>{valueOrEmpty(tension.tipo)}</p>
+          <span className={`px-2.5 py-1 rounded-full ${toneClass.soft} ${toneClass.text} border ${toneClass.border} text-[10px] flex-shrink-0`} style={{ fontWeight: 600 }}>
             {valueOrEmpty(tension.intensidad)}
           </span>
         </div>
@@ -215,18 +213,17 @@ function FasesOpcionalesPanel({ diagnosis }: { diagnosis: any }) {
       <article className={`rounded-2xl border overflow-hidden ${
         preProyecto?.aplica ? 'border-green-200 bg-white' : 'border-neutral-100 bg-neutral-50'
       }`}>
-        <div className={`h-1 ${preProyecto?.aplica ? 'bg-green-500' : 'bg-neutral-200'}`} />
         <div className="p-4">
           <div className="flex items-start justify-between gap-3 mb-3">
             <div className="flex items-center gap-2">
               <Calendar size={15} className={preProyecto?.aplica ? 'text-green-600' : 'text-neutral-400'} />
-              <p className="text-neutral-950 text-[14px]" style={{ fontWeight: 800 }}>Pre-proyecto</p>
+              <p className="text-neutral-950 text-[14px]" style={{ fontWeight: 600 }}>Pre-proyecto</p>
             </div>
             <span className={`px-2.5 py-1 rounded-full text-[10px] border ${
               preProyecto?.aplica
                 ? 'bg-green-50 text-green-700 border-green-200'
                 : 'bg-neutral-100 text-neutral-500 border-neutral-200'
-            }`} style={{ fontWeight: 800 }}>
+            }`} style={{ fontWeight: 600 }}>
               {preProyecto?.aplica ? 'Aplica' : 'No aplica'}
             </span>
           </div>
@@ -241,18 +238,17 @@ function FasesOpcionalesPanel({ diagnosis }: { diagnosis: any }) {
       <article className={`rounded-2xl border overflow-hidden ${
         postCierre?.aplica ? 'border-blue-200 bg-white' : 'border-neutral-100 bg-neutral-50'
       }`}>
-        <div className={`h-1 ${postCierre?.aplica ? 'bg-blue-500' : 'bg-neutral-200'}`} />
         <div className="p-4">
           <div className="flex items-start justify-between gap-3 mb-3">
             <div className="flex items-center gap-2">
               <Calendar size={15} className={postCierre?.aplica ? 'text-blue-600' : 'text-neutral-400'} />
-              <p className="text-neutral-950 text-[14px]" style={{ fontWeight: 800 }}>Post-cierre</p>
+              <p className="text-neutral-950 text-[14px]" style={{ fontWeight: 600 }}>Post-cierre</p>
             </div>
             <span className={`px-2.5 py-1 rounded-full text-[10px] border ${
               postCierre?.aplica
                 ? 'bg-blue-50 text-blue-700 border-blue-200'
                 : 'bg-neutral-100 text-neutral-500 border-neutral-200'
-            }`} style={{ fontWeight: 800 }}>
+            }`} style={{ fontWeight: 600 }}>
               {postCierre?.aplica ? 'Aplica' : 'No aplica'}
             </span>
           </div>
@@ -279,20 +275,19 @@ function ConsultantComments({
 }: Pick<TipoProyectosDiagnosisViewProps, 'savedComment' | 'comment' | 'isSavingComment' | 'isReprocessing' | 'onCommentChange' | 'onSaveComment' | 'onReprocess' | 'onApprove'>) {
   return (
     <section className="rounded-[1.35rem] border border-neutral-200 bg-white overflow-hidden" style={{ boxShadow: '0 18px 44px -30px rgba(31,41,55,0.35)' }}>
-      <div className="h-1.5 bg-neutral-900" />
       <div className="p-6">
         <div className="flex items-center gap-3 mb-4">
           <div className="w-10 h-10 rounded-2xl bg-neutral-50 text-neutral-700 border border-neutral-200 flex items-center justify-center">
             <MessageSquare size={18} />
           </div>
           <div>
-            <p className="text-[10px] uppercase tracking-[0.16em] text-neutral-400 mb-1" style={{ fontWeight: 700 }}>Revisión consultor</p>
-            <h2 className="text-neutral-950 text-[18px] tracking-tight" style={{ fontWeight: 750 }}>Comentarios y aprobación</h2>
+            <p className="text-[12px] text-neutral-400 mb-1" style={{ fontWeight: 600 }}>Revisión consultor</p>
+            <h2 className="text-neutral-950 text-[18px] tracking-tight" style={{ fontWeight: 600 }}>Comentarios y aprobación</h2>
           </div>
         </div>
         {savedComment && (
           <div className="mb-3 px-3 py-2.5 rounded-xl bg-neutral-50 border border-neutral-200/70 text-[13px] text-neutral-600">
-            <p className="text-neutral-400 text-xs mb-1" style={{ fontWeight: 700 }}>Último comentario guardado</p>
+            <p className="text-neutral-400 text-xs mb-1" style={{ fontWeight: 600 }}>Último comentario guardado</p>
             <p className="leading-relaxed">{savedComment}</p>
           </div>
         )}
@@ -346,9 +341,9 @@ export default function TipoProyectosDiagnosisView(props: TipoProyectosDiagnosis
       <PmoHero diagnosis={diagnosis} approved={approved} />
 
       {approved && (
-        <div className="rounded-2xl border border-[#4cb979]/25 bg-[#4cb979]/10 p-4 flex items-center gap-3">
-          <CheckCircle2 size={18} className="text-[#22794b]" />
-          <p className="text-[#22794b] text-[13px]" style={{ fontWeight: 750 }}>
+        <div className="flex items-center gap-2 px-1">
+          <CheckCircle2 size={15} className="text-[#5454e9]" />
+          <p className="text-neutral-600 text-[13px]">
             Fase completada y aprobada{completedAt ? ` el ${completedAt}` : ''}.
           </p>
         </div>
@@ -376,7 +371,7 @@ export default function TipoProyectosDiagnosisView(props: TipoProyectosDiagnosis
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           {normalizeList(diagnosis.keyFactors).map((factor, i) => (
             <div key={i} className="rounded-2xl border border-[#4cb979]/25 bg-[#4cb979]/10 p-4 flex gap-3">
-              <div className="w-7 h-7 rounded-full bg-[#4cb979] text-white flex items-center justify-center flex-shrink-0 text-[11px]" style={{ fontWeight: 800 }}>{i + 1}</div>
+              <div className="w-7 h-7 rounded-full bg-[#4cb979] text-white flex items-center justify-center flex-shrink-0 text-[11px]" style={{ fontWeight: 600 }}>{i + 1}</div>
               <p className="text-neutral-700 text-[13px] leading-relaxed">{typeof factor === 'string' ? factor : JSON.stringify(factor)}</p>
             </div>
           ))}

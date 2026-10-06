@@ -1073,7 +1073,7 @@ export default function EnfoqueModule() {
               >
                 <Loader2 size={22} className="text-neutral-700 animate-spin" strokeWidth={1.75} />
               </div>
-              <p className="text-[11px] uppercase tracking-[0.18em] text-[#5454e9] mb-2" style={{ fontWeight: 500 }}>
+              <p className="text-[12px] text-[#5454e9] mb-2" style={{ fontWeight: 500 }}>
                 Procesando
               </p>
               <h2 className="text-neutral-900 tracking-tight mb-3" style={{ fontWeight: 500, fontSize: '1.5rem', letterSpacing: '-0.02em' }}>
@@ -1107,7 +1107,7 @@ export default function EnfoqueModule() {
               >
                 <ShieldAlert size={28} className="text-orange-600" strokeWidth={1.75} />
               </div>
-              <p className="text-[11px] uppercase tracking-[0.18em] text-orange-600 mb-2" style={{ fontWeight: 700 }}>
+              <p className="text-[12px] text-orange-600 mb-2" style={{ fontWeight: 600 }}>
                 Revision requerida
               </p>
               <h2 className="text-neutral-900 tracking-tight mb-3" style={{ fontWeight: 500, fontSize: '1.5rem', letterSpacing: '-0.02em' }}>

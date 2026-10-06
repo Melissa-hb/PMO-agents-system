@@ -185,7 +185,7 @@ export function Agent9QuestionBank({ agent9Status, agent9Data, expandedDim, setE
           <Loader2 size={16} className="text-neutral-600 animate-spin" strokeWidth={1.75} />
         </div>
         <div>
-          <p className="text-[11px] uppercase tracking-[0.14em] text-neutral-500 mb-0.5" style={{ fontWeight: 500 }}>Recomendaciones para las entrevistas</p>
+          <p className="text-[12px] text-neutral-500 mb-0.5" style={{ fontWeight: 500 }}>Recomendaciones para las entrevistas</p>
           <p className="text-neutral-700 text-[13px]">Generando recomendaciones para las entrevistas…</p>
         </div>
       </div>
@@ -200,7 +200,7 @@ export function Agent9QuestionBank({ agent9Status, agent9Data, expandedDim, setE
             <AlertCircle size={16} className="text-neutral-500" strokeWidth={1.75} />
           </div>
           <div>
-            <p className="text-[11px] uppercase tracking-[0.14em] text-neutral-500 mb-0.5" style={{ fontWeight: 500 }}>Error en recomendaciones</p>
+            <p className="text-[12px] text-neutral-500 mb-0.5" style={{ fontWeight: 500 }}>Error en recomendaciones</p>
             <p className="text-neutral-600 text-[13px]">No se pudieron generar las recomendaciones para las entrevistas.</p>
           </div>
         </div>
@@ -226,7 +226,7 @@ export function Agent9QuestionBank({ agent9Status, agent9Data, expandedDim, setE
           <div className="w-7 h-7 rounded-lg bg-neutral-900 text-white flex items-center justify-center">
             <MessageSquare size={13} strokeWidth={1.75} />
           </div>
-          <span className="text-[11px] uppercase tracking-[0.14em] text-neutral-500" style={{ fontWeight: 500 }}>Recomendaciones para las entrevistas</span>
+          <span className="text-[12px] text-neutral-500" style={{ fontWeight: 500 }}>Recomendaciones para las entrevistas</span>
           <div className="flex-1" />
           <button
             title="Ver respuesta raw del Agente 9 en JSON"
@@ -250,18 +250,18 @@ export function Agent9QuestionBank({ agent9Status, agent9Data, expandedDim, setE
 
         <div className="grid grid-cols-3 gap-px bg-neutral-200/60 rounded-xl overflow-hidden border border-neutral-200/60">
           <div className="bg-white px-4 py-3">
-            <p className="text-[10px] uppercase tracking-[0.12em] text-neutral-400" style={{ fontWeight: 500 }}>Total Preguntas</p>
+            <p className="text-[12px] text-neutral-400" style={{ fontWeight: 500 }}>Total Preguntas</p>
             <p className="mt-1 text-neutral-900 tabular-nums" style={{ fontWeight: 600, fontSize: '1.5rem', letterSpacing: '-0.02em' }}>{a9.total_preguntas}</p>
           </div>
           <div className="bg-white px-4 py-3">
-            <p className="text-[10px] uppercase tracking-[0.12em] text-neutral-400" style={{ fontWeight: 500 }}>Tiempo estimado</p>
+            <p className="text-[12px] text-neutral-400" style={{ fontWeight: 500 }}>Tiempo estimado</p>
             <div className="flex items-baseline gap-1 mt-1">
               <p className="text-neutral-900 tabular-nums" style={{ fontWeight: 600, fontSize: '1.5rem', letterSpacing: '-0.02em' }}>{a9.instrucciones_para_el_consultor?.tiempo_estimado_por_entrevista_minutos ?? '—'}</p>
               <span className="text-neutral-400 text-[12px]">min</span>
             </div>
           </div>
           <div className="bg-white px-4 py-3">
-            <p className="text-[10px] uppercase tracking-[0.12em] text-neutral-400" style={{ fontWeight: 500 }}>Mínimas por sesión</p>
+            <p className="text-[12px] text-neutral-400" style={{ fontWeight: 500 }}>Mínimas por sesión</p>
             <p className="mt-1 text-neutral-900 tabular-nums" style={{ fontWeight: 600, fontSize: '1.5rem', letterSpacing: '-0.02em' }}>{a9.instrucciones_para_el_consultor?.preguntas_minimas_recomendadas_por_entrevista ?? '—'}</p>
           </div>
         </div>
@@ -271,7 +271,7 @@ export function Agent9QuestionBank({ agent9Status, agent9Data, expandedDim, setE
         <div className="rounded-2xl border border-neutral-200/70 bg-white p-6" style={{ boxShadow: '0 1px 2px rgba(0,0,0,0.02)' }}>
           <div className="flex items-center gap-2 mb-4">
             <Users size={14} className="text-neutral-500" strokeWidth={1.75} />
-            <p className="text-[11px] uppercase tracking-[0.14em] text-neutral-500" style={{ fontWeight: 500 }}>Preguntas de Apertura</p>
+            <p className="text-[12px] text-neutral-500" style={{ fontWeight: 500 }}>Preguntas de Apertura</p>
             <span className="ml-auto text-[11px] text-neutral-400 tabular-nums">{a9.preguntas_apertura.length} preguntas</span>
           </div>
           <div className="space-y-3">{a9.preguntas_apertura.map(renderPregunta)}</div>
@@ -315,7 +315,7 @@ export function Agent9QuestionBank({ agent9Status, agent9Data, expandedDim, setE
 
       {a9.preguntas_senales_metodologicas?.length > 0 && (
         <div className="rounded-2xl border border-neutral-200 bg-neutral-50/30 p-6">
-          <p className="text-[11px] uppercase tracking-[0.14em] text-neutral-500 mb-4" style={{ fontWeight: 500 }}>Señales Metodológicas</p>
+          <p className="text-[12px] text-neutral-500 mb-4" style={{ fontWeight: 500 }}>Señales Metodológicas</p>
           <div className="space-y-3">{a9.preguntas_senales_metodologicas.map(renderPregunta)}</div>
         </div>
       )}
@@ -324,7 +324,7 @@ export function Agent9QuestionBank({ agent9Status, agent9Data, expandedDim, setE
         <div className="rounded-2xl border border-neutral-200 bg-neutral-50 p-5">
           <div className="flex items-center gap-2 mb-3">
             <AlertCircle size={13} className="text-neutral-500" strokeWidth={1.75} />
-            <p className="text-[11px] uppercase tracking-[0.14em] text-neutral-600" style={{ fontWeight: 500 }}>Advertencias para el Consultor</p>
+            <p className="text-[12px] text-neutral-600" style={{ fontWeight: 500 }}>Advertencias para el Consultor</p>
           </div>
           <ul className="space-y-2">
             {a9.instrucciones_para_el_consultor.advertencias.map((adv: string, i: number) => (

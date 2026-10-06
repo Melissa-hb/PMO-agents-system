@@ -554,7 +554,7 @@ export default function TipoProyectosModule() {
       >
         <Send size={34} className="text-white" />
       </motion.div>
-      <h2 className="text-gray-900 mb-3" style={{ fontWeight: 700, fontSize: '1.375rem' }}>
+      <h2 className="text-gray-900 mb-3" style={{ fontWeight: 600, fontSize: '1.375rem' }}>
         Enviando al Agente 4
       </h2>
       <p className="text-gray-500 text-sm max-w-sm leading-relaxed mb-6">
@@ -620,7 +620,7 @@ export default function TipoProyectosModule() {
         >
           <Loader2 size={22} className="text-neutral-700 animate-spin" strokeWidth={1.75} />
         </div>
-        <p className="text-[11px] uppercase tracking-[0.18em] text-[#5454e9] mb-2" style={{ fontWeight: 500 }}>
+        <p className="text-[12px] text-[#5454e9] mb-2" style={{ fontWeight: 500 }}>
           Procesando
         </p>
         <h2 className="text-neutral-900 tracking-tight" style={{ fontWeight: 500, fontSize: '1.25rem', letterSpacing: '-0.01em' }}>
@@ -675,7 +675,7 @@ export default function TipoProyectosModule() {
         style={{ background: '#f5f5f5', border: '1px solid #e5e5e5' }}>
         <AlertTriangle size={28} className="text-neutral-400" />
       </div>
-      <p className="text-[11px] uppercase tracking-[0.18em] text-neutral-400 mb-2" style={{ fontWeight: 600 }}>
+      <p className="text-[12px] text-neutral-400 mb-2" style={{ fontWeight: 600 }}>
         Error de procesamiento
       </p>
       <h2 className="text-neutral-900 tracking-tight mb-3"

@@ -55,8 +55,8 @@ function InterviewHero({ diagnosis }: { diagnosis: EntrevistasDiagnosis }) {
             <MessageSquare size={18} />
           </div>
           <div>
-            <p className="text-[10px] uppercase tracking-[0.16em] text-white/70" style={{ fontWeight: 800 }}>Agente 2 - Registro de entrevistas</p>
-            <h2 className="text-[22px] tracking-tight" style={{ fontWeight: 850 }}>Diagnóstico cualitativo consolidado</h2>
+            <p className="text-[12px] text-white/70" style={{ fontWeight: 600 }}>Agente 2 - Registro de entrevistas</p>
+            <h2 className="text-[22px] tracking-tight" style={{ fontWeight: 600 }}>Diagnóstico cualitativo consolidado</h2>
           </div>
         </div>
         <p className="text-white/88 text-[14px] leading-relaxed max-w-4xl">{valueOrEmpty(diagnosis.summary)}</p>
@@ -88,7 +88,7 @@ function ContextPanel({ diagnosis }: { diagnosis: EntrevistasDiagnosis }) {
         { label: 'Nivel formalización general', value: diagnosis.nivel_formalizacion_general ?? diagnosis.insumos_para_agente_4?.nivel_general_formalizacion, tone: levelTone(diagnosis.nivel_formalizacion_general ?? diagnosis.insumos_para_agente_4?.nivel_general_formalizacion) },
       ]} />
       <div>
-        <p className="text-[10px] uppercase tracking-[0.14em] text-neutral-400 mb-3" style={{ fontWeight: 800 }}>Roles identificados</p>
+        <p className="text-[12px] text-neutral-400 mb-3" style={{ fontWeight: 600 }}>Roles identificados</p>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
           {(diagnosis.roles_identificados ?? []).map((rol, i) => (
             <div key={i} className="flex items-center gap-3 p-3 rounded-xl border border-neutral-100 bg-white">
@@ -96,7 +96,7 @@ function ContextPanel({ diagnosis }: { diagnosis: EntrevistasDiagnosis }) {
                 <Briefcase size={14} />
               </div>
               <div className="min-w-0 flex-1">
-                <p className="text-neutral-900 text-[13px] truncate" style={{ fontWeight: 750 }}>{valueOrEmpty(rol.nombre_cargo)}</p>
+                <p className="text-neutral-900 text-[13px] truncate" style={{ fontWeight: 600 }}>{valueOrEmpty(rol.nombre_cargo)}</p>
                 <div className="flex items-center gap-2 mt-0.5">
                   <span className="text-neutral-500 text-[11px]">{valueOrEmpty(rol.area)}</span>
                   <span className="w-1 h-1 rounded-full bg-neutral-300"></span>
@@ -117,7 +117,7 @@ function InsightCard({ item, index }: { item: unknown; index: number }) {
   const toneClass = phaseReportToneStyles[tone];
   return (
     <article className={`rounded-2xl border ${toneClass.border} ${toneClass.soft} p-4 flex gap-3`}>
-      <div className={`w-7 h-7 rounded-full ${toneClass.bg} text-white flex items-center justify-center flex-shrink-0 text-[11px]`} style={{ fontWeight: 800 }}>{index + 1}</div>
+      <div className={`w-7 h-7 rounded-full ${toneClass.bg} text-white flex items-center justify-center flex-shrink-0 text-[11px]`} style={{ fontWeight: 600 }}>{index + 1}</div>
       <p className="text-neutral-700 text-[13px] leading-relaxed">{valueOrEmpty(item)}</p>
     </article>
   );
@@ -129,20 +129,19 @@ function ThemeCard({ theme, max }: { theme: NonNullable<EntrevistasDiagnosis['re
   const mentionCount = theme.mentioned_by?.length ?? 0;
   return (
     <article className={`rounded-2xl border ${toneClass.border} bg-white overflow-hidden`}>
-      <div className={`h-1 ${toneClass.bar}`} />
       <div className="p-4">
         <div className="flex items-start justify-between gap-3 mb-3">
           <div className="min-w-0">
-            <p className="text-neutral-950 text-[15px] leading-snug" style={{ fontWeight: 800 }}>{valueOrEmpty(theme.theme)}</p>
-            <p className={`mt-1 text-[11px] uppercase tracking-[0.08em] ${toneClass.text}`} style={{ fontWeight: 750 }}>Frecuencia {valueOrEmpty(theme.frequency)}</p>
+            <p className="text-neutral-950 text-[15px] leading-snug" style={{ fontWeight: 600 }}>{valueOrEmpty(theme.theme)}</p>
+            <p className={`mt-1 text-[12px] ${toneClass.text}`} style={{ fontWeight: 600 }}>Frecuencia {valueOrEmpty(theme.frequency)}</p>
           </div>
-          <span className={`px-2.5 py-1 rounded-full ${toneClass.soft} ${toneClass.text} border ${toneClass.border} text-[10px] flex-shrink-0`} style={{ fontWeight: 800 }}>
+          <span className={`px-2.5 py-1 rounded-full ${toneClass.soft} ${toneClass.text} border ${toneClass.border} text-[10px] flex-shrink-0`} style={{ fontWeight: 600 }}>
             {mentionCount} voces
           </span>
         </div>
         <PhaseReportProgressBar label="Menciones por entrevistados" value={mentionCount} max={max} tone={tone} />
         <div className="mt-3 pt-3 border-t border-neutral-100">
-          <p className="text-[9px] uppercase tracking-[0.14em] text-neutral-400 mb-2" style={{ fontWeight: 800 }}>Mencionado por</p>
+          <p className="text-[12px] text-neutral-400 mb-2" style={{ fontWeight: 600 }}>Mencionado por</p>
           <PhaseReportBadgeList items={theme.mentioned_by} tone={tone} />
         </div>
       </div>
@@ -155,12 +154,11 @@ function PatternCard({ pattern, index }: { pattern: NonNullable<EntrevistasDiagn
   const toneClass = phaseReportToneStyles[tone];
   return (
     <article className={`rounded-2xl border ${toneClass.border} bg-white overflow-hidden`}>
-      <div className={`h-1 ${toneClass.bar}`} />
       <div className="p-4">
-        <p className="text-neutral-950 text-[15px]" style={{ fontWeight: 800 }}>{valueOrEmpty(pattern.nombre)}</p>
+        <p className="text-neutral-950 text-[15px]" style={{ fontWeight: 600 }}>{valueOrEmpty(pattern.nombre)}</p>
         <p className="mt-2 text-neutral-700 text-[13px] leading-relaxed">{valueOrEmpty(pattern.descripcion)}</p>
         <div className="mt-3 pt-3 border-t border-neutral-100">
-          <p className="text-[9px] uppercase tracking-[0.14em] text-neutral-400 mb-2" style={{ fontWeight: 800 }}>Dimensiones observadas</p>
+          <p className="text-[12px] text-neutral-400 mb-2" style={{ fontWeight: 600 }}>Dimensiones observadas</p>
           <PhaseReportBadgeList items={pattern.dimensiones_donde_se_observa} tone={tone} />
         </div>
       </div>
@@ -174,14 +172,13 @@ function InterviewDimensionCard({ label, dim, index }: { label: string; dim?: In
   const confidenceTone = levelTone((dim as any)?.confianza);
   return (
     <article className={`rounded-2xl border ${toneClass.border} bg-white overflow-hidden`}>
-      <div className={`h-1 ${toneClass.bar}`} />
       <div className="p-4">
         <div className="flex items-start justify-between gap-3 mb-3">
           <div>
-            <p className="text-neutral-950 text-[15px]" style={{ fontWeight: 850 }}>{label}</p>
-            <p className={`text-[11px] ${toneClass.text} mt-1`} style={{ fontWeight: 750 }}>{valueOrEmpty((dim as any)?.nivel_formalidad)}</p>
+            <p className="text-neutral-950 text-[15px]" style={{ fontWeight: 600 }}>{label}</p>
+            <p className={`text-[11px] ${toneClass.text} mt-1`} style={{ fontWeight: 600 }}>{valueOrEmpty((dim as any)?.nivel_formalidad)}</p>
           </div>
-          <span className={`px-2.5 py-1 rounded-full ${phaseReportToneStyles[confidenceTone].soft} ${phaseReportToneStyles[confidenceTone].text} text-[10px]`} style={{ fontWeight: 800 }}>
+          <span className={`px-2.5 py-1 rounded-full ${phaseReportToneStyles[confidenceTone].soft} ${phaseReportToneStyles[confidenceTone].text} text-[10px]`} style={{ fontWeight: 600 }}>
             Confianza {valueOrEmpty((dim as any)?.confianza)}
           </span>
         </div>
@@ -206,15 +203,14 @@ function VoiceCard({ voice }: { voice: NonNullable<EntrevistasDiagnosis['critica
   const toneClass = phaseReportToneStyles[tone];
   return (
     <article className={`rounded-2xl border ${toneClass.border} bg-white overflow-hidden`}>
-      <div className={`h-1 ${toneClass.bar}`} />
       <div className="p-4">
         <div className="flex items-start gap-3">
           <div className={`w-8 h-8 rounded-2xl ${toneClass.soft} ${toneClass.icon} border ${toneClass.border} flex items-center justify-center flex-shrink-0`}>
             <Quote size={15} />
           </div>
           <div className="min-w-0">
-            <p className="text-neutral-950 text-[15px]" style={{ fontWeight: 850 }}>{valueOrEmpty(voice.interviewee_name)}</p>
-            <p className={`mt-1 text-[11px] uppercase tracking-[0.08em] ${toneClass.text}`} style={{ fontWeight: 800 }}>
+            <p className="text-neutral-950 text-[15px]" style={{ fontWeight: 600 }}>{valueOrEmpty(voice.interviewee_name)}</p>
+            <p className={`mt-1 text-[12px] ${toneClass.text}`} style={{ fontWeight: 600 }}>
               {valueOrEmpty(voice.interview_id)} - Relevancia {valueOrEmpty(voice.relevance)}
             </p>
           </div>
@@ -230,24 +226,23 @@ function TensionCard({ tension, index }: { tension: NonNullable<EntrevistasDiagn
   const toneClass = phaseReportToneStyles[tone];
   return (
     <article className={`rounded-2xl border ${toneClass.border} bg-white overflow-hidden`}>
-      <div className={`h-1 ${toneClass.bar}`} />
       <div className="p-4">
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
-            <p className="text-neutral-950 text-[15px] leading-snug" style={{ fontWeight: 800 }}>{valueOrEmpty(tension.tipo)}</p>
-            <p className={`mt-1 text-[11px] uppercase tracking-[0.08em] ${toneClass.text}`} style={{ fontWeight: 750 }}>Intensidad {valueOrEmpty(tension.intensidad)}</p>
+            <p className="text-neutral-950 text-[15px] leading-snug" style={{ fontWeight: 600 }}>{valueOrEmpty(tension.tipo)}</p>
+            <p className={`mt-1 text-[12px] ${toneClass.text}`} style={{ fontWeight: 600 }}>Intensidad {valueOrEmpty(tension.intensidad)}</p>
           </div>
-          <span className={`px-2.5 py-1 rounded-full ${toneClass.soft} ${toneClass.text} border ${toneClass.border} text-[10px] flex-shrink-0`} style={{ fontWeight: 800 }}>
+          <span className={`px-2.5 py-1 rounded-full ${toneClass.soft} ${toneClass.text} border ${toneClass.border} text-[10px] flex-shrink-0`} style={{ fontWeight: 600 }}>
             Tension {index + 1}
           </span>
         </div>
         <p className="mt-3 text-neutral-700 text-[13px] leading-relaxed">{valueOrEmpty(tension.descripcion)}</p>
         <div className={`mt-3 rounded-2xl border ${toneClass.border} ${toneClass.soft} p-3`}>
-          <p className={`text-[10px] uppercase tracking-[0.12em] ${toneClass.text} mb-1.5`} style={{ fontWeight: 850 }}>Evidencia</p>
+          <p className={`text-[12px] ${toneClass.text} mb-1.5`} style={{ fontWeight: 600 }}>Evidencia</p>
           <p className="text-neutral-700 text-[12px] leading-relaxed">{valueOrEmpty(tension.evidencia)}</p>
         </div>
         <div className="mt-3">
-          <p className="text-[9px] uppercase tracking-[0.14em] text-neutral-400 mb-2" style={{ fontWeight: 800 }}>Roles involucrados</p>
+          <p className="text-[12px] text-neutral-400 mb-2" style={{ fontWeight: 600 }}>Roles involucrados</p>
           <PhaseReportBadgeList items={tension.roles_involucrados} tone={tone} />
         </div>
       </div>
@@ -260,20 +255,19 @@ function GapCard({ gap, index }: { gap: NonNullable<EntrevistasDiagnosis['brecha
   const toneClass = phaseReportToneStyles[tone];
   return (
     <article className={`rounded-2xl border ${toneClass.border} bg-white overflow-hidden`}>
-      <div className={`h-1 ${toneClass.bar}`} />
       <div className="p-4">
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
-            <p className="text-neutral-950 text-[15px] leading-snug" style={{ fontWeight: 800 }}>{valueOrEmpty(gap.descripcion)}</p>
-            <p className={`mt-1 text-[11px] uppercase tracking-[0.08em] ${toneClass.text}`} style={{ fontWeight: 750 }}>{valueOrEmpty(gap.dimension_o_fase)}</p>
+            <p className="text-neutral-950 text-[15px] leading-snug" style={{ fontWeight: 600 }}>{valueOrEmpty(gap.descripcion)}</p>
+            <p className={`mt-1 text-[12px] ${toneClass.text}`} style={{ fontWeight: 600 }}>{valueOrEmpty(gap.dimension_o_fase)}</p>
           </div>
-          <span className={`px-2.5 py-1 rounded-full ${toneClass.soft} ${toneClass.text} border ${toneClass.border} text-[10px] flex-shrink-0`} style={{ fontWeight: 800 }}>
+          <span className={`px-2.5 py-1 rounded-full ${toneClass.soft} ${toneClass.text} border ${toneClass.border} text-[10px] flex-shrink-0`} style={{ fontWeight: 600 }}>
             BD-{String(index + 1).padStart(2, '0')}
           </span>
         </div>
         <p className="mt-3 text-neutral-700 text-[13px] leading-relaxed">{valueOrEmpty(gap.evidencia_o_ausencia)}</p>
         <div className={`mt-3 rounded-2xl border ${toneClass.border} ${toneClass.soft} p-3`}>
-          <p className={`text-[10px] uppercase tracking-[0.12em] ${toneClass.text} mb-1.5`} style={{ fontWeight: 850 }}>Impacto potencial</p>
+          <p className={`text-[12px] ${toneClass.text} mb-1.5`} style={{ fontWeight: 600 }}>Impacto potencial</p>
           <p className="text-neutral-700 text-[12px] leading-relaxed">{valueOrEmpty(gap.impacto_potencial)}</p>
         </div>
       </div>
@@ -286,15 +280,14 @@ function HerramientaCard({ herramienta, index }: { herramienta: NonNullable<Entr
   const toneClass = phaseReportToneStyles[tone];
   return (
     <article className={`rounded-2xl border ${toneClass.border} bg-white overflow-hidden flex flex-col`}>
-      <div className={`h-1 ${toneClass.bar}`} />
       <div className="p-4 flex-1 flex flex-col">
         <div className="flex items-start justify-between gap-3 mb-3">
           <div className="min-w-0">
-            <p className="text-neutral-950 text-[15px] leading-snug" style={{ fontWeight: 800 }}>{valueOrEmpty(herramienta.nombre)}</p>
-            <p className={`mt-1 text-[11px] uppercase tracking-[0.08em] ${toneClass.text}`} style={{ fontWeight: 750 }}>Tipo: {valueOrEmpty(herramienta.tipo).replace(/_/g, ' ')}</p>
+            <p className="text-neutral-950 text-[15px] leading-snug" style={{ fontWeight: 600 }}>{valueOrEmpty(herramienta.nombre)}</p>
+            <p className={`mt-1 text-[12px] ${toneClass.text}`} style={{ fontWeight: 600 }}>Tipo: {valueOrEmpty(herramienta.tipo).replace(/_/g, ' ')}</p>
           </div>
           {herramienta.es_repositorio_digital && (
-            <span className={`px-2.5 py-1 rounded-full ${toneClass.soft} ${toneClass.text} border ${toneClass.border} text-[10px] flex-shrink-0`} style={{ fontWeight: 800 }}>
+            <span className={`px-2.5 py-1 rounded-full ${toneClass.soft} ${toneClass.text} border ${toneClass.border} text-[10px] flex-shrink-0`} style={{ fontWeight: 600 }}>
               Repositorio
             </span>
           )}
@@ -303,11 +296,11 @@ function HerramientaCard({ herramienta, index }: { herramienta: NonNullable<Entr
         
         <div className="mt-auto space-y-3">
           <div className={`rounded-2xl border ${toneClass.border} ${toneClass.soft} p-3`}>
-            <p className={`text-[10px] uppercase tracking-[0.12em] ${toneClass.text} mb-2`} style={{ fontWeight: 850 }}>Fases donde se usa</p>
+            <p className={`text-[12px] ${toneClass.text} mb-2`} style={{ fontWeight: 600 }}>Fases donde se usa</p>
             <PhaseReportBadgeList items={herramienta.fases_donde_se_usa} tone={tone} />
           </div>
           <div>
-            <p className="text-[9px] uppercase tracking-[0.14em] text-neutral-400 mb-2" style={{ fontWeight: 800 }}>Mencionado por</p>
+            <p className="text-[12px] text-neutral-400 mb-2" style={{ fontWeight: 600 }}>Mencionado por</p>
             <PhaseReportBadgeList items={herramienta.mencionado_por} tone="slate" />
           </div>
         </div>
@@ -321,14 +314,13 @@ function ReunionCard({ reunion, index }: { reunion: NonNullable<EntrevistasDiagn
   const toneClass = phaseReportToneStyles[toneTone];
   return (
     <article className={`rounded-2xl border ${toneClass.border} bg-white overflow-hidden flex flex-col`}>
-      <div className={`h-1 ${toneClass.bar}`} />
       <div className="p-4 flex-1 flex flex-col">
         <div className="flex items-start justify-between gap-3 mb-3">
           <div className="min-w-0">
-            <p className="text-neutral-950 text-[15px] leading-snug" style={{ fontWeight: 800 }}>{valueOrEmpty(reunion.nombre)}</p>
-            <p className={`mt-1 text-[11px] uppercase tracking-[0.08em] ${toneClass.text}`} style={{ fontWeight: 750 }}>Frecuencia: {valueOrEmpty(reunion.frecuencia)}</p>
+            <p className="text-neutral-950 text-[15px] leading-snug" style={{ fontWeight: 600 }}>{valueOrEmpty(reunion.nombre)}</p>
+            <p className={`mt-1 text-[12px] ${toneClass.text}`} style={{ fontWeight: 600 }}>Frecuencia: {valueOrEmpty(reunion.frecuencia)}</p>
           </div>
-          <span className={`px-2.5 py-1 rounded-full ${toneClass.soft} ${toneClass.text} border ${toneClass.border} text-[10px] flex-shrink-0`} style={{ fontWeight: 800 }}>
+          <span className={`px-2.5 py-1 rounded-full ${toneClass.soft} ${toneClass.text} border ${toneClass.border} text-[10px] flex-shrink-0`} style={{ fontWeight: 600 }}>
             {valueOrEmpty(reunion.nivel_formalidad)}
           </span>
         </div>
@@ -336,11 +328,11 @@ function ReunionCard({ reunion, index }: { reunion: NonNullable<EntrevistasDiagn
         
         <div className="mt-auto space-y-3">
           <div className={`rounded-2xl border ${toneClass.border} ${toneClass.soft} p-3`}>
-            <p className={`text-[10px] uppercase tracking-[0.12em] ${toneClass.text} mb-2`} style={{ fontWeight: 850 }}>Participantes</p>
+            <p className={`text-[12px] ${toneClass.text} mb-2`} style={{ fontWeight: 600 }}>Participantes</p>
             <PhaseReportBadgeList items={reunion.participantes} tone={toneTone} />
           </div>
           <div>
-            <p className="text-[9px] uppercase tracking-[0.14em] text-neutral-400 mb-2" style={{ fontWeight: 800 }}>Mencionada por</p>
+            <p className="text-[12px] text-neutral-400 mb-2" style={{ fontWeight: 600 }}>Mencionada por</p>
             <PhaseReportBadgeList items={reunion.mencionado_por} tone="slate" />
           </div>
         </div>
@@ -373,7 +365,7 @@ function Recommendations({ items }: { items?: string[] }) {
             <Lightbulb size={15} />
           </div>
           <div>
-            <p className="text-[10px] uppercase tracking-[0.14em] text-[#22794b] mb-1" style={{ fontWeight: 800 }}>Recomendacion {i + 1}</p>
+            <p className="text-[12px] text-[#22794b] mb-1" style={{ fontWeight: 600 }}>Recomendacion {i + 1}</p>
             <p className="text-neutral-700 text-[13px] leading-relaxed">{rec}</p>
           </div>
         </div>
@@ -500,7 +492,7 @@ export default function EntrevistasDiagnosisView({ diagnosis }: { diagnosis: Ent
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           {(diagnosis.limitaciones?.length ? diagnosis.limitaciones : [{ tipo: EMPTY_VALUE, descripcion: EMPTY_VALUE, dimensiones_afectadas: [] }]).map((limitacion, i) => (
             <div key={i} className="rounded-2xl border border-[#e9683b]/25 bg-[#e9683b]/10 p-4">
-              <p className="text-neutral-950 text-[15px] mb-2" style={{ fontWeight: 800 }}>{valueOrEmpty(limitacion.tipo)}</p>
+              <p className="text-neutral-950 text-[15px] mb-2" style={{ fontWeight: 600 }}>{valueOrEmpty(limitacion.tipo)}</p>
               <p className="text-neutral-700 text-[13px] leading-relaxed">{valueOrEmpty(limitacion.descripcion)}</p>
               <div className="mt-3"><PhaseReportBadgeList items={limitacion.dimensiones_afectadas} tone="orange" /></div>
             </div>

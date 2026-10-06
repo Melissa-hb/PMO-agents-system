@@ -38,7 +38,7 @@ function ProcessingView({
           />
         </div>
 
-        <p className="text-[11px] uppercase tracking-[0.18em] text-[#5454e9] mb-2" style={{ fontWeight: 500 }}>Procesando</p>
+        <p className="text-[12px] text-[#5454e9] mb-2" style={{ fontWeight: 500 }}>Procesando</p>
         <h2 className="text-neutral-900 tracking-tight mb-2" style={{ fontWeight: 500, fontSize: '1.5rem', letterSpacing: '-0.02em' }}>
           {isAdjustment ? 'Revisando la guía' : 'Generando la guía metodológica'}
         </h2>
@@ -81,7 +81,7 @@ function ProcessingView({
 
         <div className="hidden">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-[11px] uppercase tracking-[0.14em] text-neutral-400" style={{ fontWeight: 500 }}>Progreso</span>
+            <span className="text-[12px] text-neutral-400" style={{ fontWeight: 500 }}>Progreso</span>
             <span className="text-neutral-900 text-[12px] tabular-nums" style={{ fontWeight: 500 }}>{pct}%</span>
           </div>
           <div className="h-1 bg-neutral-200/70 rounded-full overflow-hidden">
@@ -127,7 +127,7 @@ function ProcessingView({
           })}
         </div>
         
-        <p className="text-neutral-400 text-[10px] mt-8 flex items-center gap-1.5 justify-center uppercase tracking-widest">
+        <p className="text-neutral-400 text-[12px] mt-8 flex items-center gap-1.5 justify-center">
           <AlertCircle size={10} strokeWidth={1.75} />
           Seguiremos monitoreando el resultado
         </p>

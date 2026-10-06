@@ -175,7 +175,7 @@ export default function EditProjectModal({ open, onClose, onSubmit, project }: E
                           >
                             <div
                               className="w-5 h-5 rounded-full flex items-center justify-center text-white"
-                              style={{ background: color, fontSize: '0.6rem', fontWeight: 700 }}
+                              style={{ background: color, fontSize: '0.6rem', fontWeight: 600 }}
                             >
                               {initials}
                             </div>

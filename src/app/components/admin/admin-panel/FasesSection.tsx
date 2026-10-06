@@ -69,17 +69,21 @@ function PhaseRow({ fase, fases, disabled, onSave }: {
   onSave: (changes: Partial<PhaseDefinition>) => Promise<boolean>;
 }) {
   const [nombre, setNombre] = useState(fase.nombre);
+  const [corto, setCorto] = useState(fase.nombreCorto ?? '');
   const [requiere, setRequiere] = useState(fase.requiereCompletas);
   const [lee, setLee] = useState(fase.leeResultadoDe);
-  useEffect(() => { setNombre(fase.nombre); setRequiere(fase.requiereCompletas); setLee(fase.leeResultadoDe); }, [fase]);
+  useEffect(() => { setNombre(fase.nombre); setCorto(fase.nombreCorto ?? ''); setRequiere(fase.requiereCompletas); setLee(fase.leeResultadoDe); }, [fase]);
 
-  const dirty = nombre.trim() !== fase.nombre || !sameList(requiere, fase.requiereCompletas) || !sameList(lee, fase.leeResultadoDe);
+  const dirty = nombre.trim() !== fase.nombre || corto.trim() !== (fase.nombreCorto ?? '') || !sameList(requiere, fase.requiereCompletas) || !sameList(lee, fase.leeResultadoDe);
 
   return (
     <div className="border border-gray-200 rounded-xl p-4">
       <div className="flex items-center gap-3 mb-3">
         <span className="px-2 py-0.5 rounded-md bg-[#5454e9]/10 text-[#5454e9] text-xs" style={{ fontWeight: 800 }}>{fase.codigo}</span>
-        <input className={input} value={nombre} onChange={e => setNombre(e.target.value)} disabled={disabled} />
+        <input className={input} value={nombre} onChange={e => setNombre(e.target.value)} disabled={disabled} aria-label="Nombre de la fase" />
+        <input className={`${input} max-w-[160px]`} value={corto} onChange={e => setCorto(e.target.value)} disabled={disabled}
+          maxLength={20} placeholder="Nombre corto" aria-label="Nombre corto"
+          title="Nombre que se muestra en la barra de progreso de fases. Si queda vacío se usa el nombre completo." />
         {!fase.visible && <span className="text-[11px] text-gray-400 whitespace-nowrap">Sin tarjeta propia</span>}
       </div>
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
@@ -95,7 +99,7 @@ function PhaseRow({ fase, fases, disabled, onSave }: {
       {dirty && (
         <div className="mt-3 flex justify-end">
           <SaveButton disabled={disabled || !nombre.trim()}
-            onClick={() => onSave({ nombre: nombre.trim(), requiereCompletas: requiere, leeResultadoDe: lee })} />
+            onClick={() => onSave({ nombre: nombre.trim(), nombreCorto: corto.trim(), requiereCompletas: requiere, leeResultadoDe: lee })} />
         </div>
       )}
     </div>

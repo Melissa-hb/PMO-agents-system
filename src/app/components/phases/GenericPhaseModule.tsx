@@ -110,7 +110,7 @@ export default function GenericPhaseModule() {
             <div className="w-16 h-16 rounded-full border border-neutral-200 bg-white flex items-center justify-center mb-5" style={{ boxShadow: '0 1px 2px rgba(0,0,0,0.04)' }}>
               <Loader2 size={22} className="text-neutral-700 animate-spin" strokeWidth={1.75} />
             </div>
-            <p className="text-[11px] uppercase tracking-[0.18em] text-neutral-400 mb-2" style={{ fontWeight: 500 }}>Procesando</p>
+            <p className="text-[12px] text-neutral-400 mb-2" style={{ fontWeight: 500 }}>Procesando</p>
             <h2 className="text-neutral-900 tracking-tight" style={{ fontWeight: 500, fontSize: '1.25rem', letterSpacing: '-0.01em' }}>
               Analizando {phase.name}
             </h2>
@@ -122,10 +122,10 @@ export default function GenericPhaseModule() {
       <div className="max-w-[1100px] mx-auto px-10 py-10">
         <div className="flex items-end justify-between mb-8 gap-4">
           <div>
-            <p className="text-[11px] uppercase tracking-[0.18em] text-neutral-400 mb-3" style={{ fontWeight: 500 }}>
+            <p className="text-[12px] text-neutral-400 mb-3" style={{ fontWeight: 500 }}>
               Fase {pNum}
             </p>
-            <h1 className="text-neutral-900 tracking-tight" style={{ fontWeight: 500, fontSize: '2rem', lineHeight: 1.1, letterSpacing: '-0.02em' }}>
+            <h1 className="text-neutral-900 tracking-tight" style={{ fontWeight: 500, fontSize: '1.75rem', lineHeight: 1.15, letterSpacing: '-0.015em' }}>
               {phase.name}
             </h1>
             {isCompleted && (
@@ -155,7 +155,7 @@ export default function GenericPhaseModule() {
               <div className="w-7 h-7 rounded-lg bg-neutral-900 text-white flex items-center justify-center">
                 <Sparkles size={13} strokeWidth={1.75} />
               </div>
-              <span className="text-[11px] uppercase tracking-[0.14em] text-neutral-500" style={{ fontWeight: 500 }}>
+              <span className="text-[12px] text-neutral-500" style={{ fontWeight: 500 }}>
                 Diagnóstico del agente IA
               </span>
             </div>

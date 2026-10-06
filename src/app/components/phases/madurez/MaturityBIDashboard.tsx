@@ -57,7 +57,7 @@ const maturityLevelPrefixMap: Record<string, number> = {
   optimizado: 5,
 };
 
-const maturityLevelNames = ['Informal', 'Basico', 'Estandar', 'Avanzado', 'Excelencia'];
+const maturityLevelNames = ['Informal', 'Básico', 'Estándar', 'Avanzado', 'Excelencia'];
 
 const domainRows = [
   { key: 'gobernanza', label: 'Gobernanza' },
@@ -185,9 +185,8 @@ function WrappedAxisTick({ x, y, payload }: any) {
 function MaturityChartPanel({ title, description, children }: { title: string; description: string; children: ReactNode }) {
   return (
     <section className="mb-6 rounded-[1.35rem] border border-[#5454e9]/15 bg-white overflow-hidden" style={{ boxShadow: '0 18px 44px -32px rgba(84,84,233,0.42)' }}>
-      <div className="h-1.5 bg-[#5454e9]" />
       <div className="px-5 py-4 border-b border-neutral-100 bg-white">
-        <h3 className="text-[16px] tracking-tight text-neutral-950" style={{ fontWeight: 850 }}>{title}</h3>
+        <h3 className="text-[16px] tracking-tight text-neutral-950" style={{ fontWeight: 600 }}>{title}</h3>
         <p className="mt-1 text-[12px] leading-relaxed text-neutral-500">{description}</p>
       </div>
       <div className="p-4 md:p-5">{children}</div>
@@ -214,20 +213,20 @@ function MaturityBISection({
           <table className="w-full border-collapse text-xs text-slate-900">
             <thead>
               <tr className="bg-[#5454e9]/[0.07]">
-                <th className="border-b border-[#5454e9]/10 px-4 py-3 text-left font-black text-[#3535a8]">Dimensión</th>
-                <th className="border-b border-[#5454e9]/10 px-4 py-3 text-right font-black text-[#3535a8]">Promedio</th>
-                <th className="border-b border-[#5454e9]/10 px-4 py-3 text-left font-black text-[#3535a8]">Nivel</th>
+                <th className="border-b border-[#5454e9]/10 px-4 py-3 text-left font-semibold text-[#3535a8]">Dimensión</th>
+                <th className="border-b border-[#5454e9]/10 px-4 py-3 text-right font-semibold text-[#3535a8]">Promedio</th>
+                <th className="border-b border-[#5454e9]/10 px-4 py-3 text-left font-semibold text-[#3535a8]">Nivel</th>
               </tr>
             </thead>
             <tbody>
               {tableRows.map((row) => {
                 const isTotal = row.key === 'total_general';
                 return (
-                  <tr key={row.key} className={isTotal ? 'bg-[#5454e9]/[0.08] font-black' : 'bg-white'}>
+                  <tr key={row.key} className={isTotal ? 'bg-[#5454e9]/[0.08] font-semibold' : 'bg-white'}>
                     <td className="border-b border-slate-100 px-4 py-3">{row.label}</td>
-                    <td className="border-b border-slate-100 px-4 py-3 text-right tabular-nums font-black text-slate-950">{formatOneDecimal(row.value)}</td>
+                    <td className="border-b border-slate-100 px-4 py-3 text-right tabular-nums font-semibold text-slate-950">{formatOneDecimal(row.value)}</td>
                     <td className="border-b border-slate-100 px-4 py-3">
-                      <span className="inline-flex rounded-full border border-[#5454e9]/15 bg-[#5454e9]/[0.06] px-2.5 py-1 text-[11px] font-black text-[#3535a8]">
+                      <span className="inline-flex rounded-full border border-[#5454e9]/15 bg-[#5454e9]/[0.06] px-2.5 py-1 text-[11px] font-semibold text-[#3535a8]">
                         {row.maturity}
                       </span>
                     </td>
@@ -264,7 +263,7 @@ function MaturityBISection({
                     dataKey="value"
                     position="top"
                     formatter={(value: unknown) => formatOneDecimal(value)}
-                    style={{ fill: chartColors.label, fontSize: 12, fontWeight: 800, fontFamily: chartFont.fontFamily }}
+                    style={{ fill: chartColors.label, fontSize: 12, fontWeight: 600, fontFamily: chartFont.fontFamily }}
                   />
                 </Bar>
               </BarChart>

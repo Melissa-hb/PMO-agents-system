@@ -11,6 +11,8 @@ export interface PhaseDefinition {
   numero: number;
   codigo: string;
   nombre: string;
+  /** Nombre para la barra de progreso ("Idoneidad"); null usa el nombre completo. */
+  nombreCorto?: string | null;
   orden: number;
   visible: boolean;
   /** Fases que deben estar completadas para ejecutar esta. */
@@ -71,6 +73,11 @@ function subscribe(listener: () => void) {
 /** La configuracion actual; el componente se vuelve a pintar cuando cambia. */
 export function usePhaseConfig(): PhaseConfig {
   return useSyncExternalStore(subscribe, getPhaseConfig, getPhaseConfig);
+}
+
+/** Nombre de la fase para espacios reducidos (barra de progreso). */
+export function shortPhaseName(numero: number, fallback: string, config: PhaseConfig = current): string {
+  return config.fases.find(f => f.numero === numero)?.nombreCorto?.trim() || fallback;
 }
 
 // ── Categorias de documentos ────────────────────────────────────────────────────────────────

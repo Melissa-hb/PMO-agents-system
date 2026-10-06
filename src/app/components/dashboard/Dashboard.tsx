@@ -216,7 +216,7 @@ export default function Dashboard() {
         {/* Header */}
         <div className="flex flex-col items-stretch gap-5 mb-6 sm:flex-row sm:items-end sm:justify-between sm:gap-6 md:mb-12">
           <div>
-            <p className="text-[11px] uppercase tracking-[0.18em] text-neutral-400 mb-3" style={{ fontWeight: 500 }}>
+            <p className="text-[12px] text-neutral-400 mb-3" style={{ fontWeight: 500 }}>
               Panel principal
             </p>
             <h1 className="text-neutral-900 tracking-tight" style={{ fontWeight: 500, fontSize: 'clamp(1.75rem, 5vw, 2.25rem)', lineHeight: 1.1, letterSpacing: '-0.02em' }}>
@@ -256,7 +256,7 @@ export default function Dashboard() {
             { label: 'Completados', value: completadosCount },
           ].map((s) => (
             <div key={s.label} className="brand-kpi-item flex flex-col items-start gap-0.5 max-md:px-2.5! max-md:py-2.5! md:flex-row md:items-center md:justify-between md:gap-3">
-              <p className="text-[9.5px] md:text-[11px] uppercase tracking-[0.04em] md:tracking-[0.14em] text-neutral-400 truncate max-w-full" style={{ fontWeight: 500 }}>{s.label}</p>
+              <p className="text-[12px] md:text-[12px] tracking-[0.04em] md: text-neutral-400 truncate max-w-full" style={{ fontWeight: 500 }}>{s.label}</p>
               <p className="text-neutral-900 tabular-nums" style={{ fontWeight: 500, fontSize: '1.125rem', letterSpacing: '-0.02em' }}>
                 {s.value}
               </p>

@@ -77,17 +77,16 @@ function ConfirmModal({ open, onCancel, onConfirm, isLoading }: {
 function AgentErrorCard({ error }: { error: AgentErrorPayload }) {
   return (
     <div className="rounded-2xl border border-[#ef4444]/25 bg-white overflow-hidden" style={{ boxShadow: '0 18px 44px -30px rgba(239,68,68,0.35)' }}>
-      <div className="h-1.5 bg-[#ef4444]" />
       <div className="p-5 flex gap-4">
         <div className="w-10 h-10 rounded-2xl bg-[#ef4444]/10 text-[#ef4444] border border-[#ef4444]/20 flex items-center justify-center flex-shrink-0">
           <AlertTriangle size={18} />
         </div>
         <div className="min-w-0">
-          <p className="text-neutral-950 text-[15px]" style={{ fontWeight: 750 }}>El agente no pudo completar el análisis</p>
+          <p className="text-neutral-950 text-[15px]" style={{ fontWeight: 600 }}>El agente no pudo completar el análisis</p>
           <p className="text-neutral-600 text-[13px] leading-relaxed mt-1">{error.message}</p>
           {error.details && <p className="text-neutral-500 text-[12px] leading-relaxed mt-2">{error.details}</p>}
           {error.code && (
-            <span className="inline-flex mt-3 px-2.5 py-1 rounded-full bg-[#ef4444]/10 text-[#b91c1c] border border-[#ef4444]/20 text-[10px]" style={{ fontWeight: 750 }}>
+            <span className="inline-flex mt-3 px-2.5 py-1 rounded-full bg-[#ef4444]/10 text-[#b91c1c] border border-[#ef4444]/20 text-[10px]" style={{ fontWeight: 600 }}>
               {error.code}
             </span>
           )}
@@ -372,8 +371,8 @@ export default function IdoneidadModule() {
           {(moduleState === 'selection' || moduleState === 'data-entry') && (
             <motion.div key="selection" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
               <div className="mb-8">
-                <p className="text-[11px] uppercase tracking-[0.18em] text-neutral-400 mb-3" style={{ fontWeight: 500 }}>Fase 3 · Diagnóstico de idoneidad</p>
-                <h1 className="text-neutral-900 tracking-tight" style={{ fontWeight: 500, fontSize: '2.25rem', lineHeight: 1.05, letterSpacing: '-0.025em' }}>
+                <p className="text-[12px] text-neutral-400 mb-3" style={{ fontWeight: 500 }}>Fase 3 · Diagnóstico de idoneidad</p>
+                <h1 className="text-neutral-900 tracking-tight" style={{ fontWeight: 500, fontSize: '1.75rem', lineHeight: 1.15, letterSpacing: '-0.015em' }}>
                   Distribución de la encuesta
                 </h1>
                 <p className="text-neutral-500 text-[14px] mt-3 max-w-2xl leading-relaxed">
@@ -455,7 +454,7 @@ export default function IdoneidadModule() {
                   <h3 className="text-neutral-900 text-[13px]" style={{ fontWeight: 500 }}>
                     Cargar resultados de manera manual
                   </h3>
-                  <span className="text-[11px] uppercase tracking-wide bg-neutral-100 text-neutral-500 px-2 py-0.5 rounded" style={{ fontWeight: 500 }}>
+                  <span className="text-[12px] bg-neutral-100 text-neutral-500 px-2 py-0.5 rounded" style={{ fontWeight: 500 }}>
                     Alternativo
                   </span>
                 </div>
@@ -533,7 +532,7 @@ export default function IdoneidadModule() {
               <div className="w-16 h-16 rounded-full border border-neutral-200 bg-white flex items-center justify-center mb-5" style={{ boxShadow: '0 1px 2px rgba(0,0,0,0.04)' }}>
                 <Loader2 size={22} className="text-neutral-700 animate-spin" strokeWidth={1.75} />
               </div>
-              <p className="text-[11px] uppercase tracking-[0.18em] text-[#5454e9] mb-2" style={{ fontWeight: 500 }}>Procesando</p>
+              <p className="text-[12px] text-[#5454e9] mb-2" style={{ fontWeight: 500 }}>Procesando</p>
               <h2 className="text-neutral-900 tracking-tight" style={{ fontWeight: 500, fontSize: '1.5rem', letterSpacing: '-0.02em' }}>
                 Analizando idoneidad
               </h2>
@@ -595,7 +594,7 @@ export default function IdoneidadModule() {
                     ))}
                   </div>
                   <div className="mt-5 p-4 bg-neutral-50 rounded-xl border border-neutral-200/70">
-                    <p className="text-[11px] uppercase tracking-[0.14em] text-neutral-400" style={{ fontWeight: 500 }}>Respuestas totales</p>
+                    <p className="text-[12px] text-neutral-400" style={{ fontWeight: 500 }}>Respuestas totales</p>
                     <p className="text-neutral-900 tabular-nums mt-1" style={{ fontWeight: 500, fontSize: '1.5rem', letterSpacing: '-0.02em' }}>
                       {totalRespondentCount}
                     </p>

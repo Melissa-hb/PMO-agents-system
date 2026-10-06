@@ -46,7 +46,7 @@ export function GuideSidebar({
               <div className="w-8 h-8 rounded-xl bg-[#865cf0]/10 text-[#6a45d8] flex items-center justify-center">
                 <MessageSquare size={14} strokeWidth={1.85} />
               </div>
-              <p className="text-[11px] uppercase tracking-[0.14em] text-neutral-700" style={{ fontWeight: 850 }}>
+              <p className="text-[12px] text-neutral-700" style={{ fontWeight: 600 }}>
                 Solicitar ajustes
               </p>
             </div>
@@ -55,7 +55,7 @@ export function GuideSidebar({
             </p>
             {sectionOptions.length > 0 && (
               <div className="mb-3 flex-shrink-0">
-                <p className="text-[11px] text-neutral-600 mb-1.5" style={{ fontWeight: 650 }}>
+                <p className="text-[11px] text-neutral-600 mb-1.5" style={{ fontWeight: 500 }}>
                   Capítulos a ajustar <span className="text-neutral-400" style={{ fontWeight: 400 }}>(opcional)</span>
                 </p>
                 <div className="flex flex-wrap gap-1.5 max-h-[88px] overflow-y-auto pr-0.5" role="group" aria-label="Capítulos a ajustar">
@@ -100,7 +100,7 @@ export function GuideSidebar({
                 onClick={onRequestAdjustments}
                 disabled={isAdjusting || !adjustText.trim()}
                 className="flex-1 py-2.5 rounded-xl border border-[#865cf0]/25 text-[#6a45d8] bg-[#865cf0]/[0.06] text-[12px] flex items-center justify-center gap-1.5 disabled:opacity-50 hover:bg-[#865cf0]/10 transition-all"
-                style={{ fontWeight: 750 }}
+                style={{ fontWeight: 600 }}
               >
                 {isAdjusting
                   ? <><Loader2 size={12} className="animate-spin" strokeWidth={1.75} />Enviando…</>
@@ -111,7 +111,7 @@ export function GuideSidebar({
                 onClick={onReprocess}
                 disabled={isAdjusting || !adjustText.trim()}
                 className="flex-1 py-2.5 rounded-xl border border-[#5454e9]/30 text-white bg-[#5454e9] text-[12px] flex items-center justify-center gap-1.5 disabled:opacity-50 hover:bg-[#4747cf] transition-all"
-                style={{ fontWeight: 750, boxShadow: '0 12px 26px -18px rgba(84,84,233,0.75)' }}
+                style={{ fontWeight: 600, boxShadow: '0 12px 26px -18px rgba(84,84,233,0.75)' }}
               >
                 <RotateCcw size={12} strokeWidth={1.75} />
                 Reprocesar
@@ -124,7 +124,7 @@ export function GuideSidebar({
               <div className="w-7 h-7 rounded-lg bg-neutral-900 text-white flex items-center justify-center">
                 <CheckCircle2 size={13} strokeWidth={1.75} />
               </div>
-              <span className="text-[11px] uppercase tracking-[0.14em] text-neutral-500" style={{ fontWeight: 500 }}>Fase completada</span>
+              <span className="text-[12px] text-neutral-500" style={{ fontWeight: 500 }}>Fase completada</span>
             </div>
             <p className="text-neutral-700 text-[13px] leading-relaxed">
               La guía fue aprobada y enviada al Agente 8 para generar los artefactos de soporte.
@@ -146,7 +146,7 @@ export function GuideSidebar({
                 onClick={onReprocess}
                 disabled={isAdjusting || !adjustText.trim()}
                 className="w-full py-2.5 rounded-xl border border-[#5454e9]/30 bg-[#5454e9] text-white text-[12px] flex items-center justify-center gap-1.5 disabled:opacity-50 hover:bg-[#4747cf] transition-all"
-                style={{ fontWeight: 750 }}
+                style={{ fontWeight: 600 }}
               >
                 <RotateCcw size={12} strokeWidth={1.75} />
                 Reprocesar guía metodológica

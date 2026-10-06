@@ -34,7 +34,7 @@ export function PhaseConfirmDialog({
             <AlertTriangle size={20} />
           </div>
           <div className="min-w-0 flex-1">
-            <h2 className="text-base font-bold text-slate-950">{title}</h2>
+            <h2 className="text-base font-semibold text-slate-950">{title}</h2>
             {description ? <div className="mt-1 text-sm leading-6 text-slate-600">{description}</div> : null}
           </div>
           <button

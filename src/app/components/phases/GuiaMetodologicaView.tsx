@@ -827,7 +827,7 @@ export default function GuiaMetodologicaView() {
         />
         <div className="flex-1 flex items-center justify-center px-6">
           <div className="max-w-xl text-center">
-            <p className="text-[11px] uppercase tracking-[0.18em] text-orange-600 mb-3" style={{ fontWeight: 700 }}>
+            <p className="text-[12px] text-orange-600 mb-3" style={{ fontWeight: 600 }}>
               Agente detenido
             </p>
             <h2 className="text-neutral-900 mb-3" style={{ fontWeight: 600, fontSize: '1.6rem' }}>

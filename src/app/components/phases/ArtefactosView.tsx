@@ -395,7 +395,7 @@ function FormatBadge({ format }: { format: Artifact['format'] }) {
     pdf: 'bg-neutral-100 text-neutral-600',
   };
   return (
-    <span className={`text-xs px-2 py-0.5 rounded-full uppercase tracking-wide ${styles[format]}`} style={{ fontWeight: 600 }}>
+    <span className={`text-[12px] px-2 py-0.5 rounded-full ${styles[format]}`} style={{ fontWeight: 600 }}>
       {format}
     </span>
   );
@@ -418,7 +418,7 @@ function ArtifactCard({ artifact }: { artifact: Artifact }) {
         <FormatBadge format={artifact.format} />
       </div>
       <div className="flex-1">
-        <p className="text-neutral-900 text-[15px] leading-tight mb-1.5" style={{ fontWeight: 700 }}>{artifact.name}</p>
+        <p className="text-neutral-900 text-[15px] leading-tight mb-1.5" style={{ fontWeight: 600 }}>{artifact.name}</p>
         <p className="text-neutral-500 text-[12px] leading-relaxed line-clamp-3 mb-2">{artifact.description}</p>
         <div className="flex items-center gap-2 mt-auto">
           <span className="text-neutral-400 text-[10px] tabular-nums" style={{ fontWeight: 500 }}>{artifact.size}</span>
@@ -434,7 +434,7 @@ function ArtifactCard({ artifact }: { artifact: Artifact }) {
             window.open(artifact.downloadUrl, '_blank');
           }}
           className="w-full py-2.5 rounded-xl text-white text-[13px] flex items-center justify-center gap-2 hover:brightness-110 active:scale-[0.98] transition-all shadow-sm"
-          style={{ background: buttonColor, fontWeight: 700 }}
+          style={{ background: buttonColor, fontWeight: 600 }}
         >
           <Download size={14} />
           Descargar
@@ -650,7 +650,7 @@ export default function ArtefactosView() {
           >
             <Loader2 size={22} className="text-neutral-700 animate-spin" strokeWidth={1.75} />
           </div>
-          <p className="text-[11px] uppercase tracking-[0.18em] text-[#5454e9] mb-2" style={{ fontWeight: 500 }}>
+          <p className="text-[12px] text-[#5454e9] mb-2" style={{ fontWeight: 500 }}>
             {isSending ? 'Finalizando' : 'Fase 8 · Agente'}
           </p>
           <h2 className="text-neutral-900 tracking-tight mb-2" style={{ fontWeight: 500, fontSize: '1.25rem', letterSpacing: '-0.01em' }}>
@@ -690,13 +690,13 @@ export default function ArtefactosView() {
         <div className="col-span-8 flex flex-col border-r border-gray-200 overflow-hidden">
           <div className="bg-white border-b border-neutral-100 px-8 py-5 flex items-center justify-between flex-shrink-0">
             <div>
-              <h2 className="text-neutral-900 text-2xl tracking-tight" style={{ fontWeight: 850 }}>Catálogo de Entregables</h2>
+              <h2 className="text-neutral-900 text-2xl tracking-tight" style={{ fontWeight: 600 }}>Catálogo de Entregables</h2>
               <p className="text-neutral-500 text-[13px] mt-1">Se han generado {ACTIVE_ARTIFACTS.length} plantillas personalizadas para su gestión operativa.</p>
             </div>
             <div className="flex items-center gap-3">
               <button
                 className="flex items-center gap-2.5 px-6 py-3 rounded-2xl text-white text-sm hover:brightness-110 active:scale-[0.98] transition-all shadow-md shadow-blue-500/10"
-                style={{ background: '#5454e9', fontWeight: 800 }}
+                style={{ background: '#5454e9', fontWeight: 600 }}
               >
                 <Archive size={16} />
                 Paquete Completo (ZIP)
@@ -727,7 +727,7 @@ export default function ArtefactosView() {
                         <CheckCircle2 size={18} strokeWidth={2.5} />
                       </div>
                       <div>
-                        <h3 className="text-neutral-900 text-[20px] tracking-tight" style={{ fontWeight: 850 }}>Artefactos Recomendados</h3>
+                        <h3 className="text-neutral-900 text-[20px] tracking-tight" style={{ fontWeight: 600 }}>Artefactos Recomendados</h3>
                         <p className="text-neutral-500 text-[13px]">El Agente 8 sugiere priorizar estos entregables según su diagnóstico.</p>
                       </div>
                     </div>
@@ -753,7 +753,7 @@ export default function ArtefactosView() {
                         <Archive size={18} strokeWidth={2.5} />
                       </div>
                       <div>
-                        <h3 className="text-neutral-900 text-[20px] tracking-tight" style={{ fontWeight: 850 }}>Otros Artefactos</h3>
+                        <h3 className="text-neutral-900 text-[20px] tracking-tight" style={{ fontWeight: 600 }}>Otros Artefactos</h3>
                         <p className="text-neutral-500 text-[13px]">Biblioteca complementaria de soporte operativo y metodológico.</p>
                       </div>
                     </div>
@@ -774,21 +774,21 @@ export default function ArtefactosView() {
         <div className="col-span-4 flex flex-col bg-neutral-50/50 border-l border-neutral-200 overflow-hidden">
           <div className="flex-1 min-h-0 p-6 space-y-5">
             <div className="bg-white rounded-2xl border border-neutral-200/60 p-5 shadow-sm">
-              <h3 className="text-neutral-900 text-[13px] mb-3 uppercase tracking-wider" style={{ fontWeight: 800 }}>Resumen del Paquete</h3>
+              <h3 className="text-neutral-900 text-[13px] mb-3" style={{ fontWeight: 600 }}>Resumen del Paquete</h3>
               <div className="space-y-3">
                 <div className="flex items-center justify-between p-2.5 rounded-xl bg-emerald-50 border border-emerald-100/50">
                   <div className="flex items-center gap-3">
                     <div className="w-2 h-2 rounded-full bg-emerald-500" />
                     <span className="text-neutral-700 text-sm font-semibold">Recomendados</span>
                   </div>
-                  <span className="text-emerald-700 font-bold tabular-nums">{recommendedArtifacts.length}</span>
+                  <span className="text-emerald-700 font-semibold tabular-nums">{recommendedArtifacts.length}</span>
                 </div>
                 <div className="flex items-center justify-between p-2.5 rounded-xl bg-neutral-100 border border-neutral-200/50">
                   <div className="flex items-center gap-3">
                     <div className="w-2 h-2 rounded-full bg-neutral-400" />
                     <span className="text-neutral-600 text-sm">Complementarios</span>
                   </div>
-                  <span className="text-neutral-500 font-bold tabular-nums">{otherArtifacts.length}</span>
+                  <span className="text-neutral-500 font-semibold tabular-nums">{otherArtifacts.length}</span>
                 </div>
               </div>
             </div>
@@ -801,7 +801,7 @@ export default function ArtefactosView() {
                   <AlertTriangle size={18} className="text-amber-500" />
                 </div>
                 <div>
-                  <p className="text-amber-950 text-sm mb-1.5" style={{ fontWeight: 700 }}>Revisión Final de Entrega</p>
+                  <p className="text-amber-950 text-sm mb-1.5" style={{ fontWeight: 600 }}>Revisión Final de Entrega</p>
                   <p className="text-amber-800/80 text-[12px] leading-relaxed font-medium">
                     Al proceder con la aprobación, el sistema consolidará la documentación final y registrará el cierre administrativo del proyecto de implementación de la PMO.
                   </p>
@@ -815,7 +815,7 @@ export default function ArtefactosView() {
                   <CheckCircle2 size={24} strokeWidth={2.5} />
                 </div>
                 <div>
-                  <p className="text-white text-base tracking-tight" style={{ fontWeight: 800 }}>Proyecto Finalizado</p>
+                  <p className="text-white text-base tracking-tight" style={{ fontWeight: 600 }}>Proyecto Finalizado</p>
                   <p className="text-neutral-400 text-xs mt-0.5">Cierre registrado el {new Date().toLocaleDateString()}</p>
                 </div>
               </div>
@@ -830,7 +830,7 @@ export default function ArtefactosView() {
                 onClick={() => setShowConfirm(true)}
                 disabled={depsBlocked}
                 className="disabled:opacity-40 disabled:cursor-not-allowed w-full max-w-sm mx-auto py-3.5 rounded-xl text-white flex items-center justify-center gap-2.5 shadow-lg shadow-blue-600/15 group relative overflow-hidden"
-                style={{ background: '#5454e9', fontWeight: 850 }}
+                style={{ background: '#5454e9', fontWeight: 600 }}
               >
                 <div className="flex items-center gap-2.5 text-[14px] relative z-10">
                   <Send size={16} />

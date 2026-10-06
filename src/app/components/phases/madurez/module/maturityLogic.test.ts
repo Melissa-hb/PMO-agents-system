@@ -31,7 +31,7 @@ describe('escala de madurez', () => {
 
   it('sin etiqueta usa el nivel que corresponde al puntaje', () => {
     expect(formatMaturityLabel('', 4.6)).toBe('5. Excelencia');
-    expect(formatMaturityLabel('', 2.5)).toBe('3. Estandar');
+    expect(formatMaturityLabel('', 2.5)).toBe('3. Estándar');
     expect(formatMaturityLabel('', 0)).toBe('1. Informal');
   });
 });

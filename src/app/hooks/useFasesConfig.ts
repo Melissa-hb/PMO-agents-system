@@ -72,7 +72,7 @@ export function useFasesConfig() {
     }
   }, [fetchConfig]);
 
-  const updatePhase = useCallback((numero: number, changes: Partial<Pick<PhaseDefinition, 'nombre' | 'requiereCompletas' | 'leeResultadoDe'>>) =>
+  const updatePhase = useCallback((numero: number, changes: Partial<Pick<PhaseDefinition, 'nombre' | 'nombreCorto' | 'requiereCompletas' | 'leeResultadoDe'>>) =>
     save(() => apiPut(`${BASE}/fases/${numero}`, changes), `Fase ${numero} actualizada`), [save]);
 
   const updateAgent = useCallback((faseNumero: number, changes: Partial<Omit<AgentConfig, 'id' | 'faseNumero'>>) =>

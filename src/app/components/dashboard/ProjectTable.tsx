@@ -22,7 +22,7 @@ interface ProjectTableProps {
   onSort: (key: SortKey) => void;
 }
 
-const TH = 'px-4 py-3 text-left text-[11px] uppercase tracking-[0.14em] text-neutral-400 whitespace-nowrap';
+const TH = 'px-4 py-3 text-left text-[11px] uppercase text-neutral-400 whitespace-nowrap';
 // Auditores y Fecha solo en escritorio (>= 1024px); en tablet se ocultan.
 const DESKTOP_ONLY = 'hidden lg:table-cell';
 
@@ -46,7 +46,7 @@ function SortHeader({ label, column, sortKey, sortDir, onSort, className = '' }:
       <button
         type="button"
         onClick={() => onSort(column)}
-        className={`inline-flex items-center gap-1.5 text-[11px] uppercase tracking-[0.14em] rounded-md -mx-1 px-1 outline-none focus-visible:ring-2 focus-visible:ring-[#5454e9]/40 transition-colors ${
+        className={`inline-flex items-center gap-1.5 text-[11px] uppercase rounded-md -mx-1 px-1 outline-none focus-visible:ring-2 focus-visible:ring-[#5454e9]/40 transition-colors ${
           active ? 'text-neutral-700' : 'hover:text-neutral-600'
         }`}
         style={{ fontWeight: 500 }}

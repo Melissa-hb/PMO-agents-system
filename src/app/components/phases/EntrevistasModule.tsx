@@ -31,17 +31,16 @@ import { LoadingRouteState, MissingProjectState } from '../layout/RouteState';
 function AgentErrorCard({ error }: { error: AgentErrorPayload }) {
   return (
     <div className="rounded-2xl border border-[#ef4444]/25 bg-white overflow-hidden" style={{ boxShadow: '0 18px 44px -30px rgba(239,68,68,0.35)' }}>
-      <div className="h-1.5 bg-[#ef4444]" />
       <div className="p-5 flex gap-4">
         <div className="w-10 h-10 rounded-2xl bg-[#ef4444]/10 text-[#ef4444] border border-[#ef4444]/20 flex items-center justify-center flex-shrink-0">
           <AlertTriangle size={18} />
         </div>
         <div className="min-w-0">
-          <p className="text-neutral-950 text-[15px]" style={{ fontWeight: 750 }}>El agente no pudo completar el análisis</p>
+          <p className="text-neutral-950 text-[15px]" style={{ fontWeight: 600 }}>El agente no pudo completar el análisis</p>
           <p className="text-neutral-600 text-[13px] leading-relaxed mt-1">{error.message}</p>
           {error.details && <p className="text-neutral-500 text-[12px] leading-relaxed mt-2">{error.details}</p>}
           {error.code && (
-            <span className="inline-flex mt-3 px-2.5 py-1 rounded-full bg-[#ef4444]/10 text-[#b91c1c] border border-[#ef4444]/20 text-[10px]" style={{ fontWeight: 750 }}>
+            <span className="inline-flex mt-3 px-2.5 py-1 rounded-full bg-[#ef4444]/10 text-[#b91c1c] border border-[#ef4444]/20 text-[10px]" style={{ fontWeight: 600 }}>
               {error.code}
             </span>
           )}
@@ -465,7 +464,7 @@ export default function EntrevistasModule() {
             <div className="w-16 h-16 rounded-full border border-neutral-200 bg-white flex items-center justify-center mb-5" style={{ boxShadow: '0 1px 2px rgba(0,0,0,0.04)' }}>
               <Loader2 size={22} className="text-neutral-700 animate-spin" strokeWidth={1.75} />
             </div>
-            <p className="text-[11px] uppercase tracking-[0.18em] text-[#5454e9] mb-2" style={{ fontWeight: 500 }}>Procesando</p>
+            <p className="text-[12px] text-[#5454e9] mb-2" style={{ fontWeight: 500 }}>Procesando</p>
             <h2 className="text-neutral-900 tracking-tight" style={{ fontWeight: 500, fontSize: '1.25rem', letterSpacing: '-0.01em' }}>
               Consolidando entrevistas
             </h2>
@@ -479,8 +478,8 @@ export default function EntrevistasModule() {
       {/* ------------------------------------------------------------------ */}
       <div className="max-w-[1100px] mx-auto px-10 py-10">
         <div className="mb-10">
-          <p className="text-[11px] uppercase tracking-[0.18em] text-neutral-400 mb-3" style={{ fontWeight: 500 }}>Fase 2 · Entrevistas a stakeholders</p>
-          <h1 className="text-neutral-900 tracking-tight" style={{ fontWeight: 500, fontSize: '2.25rem', lineHeight: 1.05, letterSpacing: '-0.025em' }}>
+          <p className="text-[12px] text-neutral-400 mb-3" style={{ fontWeight: 500 }}>Fase 2 · Entrevistas a stakeholders</p>
+          <h1 className="text-neutral-900 tracking-tight" style={{ fontWeight: 500, fontSize: '1.75rem', lineHeight: 1.15, letterSpacing: '-0.015em' }}>
             {isCompleted ? 'Entrevistas analizadas' : 'Registro de entrevistas'}
           </h1>
           <p className="text-neutral-500 text-[14px] mt-3 max-w-2xl leading-relaxed">
@@ -489,19 +488,19 @@ export default function EntrevistasModule() {
 
           <div className="grid grid-cols-3 gap-px bg-neutral-200/60 rounded-2xl overflow-hidden mt-7 border border-neutral-200/60">
             <div className="bg-white px-5 py-4">
-              <p className="text-[11px] uppercase tracking-[0.14em] text-neutral-400" style={{ fontWeight: 500 }}>Entrevistas</p>
+              <p className="text-[12px] text-neutral-400" style={{ fontWeight: 500 }}>Entrevistas</p>
               <p className="mt-1.5 text-neutral-900 tabular-nums" style={{ fontWeight: 500, fontSize: '1.375rem', letterSpacing: '-0.02em' }}>
                 {entrevistas.length}
               </p>
             </div>
             <div className="bg-white px-5 py-4">
-              <p className="text-[11px] uppercase tracking-[0.14em] text-neutral-400" style={{ fontWeight: 500 }}>Áreas cubiertas</p>
+              <p className="text-[12px] text-neutral-400" style={{ fontWeight: 500 }}>Áreas cubiertas</p>
               <p className="mt-1.5 text-neutral-900 tabular-nums" style={{ fontWeight: 500, fontSize: '1.375rem', letterSpacing: '-0.02em' }}>
                 {new Set(entrevistas.map(e => e.area)).size}
               </p>
             </div>
             <div className="bg-white px-5 py-4">
-              <p className="text-[11px] uppercase tracking-[0.14em] text-neutral-400" style={{ fontWeight: 500 }}>Estado</p>
+              <p className="text-[12px] text-neutral-400" style={{ fontWeight: 500 }}>Estado</p>
               <div className="mt-1.5 flex items-center gap-2">
                 <span className={`w-1.5 h-1.5 rounded-full ${isCompleted ? 'bg-emerald-500' : 'bg-neutral-900'}`} />
                 <p className="text-neutral-900 text-[13px]" style={{ fontWeight: 500 }}>
@@ -712,7 +711,7 @@ export default function EntrevistasModule() {
                       <div className="flex items-center justify-between mt-2 pl-10">
                         <p className="text-neutral-400 text-[11px] tabular-nums">{e.createdAt}</p>
                         {isSelected && (
-                          <span className="inline-flex items-center gap-1 text-[10px] uppercase tracking-[0.12em] text-neutral-500" style={{ fontWeight: 500 }}>
+                          <span className="inline-flex items-center gap-1 text-[12px] text-neutral-500" style={{ fontWeight: 500 }}>
                             <span className="w-1 h-1 rounded-full bg-neutral-900" /> Seleccionado
                           </span>
                         )}

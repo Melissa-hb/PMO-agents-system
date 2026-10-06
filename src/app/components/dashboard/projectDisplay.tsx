@@ -40,7 +40,7 @@ export function StatusBadge({ meta }: { meta: (typeof STATUS_META)[PhaseStatus] 
   return (
     <span className="inline-flex items-center gap-2">
       <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${meta.dot}`} />
-      <span className="text-[11px] uppercase tracking-[0.14em] text-neutral-400 whitespace-nowrap" style={{ fontWeight: 500 }}>
+      <span className="text-[12px] text-neutral-400 whitespace-nowrap" style={{ fontWeight: 500 }}>
         {meta.label}
       </span>
     </span>
