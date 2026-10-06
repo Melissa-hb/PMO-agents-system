@@ -24,6 +24,7 @@ vi.mock('../../../hooks/useFasesConfig', () => ({
       agentes: [{
         id: 'a7', faseNumero: 7, nombreFase: 'Guía metodológica', promptSistema: 'Eres el agente 7', modelo: null,
         temperatura: 1, instruccionesSalida: 'Devuelve JSON', maxOutputTokens: 65536, timeoutMs: 280000, sinRazonamiento: false,
+        esquemaSalida: { type: 'object', properties: {} },
       }],
       categoriasDocumento: [
         { codigo: 'D01', nombre: 'Organigrama', orden: 1, esVisual: true, esOtros: false },
@@ -64,6 +65,20 @@ describe('Administracion > Fases y agentes', () => {
     expect(hook.updateAgent).toHaveBeenCalledWith(7, expect.objectContaining({
       maxOutputTokens: 32768, timeoutMs: 280000, sinRazonamiento: true, promptSistema: 'Eres el agente 7',
     }));
+  });
+
+  it('valida el esquema de salida antes de guardarlo', () => {
+    render(<FasesSection />);
+    fireEvent.click(screen.getByRole('button', { name: /Agentes/ }));
+    const esquema = screen.getByPlaceholderText(/"type": "object"/);
+
+    fireEvent.change(esquema, { target: { value: '{ no es json' } });
+    fireEvent.click(screen.getByRole('button', { name: /Guardar agente/ }));
+    expect(hook.updateAgent).not.toHaveBeenCalled();
+
+    fireEvent.change(esquema, { target: { value: '' } });
+    fireEvent.click(screen.getByRole('button', { name: /Guardar agente/ }));
+    expect(hook.updateAgent).toHaveBeenCalledWith(7, expect.objectContaining({ esquemaSalida: null }));
   });
 
   it('la categoria "Otros" no se puede eliminar', () => {

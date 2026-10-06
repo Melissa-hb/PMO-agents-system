@@ -116,6 +116,7 @@ function AgentForm({ agente, disabled, onSave }: {
     sinRazonamiento: agente.sinRazonamiento,
     instruccionesSalida: agente.instruccionesSalida ?? '',
     promptSistema: agente.promptSistema ?? '',
+    esquemaSalida: agente.esquemaSalida ? JSON.stringify(agente.esquemaSalida, null, 2) : '',
   });
   const [form, setForm] = useState(initial);
   useEffect(() => { setForm(initial()); }, [agente]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -126,7 +127,17 @@ function AgentForm({ agente, disabled, onSave }: {
 
   const handleSave = () => {
     if (!form.promptSistema.trim()) { toast.error('El prompt del agente no puede quedar vacío.'); return; }
+    let esquemaSalida: Record<string, unknown> | null = null;
+    if (form.esquemaSalida.trim()) {
+      try {
+        esquemaSalida = JSON.parse(form.esquemaSalida);
+      } catch {
+        toast.error('El esquema de salida no es un JSON válido.');
+        return;
+      }
+    }
     onSave({
+      esquemaSalida,
       nombreFase: form.nombreFase,
       modelo: form.modelo,
       temperatura: Number(form.temperatura),
@@ -180,6 +191,15 @@ function AgentForm({ agente, disabled, onSave }: {
         <span className={label} style={{ fontWeight: 800 }}>Instrucciones de salida (se agregan al final del prompt)</span>
         <textarea className={`${input} font-mono text-xs`} rows={6} value={form.instruccionesSalida}
           onChange={e => set('instruccionesSalida', e.target.value)} disabled={disabled} />
+      </div>
+      <div>
+        <span className={label} style={{ fontWeight: 800 }}>Esquema de salida (JSON Schema, vacío = sin esquema)</span>
+        <textarea className={`${input} font-mono text-xs`} rows={8} value={form.esquemaSalida}
+          placeholder='{"type": "object", "properties": { ... }}'
+          onChange={e => set('esquemaSalida', e.target.value)} disabled={disabled} />
+        <p className="text-xs text-gray-400 mt-1">
+          Con esquema, Gemini solo puede responder JSON válido con esa forma. Evita respuestas rotas en fases largas como la 7.
+        </p>
       </div>
       <div>
         <span className={label} style={{ fontWeight: 800 }}>Prompt de sistema</span>

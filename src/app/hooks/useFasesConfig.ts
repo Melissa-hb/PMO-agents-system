@@ -15,6 +15,8 @@ export interface AgentConfig {
   maxOutputTokens: number;
   timeoutMs: number;
   sinRazonamiento: boolean;
+  /** Esquema JSON de la respuesta (salida estructurada de Gemini); null = sin esquema. */
+  esquemaSalida: Record<string, unknown> | null;
 }
 
 export interface ReferenceGuide {
