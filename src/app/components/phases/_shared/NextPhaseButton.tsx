@@ -1,7 +1,6 @@
 import { useNavigate } from 'react-router';
 import { motion } from 'motion/react';
-import { ArrowLeft, ArrowRight } from 'lucide-react';
-import { supabase } from '../../../lib/supabase';
+import { ArrowLeft, ArrowRight, LayoutGrid } from 'lucide-react';
 import { useApp } from '../../../context/AppContext';
 
 interface NextPhaseButtonProps {
@@ -15,7 +14,8 @@ interface NextPhaseButtonProps {
 
 /**
  * Barra de navegación inferior que aparece cuando una fase está completada.
- * Muestra "Ver la fase previa" a la izquierda y "Ir a la siguiente fase" a la derecha.
+ * Muestra "Ver la fase previa" a la izquierda, "Ir al proyecto" al centro e "Ir a la siguiente
+ * fase" a la derecha.
  */
 export default function NextPhaseButton({ projectId, show, nextPhase, prevPhase }: NextPhaseButtonProps) {
   const navigate = useNavigate();
@@ -28,16 +28,8 @@ export default function NextPhaseButton({ projectId, show, nextPhase, prevPhase 
     const target = project?.phases.find(p => p.number === phaseNumber);
     const previous = project?.phases.find(p => p.number === phaseNumber - 1);
 
+    // updatePhaseStatus guarda el cambio a traves del backend.
     if (target?.status === 'bloqueado' && previous?.status === 'completado') {
-      await supabase
-        .from('fases_estado')
-        .update({
-          estado_visual: 'disponible',
-          updated_at: new Date().toISOString(),
-        })
-        .eq('proyecto_id', projectId)
-        .eq('numero_fase', phaseNumber)
-        .eq('estado_visual', 'bloqueado');
       updatePhaseStatus(projectId, phaseNumber, 'disponible');
     }
 
@@ -68,6 +60,17 @@ export default function NextPhaseButton({ projectId, show, nextPhase, prevPhase 
           /* Placeholder para mantener el justify-between */
           <span />
         )}
+
+        {/* Centro: volver al proyecto */}
+        <button
+          type="button"
+          onClick={() => navigate(`/dashboard/project/${projectId}`)}
+          className="inline-flex items-center gap-1.5 px-4 py-2 text-neutral-500 text-[13px] hover:text-[#5454e9] transition-colors"
+          style={{ fontWeight: 500 }}
+        >
+          <LayoutGrid size={13} strokeWidth={1.75} />
+          Ir al proyecto
+        </button>
 
         {/* Botón derecho: siguiente fase */}
         {nextPhase ? (

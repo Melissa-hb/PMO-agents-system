@@ -17,6 +17,7 @@ import {
 } from '../../hooks/useEntrevistas';
 import { useSoundManager } from '../../hooks/useSoundManager';
 import { supabase } from '../../lib/supabase';
+import { getPhaseState } from '../../lib/api';
 import PhaseHeader from './_shared/PhaseHeader';
 import { usePhaseDependencies, BlockedActionHint } from './_shared/PhaseDependencyNotice';
 import NextPhaseButton from './_shared/NextPhaseButton';
@@ -127,17 +128,12 @@ export default function EntrevistasModule() {
 
   const keepProcessingIfAgentStarted = async () => {
     if (!projectId) return false;
-    const { data } = await supabase
-      .from('fases_estado')
-      .select('estado_visual')
-      .eq('proyecto_id', projectId)
-      .eq('numero_fase', 2)
-      .single();
+    const data = await getPhaseState(projectId, 2).catch(() => null);
 
-    if (data?.estado_visual === 'procesando') {
+    if (data?.estadoVisual === 'procesando') {
       setIsSending(false);
       toast.info('El Agente 2 sigue en ejecucion.', {
-        description: 'Seguiremos esperando el resultado guardado en Supabase.',
+        description: 'Seguiremos esperando el resultado del agente.',
       });
       return true;
     }

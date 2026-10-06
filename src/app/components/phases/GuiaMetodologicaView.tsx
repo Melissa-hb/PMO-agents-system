@@ -949,18 +949,10 @@ export default function GuiaMetodologicaView() {
         </div>
 
         <GuideSidebar
-          versions={versions}
-          currentVersionIdx={currentVersionIdx}
-          currentVersion={currentVersion}
           adjustText={adjustText}
           isAdjusting={isAdjusting}
           isCompleted={isCompleted}
           completedAt={phase.completedAt}
-          onVersionSelect={(version, index) => {
-            setCurrentVersionIdx(index);
-            setSelectedSections([]);
-            if (version.data) setChapters(normalizeChapters(version.data));
-          }}
           onAdjustTextChange={setAdjustText}
           sectionOptions={sectionOptions}
           selectedSections={selectedSections}
@@ -970,7 +962,9 @@ export default function GuiaMetodologicaView() {
           onApprove={() => setShowApprove(true)}
           onGoPhase6={() => navigate(`/dashboard/project/${projectId}/phase/6`)}
           onGoPhase8={() => navigate(`/dashboard/project/${projectId}/phase/8`)}
-        />      </div>
+          onGoProject={() => navigate(`/dashboard/project/${projectId}`)}
+        />
+      </div>
 
       <ApproveModal
         open={showApprove}

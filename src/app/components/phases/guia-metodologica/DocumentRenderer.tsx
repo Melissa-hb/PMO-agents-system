@@ -80,6 +80,15 @@ function tableWidth(headers: string[], rows: string[][]) {
   return headers.reduce((total, _, index) => total + tableColumnWidth(headers, rows, index), 0);
 }
 
+/**
+ * Ancho de cada columna como porcentaje de la pagina. Con anchos fijos en pixeles una tabla de 5
+ * columnas quedaba mas ancha que la hoja A4 y la ultima columna se cortaba (scroll horizontal
+ * invisible en macOS); asi las columnas se reparten la pagina y el texto se ajusta.
+ */
+function tableColumnPercent(headers: string[], rows: string[][], columnIndex: number) {
+  return `${(tableColumnWidth(headers, rows, columnIndex) / tableWidth(headers, rows)) * 100}%`;
+}
+
 function DocumentRenderer({ chapters, org, pmoType, version }: {
   chapters: GuideChapter[]; org: string; pmoType: PmoType; version: DocVersion;
 }) {
@@ -202,10 +211,9 @@ function DocumentRenderer({ chapters, org, pmoType, version }: {
                   )}
 
                   {sec.table && (
-                    <div className="phase7-table-wrap overflow-x-auto rounded-xl border border-gray-200 mb-3 print:overflow-visible print:rounded-none print:border-gray-300 print:break-inside-auto">
+                    <div className="phase7-table-wrap rounded-xl border border-gray-200 mb-3 overflow-hidden print:overflow-visible print:rounded-none print:border-gray-300 print:break-inside-auto">
                       <table
-                        className="phase7-print-table text-[10px] print:w-full print:min-w-0 print:table-fixed print:text-[5.8px]"
-                        style={{ width: tableWidth(sec.table.headers, sec.table.rows) }}
+                        className="phase7-print-table w-full table-fixed text-[10px] print:w-full print:min-w-0 print:table-fixed print:text-[5.8px]"
                       >
                         <thead>
                           <tr style={{ background: '#5454e9' }}>
@@ -215,9 +223,7 @@ function DocumentRenderer({ chapters, org, pmoType, version }: {
                                 className="px-3 py-2 text-left text-white align-top leading-snug print:px-1.5 print:py-1 print:leading-tight print:break-words"
                                 style={{
                                   fontWeight: 700,
-                                  width: tableColumnWidth(sec.table!.headers, sec.table!.rows, hi),
-                                  minWidth: tableColumnWidth(sec.table!.headers, sec.table!.rows, hi),
-                                  maxWidth: tableColumnWidth(sec.table!.headers, sec.table!.rows, hi),
+                                  width: tableColumnPercent(sec.table!.headers, sec.table!.rows, hi),
                                   whiteSpace: 'normal',
                                 }}
                               >
@@ -236,9 +242,7 @@ function DocumentRenderer({ chapters, org, pmoType, version }: {
                                     key={ci}
                                     className="px-3 py-3 text-gray-600 border-t border-gray-100 whitespace-pre-wrap break-words align-top leading-relaxed print:px-1.5 print:py-1 print:leading-tight print:border-gray-300"
                                     style={{
-                                      width: tableColumnWidth(sec.table!.headers, sec.table!.rows, ci),
-                                      minWidth: tableColumnWidth(sec.table!.headers, sec.table!.rows, ci),
-                                      maxWidth: tableColumnWidth(sec.table!.headers, sec.table!.rows, ci),
+                                      width: tableColumnPercent(sec.table!.headers, sec.table!.rows, ci),
                                       overflowWrap: 'anywhere',
                                       wordBreak: 'break-word',
                                     }}

@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { ArrowLeft, BarChart3, CheckCircle2, X, Sparkles, MoreVertical, Edit2, Trash2, Square, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useApp } from '../../context/AppContext';
-import { supabase } from '../../lib/supabase';
+import { apiPost } from '../../lib/api';
 import PhaseCard from './PhaseCard';
 import EditProjectModal from '../dashboard/EditProjectModal';
 import IcesiLogo from '../brand/IcesiLogo';
@@ -64,17 +64,8 @@ export default function ProjectDetailView() {
     setShowMenu(false);
     if (!processingPhase) return;
     try {
-      const { error } = await supabase
-        .from('fases_estado')
-        .update({
-          estado_visual: 'disponible',
-          updated_at: new Date().toISOString(),
-        })
-        .eq('proyecto_id', project.id)
-        .eq('numero_fase', processingPhase.number);
-
-      if (error) throw error;
-
+      // El backend deja la fase en 'disponible' y descarta el resultado si el agente termina despues.
+      await apiPost(`/api/projects/${project.id}/phases/${processingPhase.number}/cancel`);
       updatePhaseStatus(project.id, processingPhase.number, 'disponible');
       toast.info('Procesamiento detenido exitosamente');
     } catch (err: any) {
