@@ -4,7 +4,8 @@ import { toast } from 'sonner';
 import type { DocumentoLocal } from '../../../../hooks/useDocumentacion';
 import { supabase } from '../../../../lib/supabase';
 import DocumentCategoryDropdown from '../DocumentCategoryDropdown';
-import { DOCUMENT_CATEGORIES, type DocCategory } from '../documentCategories';
+import { useDocumentCategories, type DocCategory } from '../documentCategories';
+import { isOtrosCategory, usePhaseConfig } from '../../../../lib/phaseConfig';
 import { formatSize, getFileIcon } from './documentacionUtils';
 
 type DocumentListProps = {
@@ -26,6 +27,8 @@ export function DocumentList({
   onUpdateCustomCategory,
   onDelete,
 }: DocumentListProps) {
+  const categories = useDocumentCategories();
+  const phaseConfig = usePhaseConfig();
   if (documentos.length === 0 && !isCompleted) {
     return (
       <div className="bg-white rounded-2xl border border-dashed border-neutral-200 p-10 text-center">
@@ -91,7 +94,7 @@ export function DocumentList({
                       />
 
                       <AnimatePresence>
-                        {doc.category === 'D16' && (
+                        {isOtrosCategory(doc.category, phaseConfig) && (
                           <motion.input
                             initial={{ width: 0, opacity: 0 }}
                             animate={{ width: '10rem', opacity: 1 }}
@@ -118,7 +121,7 @@ export function DocumentList({
                   ) : (
                     <div className="flex items-center gap-3">
                       <span className="px-2.5 py-1 bg-neutral-100 text-neutral-700 text-[11px] rounded-full" style={{ fontWeight: 500 }}>
-                        {DOCUMENT_CATEGORIES.find(c => c.value === doc.category)?.label || doc.category || 'Sin categoría'}
+                        {categories.find(c => c.value === doc.category)?.label || doc.category || 'Sin categoría'}
                       </span>
                       <button
                         onClick={async () => {

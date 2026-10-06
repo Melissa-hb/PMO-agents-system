@@ -17,6 +17,7 @@ import PhaseHeader from './_shared/PhaseHeader';
 import { usePhaseDependencies, BlockedActionHint } from './_shared/PhaseDependencyNotice';
 import NextPhaseButton from './_shared/NextPhaseButton';
 import type { DocCategory } from './documentacion/documentCategories';
+import { getPhaseConfig, isOtrosCategory } from '../../lib/phaseConfig';
 import { CompletedDiagnosisSection } from './documentacion/module/CompletedDiagnosisSection';
 import { DocumentacionHeaderStats } from './documentacion/module/DocumentacionHeaderStats';
 import { DocumentacionLoadingView } from './documentacion/module/DocumentacionLoadingView';
@@ -208,7 +209,7 @@ export default function DocumentacionModule() {
   }, []);
 
   const canComplete = documentos.length > 0 && documentos.every(d =>
-    d.category !== 'D16' || d.customCategory.trim() !== ''
+    !isOtrosCategory(d.category) || d.customCategory.trim() !== ''
   );
 
   const handleFiles = useCallback((files: FileList | File[]) => {
@@ -236,7 +237,8 @@ export default function DocumentacionModule() {
           name: file.name,
           size: file.size,
           type: file.type,
-          category: 'D01',
+          // Primera categoria configurada que no sea "Otros" (D01 con la configuracion inicial).
+          category: getPhaseConfig().categoriasDocumento.find(c => !c.esOtros)?.codigo ?? 'D01',
           customCategory: '',
           file,
         };

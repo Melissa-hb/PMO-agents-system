@@ -10,7 +10,7 @@ import { useAiModelSettings } from '../../../hooks/useAdmin';
  * versiones fechadas porque Google los mueve automaticamente al modelo vigente.
  */
 const MODEL_SUGGESTIONS: Array<{ rank: string; slug: string; useCase: string }> = [
-  { rank: '🥇', slug: 'gemini-pro-latest', useCase: 'Agentes complejos / razonamiento / planificación' },
+  { rank: '🥇', slug: 'gemini-pro-latest', useCase: 'Razonamiento complejo; el más costoso, úsalo solo si hace falta' },
   { rank: '🥈', slug: 'gemini-flash-latest', useCase: 'Agentes generales, rápido y económico' },
   { rank: '🥉', slug: 'gemini-flash-lite-latest', useCase: 'Agentes de alto volumen, el más económico' },
   { rank: '4', slug: 'gemini-3.1-pro-preview', useCase: 'Mayor contexto y razonamiento (preview)' },
@@ -94,7 +94,7 @@ function ModelsSection() {
               list="ai-model-suggestions"
               value={primary}
               onChange={e => setPrimary(e.target.value)}
-              placeholder="gemini-pro-latest"
+              placeholder="gemini-flash-latest"
               disabled={isLoading || isSaving}
               className="w-full px-3 py-2.5 rounded-lg border border-gray-200 text-sm font-mono focus:outline-none focus:border-[#5454e9] disabled:opacity-60"
             />
@@ -112,7 +112,7 @@ function ModelsSection() {
               list="ai-model-suggestions"
               value={fallback}
               onChange={e => setFallback(e.target.value)}
-              placeholder="gemini-flash-latest"
+              placeholder="gemini-flash-lite-latest"
               disabled={isLoading || isSaving}
               className="w-full px-3 py-2.5 rounded-lg border border-gray-200 text-sm font-mono focus:outline-none focus:border-[#5454e9] disabled:opacity-60"
             />

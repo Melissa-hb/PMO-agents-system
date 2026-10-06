@@ -5,8 +5,9 @@
 
 import { useState, type ReactNode } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Users, BookOpen, Cpu } from 'lucide-react';
+import { Users, BookOpen, Cpu, GitBranch } from 'lucide-react';
 import IcesiLogo from '../brand/IcesiLogo';
+import { FasesSection } from './admin-panel/FasesSection';
 import { ModelsSection } from './admin-panel/ModelsSection';
 import { QuestionsSection } from './admin-panel/QuestionsSection';
 import { UsersSection } from './admin-panel/UsersSection';
@@ -18,6 +19,7 @@ export default function AdminPanelView() {
     { id: 'usuarios', label: 'Gestión de Usuarios', icon: <Users size={16} /> },
     { id: 'preguntas', label: 'Banco de Preguntas', icon: <BookOpen size={16} /> },
     { id: 'modelos', label: 'Modelos de IA', icon: <Cpu size={16} /> },
+    { id: 'fases', label: 'Fases y agentes', icon: <GitBranch size={16} /> },
   ];
 
   return (
@@ -87,6 +89,7 @@ export default function AdminPanelView() {
               {activeSection === 'usuarios' && <UsersSection />}
               {activeSection === 'preguntas' && <QuestionsSection />}
               {activeSection === 'modelos' && <ModelsSection />}
+              {activeSection === 'fases' && <FasesSection />}
             </motion.div>
           </AnimatePresence>
         </div>

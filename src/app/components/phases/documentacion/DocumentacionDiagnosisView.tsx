@@ -1,3 +1,5 @@
+import { categoryLabel } from '../../../lib/phaseConfig';
+import { useDocumentCategories } from './documentCategories';
 import {
   AlertCircle, AlertTriangle, BarChart3, Briefcase, CheckCircle2, ClipboardList, Clock,
   FileCheck2, FileSearch, Gauge, Globe, HardDrive, Layers3, Lightbulb, MessageSquare, ShieldAlert,
@@ -20,24 +22,6 @@ import {
   valueOrEmpty,
 } from '../_shared/PhaseReportVisuals';
 
-const DOC_CATEGORIES = [
-  { value: 'D01', label: 'Organigrama' },
-  { value: 'D02', label: 'Artefactos de Gestión de proyectos' },
-  { value: 'D03', label: 'Plataformas y Sistemas' },
-  { value: 'D04', label: 'Listado de Proyectos' },
-  { value: 'D05', label: 'Listado de lideres del proyecto' },
-  { value: 'D06', label: 'Proyecto mejor documentado' },
-  { value: 'D07', label: 'Resultados Estratégicos' },
-  { value: 'D08', label: 'Resultados financieros' },
-  { value: 'D09', label: 'Mapa de Procesos' },
-  { value: 'D10', label: 'Filosofia organizacional' },
-  { value: 'D11', label: 'Modelo de Negocio' },
-  { value: 'D12', label: 'Arquitectura Organizacional/TI' },
-  { value: 'D13', label: 'Metodología de Gestión de Proyectos' },
-  { value: 'D14', label: 'Portafolio de Productos/Servicios' },
-  { value: 'D15', label: 'Segmentos de clientes' },
-  { value: 'D16', label: 'Otros' },
-];
 
 function buildDocumentLookup(diagnosis: AgentDiagnosis) {
   const byId: Record<string, string> = {};
@@ -58,8 +42,8 @@ function referenceName(value: unknown, lookup: ReturnType<typeof buildDocumentLo
   const catalog = raw.toUpperCase();
   if (lookup.byId[docId]) return lookup.byId[docId];
   if (lookup.byCatalog[catalog]) return lookup.byCatalog[catalog];
-  const category = DOC_CATEGORIES.find((item) => item.value === catalog);
-  if (category) return category.label;
+  const category = categoryLabel(catalog);
+  if (category) return category;
   return raw;
 }
 
@@ -415,6 +399,7 @@ function DimensionCard({ label, dim, lookup, index }: { label: string; dim: any;
 }
 
 function InventoryTable({ diagnosis }: { diagnosis: AgentDiagnosis }) {
+  const categories = useDocumentCategories();
   const lookup = buildDocumentLookup(diagnosis);
   const estadoMap: Record<string, any> = {};
   for (const doc of diagnosis.estado_documentos ?? []) {
@@ -449,7 +434,7 @@ function InventoryTable({ diagnosis }: { diagnosis: AgentDiagnosis }) {
             </tr>
           </thead>
           <tbody className="divide-y divide-neutral-50 bg-white">
-            {DOC_CATEGORIES.map((cat) => {
+            {categories.map((cat) => {
               const entry = estadoMap[cat.value];
               const isMissing = missingSet.has(cat.value) || !entry || entry.estado === 'no_entregado';
               const tone: PhaseReportTone = isMissing ? 'orange' : entry?.estado === 'critico_para_gp' ? 'green' : 'blue';

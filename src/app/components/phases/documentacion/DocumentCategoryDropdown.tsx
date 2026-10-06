@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { AnimatePresence, motion } from 'motion/react';
 import { Check, ChevronDown, Search } from 'lucide-react';
-import { DOCUMENT_CATEGORIES, type DocCategory } from './documentCategories';
+import { useDocumentCategories, type DocCategory } from './documentCategories';
 
 interface DocumentCategoryDropdownProps {
   value: DocCategory;
@@ -28,7 +28,8 @@ export default function DocumentCategoryDropdown({ value, onChange }: DocumentCa
   const normalize = (s: string) =>
     s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
 
-  const sortedCategories = [...DOCUMENT_CATEGORIES].sort((a, b) =>
+  const categories = useDocumentCategories();
+  const sortedCategories = [...categories].sort((a, b) =>
     normalize(a.label).localeCompare(normalize(b.label), 'es')
   );
 
@@ -36,7 +37,7 @@ export default function DocumentCategoryDropdown({ value, onChange }: DocumentCa
     normalize(cat.label).includes(normalize(query))
   );
 
-  const selected = DOCUMENT_CATEGORIES.find((cat) => cat.value === value);
+  const selected = categories.find((cat) => cat.value === value);
 
   // Calculate dropdown position from trigger button
   const recalcCoords = useCallback(() => {

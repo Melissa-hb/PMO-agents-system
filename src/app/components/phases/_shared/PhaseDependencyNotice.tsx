@@ -3,24 +3,26 @@ import { useNavigate } from 'react-router';
 import { Info, ArrowRight, Hourglass, Play } from 'lucide-react';
 import { useApp, Phase } from '../../../context/AppContext';
 import { getPendingDependencies, pendingDependenciesLabel } from '../../../lib/phaseDependencies';
+import { usePhaseConfig } from '../../../lib/phaseConfig';
 
 /**
- * Estado de dependencias de una fase, calculado a partir de la configuración en
- * lib/phaseDependencies.ts y el estado real de las fases del proyecto. Se recalcula
+ * Estado de dependencias de una fase, calculado a partir de la configuración de fases
+ * (tabla fases, cargada en lib/phaseConfig.ts) y el estado real de las fases del proyecto. Se recalcula
  * solo cuando cambian los estados, así que el aviso desaparece y la acción se
  * habilita en cuanto se completan las fases requeridas.
  */
 export function usePhaseDependencies(projectId: string | undefined, phaseNumber: number) {
   const { getProject } = useApp();
   const project = projectId ? getProject(projectId) : undefined;
-  const pending: Phase[] = project ? getPendingDependencies(project.phases, phaseNumber) : [];
+  const phaseConfig = usePhaseConfig();
+  const pending: Phase[] = project ? getPendingDependencies(project.phases, phaseNumber, phaseConfig) : [];
   return {
     pending,
-    // Mientras el proyecto no ha cargado no se conocen las dependencias: se trata como
-    // bloqueada para que los agentes con auto-disparo (fases 4, 6 y 7) no arranquen antes
-    // de poder verificarlas.
-    isBlocked: !project || pending.length > 0,
-    blockedReason: pending.length > 0 ? pendingDependenciesLabel(pending) : undefined,
+    // Mientras el proyecto o la configuracion de fases no han cargado no se conocen las
+    // dependencias: se trata como bloqueada para que los agentes con auto-disparo (fases 4, 6
+    // y 7) no arranquen antes de poder verificarlas.
+    isBlocked: !project || !phaseConfig.loaded || pending.length > 0,
+    blockedReason: pending.length > 0 ? pendingDependenciesLabel(pending, phaseConfig) : undefined,
   };
 }
 

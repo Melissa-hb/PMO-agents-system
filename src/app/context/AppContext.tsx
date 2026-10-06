@@ -4,6 +4,8 @@ import React, {
 } from 'react';
 import { apiDelete, apiGet, apiPatch, apiPost, apiPut } from '../lib/api';
 import { useAuth } from './AuthContext';
+import { loadPhaseConfig, resetPhaseConfig } from '../lib/phaseConfig';
+import { toast } from 'sonner';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // TIPOS
@@ -112,7 +114,15 @@ export function AppProvider({ children }: { children: ReactNode }) {
     if (session) {
       fetchProjects();
       fetchCurrentUser();
+      // Configuracion de fases (dependencias y categorias de documentos) desde la base de datos.
+      loadPhaseConfig().catch(err => {
+        console.error('[AppContext] Error cargando la configuracion de fases:', err);
+        toast.error('No se pudo cargar la configuración de las fases', {
+          description: 'Las acciones que dependen de otras fases quedan bloqueadas hasta recargar la página.',
+        });
+      });
     } else {
+      resetPhaseConfig();
       setProjects([]);
       setCurrentUser({ id: '', name: 'Usuario', initials: 'US', color: '#5454e9' });
       setIsLoading(false);
@@ -226,7 +236,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
               agentData: undefined,
             };
           }
-          // Las fases que dependen de esta las invalida el backend (PhaseDataFlow); su estado real
+          // Las fases que dependen de esta las invalida el backend (tabla fases, columna lee_resultado_de); su estado real
           // llega con la recarga de abajo.
           return phase;
         });
