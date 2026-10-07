@@ -1,11 +1,12 @@
 import { supabase } from './supabase';
+import { resolveApiBaseUrl } from './runtimeUrls';
 
 /**
  * Cliente HTTP hacia el backend de Spring Boot (reemplaza supabase.from(...) /
  * supabase.functions.invoke(...) para todo lo que no sea autenticacion). Supabase sigue
  * usandose SOLO para Auth (login/sesion) y para leer el JWT que se manda a este backend.
  */
-const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL as string | undefined)?.replace(/\/$/, '') || 'http://localhost:8080';
+const API_BASE_URL = resolveApiBaseUrl();
 
 async function authHeaders(): Promise<Record<string, string>> {
   const { data: { session } } = await supabase.auth.getSession();
