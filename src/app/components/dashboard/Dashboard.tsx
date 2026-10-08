@@ -1,13 +1,12 @@
 import { useState, useMemo, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Search, Plus, ChevronDown, ChevronLeft, ChevronRight, FolderOpen, CheckSquare, SlidersHorizontal, User, Layers, Check } from 'lucide-react';
+import { Search, Plus, ChevronDown, ChevronLeft, ChevronRight, FolderOpen, CheckSquare, SlidersHorizontal, User, Layers, Check, Briefcase, Activity, CheckCircle2, TrendingUp } from 'lucide-react';
 import { toast } from 'sonner';
 import { useApp } from '../../context/AppContext';
 import ProjectCard, { ProjectCardSkeleton } from './ProjectCard';
 import ProjectTable, { ProjectTableSkeleton, SortKey, SortDir } from './ProjectTable';
 import { getProjectSummary } from './projectDisplay';
 import NewProjectModal from './NewProjectModal';
-import IcesiLogo from '../brand/IcesiLogo';
 
 type Tab = 'en_ejecucion' | 'completado';
 
@@ -184,6 +183,16 @@ export default function Dashboard() {
 
   const enEjecucionCount = projects.filter(p => !p.isDeleted && p.status === 'en_ejecucion').length;
   const completadosCount = projects.filter(p => !p.isDeleted && p.status === 'completado').length;
+  // Las tarjetas resumen cuentan solo proyectos activos (los de la papelera no).
+  const activeProjects = projects.filter(p => !p.isDeleted);
+  const activeCount = activeProjects.length;
+  const shareOf = (n: number) => (activeCount > 0 ? Math.round((n / activeCount) * 100) : 0);
+  const averageProgress = activeCount > 0
+    ? Math.round(activeProjects.reduce((sum, p) => {
+        const total = p.phases.length || 1;
+        return sum + p.phases.filter(ph => ph.status === 'completado').length / total;
+      }, 0) / activeCount * 100)
+    : 0;
 
   const tabs = [
     { key: 'en_ejecucion' as Tab, label: 'En ejecución', icon: <FolderOpen size={14} strokeWidth={1.75} />, count: enEjecucionCount },
@@ -225,11 +234,10 @@ export default function Dashboard() {
             <p className="text-neutral-500 text-sm mt-3" style={{ fontWeight: 400 }}>
               Bienvenido, {currentUser.name}
               <span className="mx-2 text-neutral-300">·</span>
-              <span className="text-neutral-600">{projects.length}</span> proyectos en cartera
+              <span className="text-neutral-600">{activeCount}</span> proyecto{activeCount === 1 ? '' : 's'} en cartera
             </p>
           </div>
           <div className="flex items-center gap-4">
-            <IcesiLogo variant="positive" className="brand-logo-mark hidden md:block h-11 w-auto" />
             <motion.button
               whileHover={{ y: -1 }}
               whileTap={{ y: 0 }}
@@ -248,19 +256,45 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* Stats strip */}
-        <div className="brand-kpi-strip grid-cols-3 mb-4 md:mb-8">
+        {/* Resumen de la cartera */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4 mb-4 md:mb-8">
           {[
-            { label: 'Total', value: projects.length },
-            { label: 'En ejecución', value: enEjecucionCount },
-            { label: 'Completados', value: completadosCount },
-          ].map((s) => (
-            <div key={s.label} className="brand-kpi-item flex flex-col items-start gap-0.5 max-md:px-2.5! max-md:py-2.5! md:flex-row md:items-center md:justify-between md:gap-3">
-              <p className="text-[12px] md:text-[12px] tracking-[0.04em] md: text-neutral-400 truncate max-w-full" style={{ fontWeight: 500 }}>{s.label}</p>
-              <p className="text-neutral-900 tabular-nums" style={{ fontWeight: 500, fontSize: '1.125rem', letterSpacing: '-0.02em' }}>
-                {s.value}
+            { label: 'Proyectos en cartera', value: activeCount, icon: <Briefcase size={16} strokeWidth={1.75} />, note: 'Sin contar la papelera', pct: null },
+            { label: 'En ejecución', value: enEjecucionCount, icon: <Activity size={16} strokeWidth={1.75} />, note: `${shareOf(enEjecucionCount)}% de la cartera`, pct: shareOf(enEjecucionCount) },
+            { label: 'Completados', value: completadosCount, icon: <CheckCircle2 size={16} strokeWidth={1.75} />, note: `${shareOf(completadosCount)}% de la cartera`, pct: shareOf(completadosCount) },
+            { label: 'Avance promedio', value: `${averageProgress}%`, icon: <TrendingUp size={16} strokeWidth={1.75} />, note: 'Fases completadas por proyecto', pct: averageProgress },
+          ].map((card, i) => (
+            <motion.div
+              key={card.label}
+              initial={{ opacity: 0, y: 6 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: i * 0.05, duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+              className="bg-white rounded-2xl border border-neutral-200/70 p-4 md:p-5 flex flex-col"
+              style={{ boxShadow: '0 1px 2px rgba(0,0,0,0.03)' }}
+            >
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-[13px] text-neutral-500 truncate">{card.label}</span>
+                <span className="w-8 h-8 rounded-lg bg-[#5454e9]/[0.08] text-[#5454e9] flex items-center justify-center flex-shrink-0">
+                  {card.icon}
+                </span>
+              </div>
+              <p className="text-neutral-900 tabular-nums mt-3" style={{ fontWeight: 500, fontSize: 'clamp(1.5rem, 3vw, 2rem)', lineHeight: 1, letterSpacing: '-0.02em' }}>
+                {card.value}
               </p>
-            </div>
+              {card.pct !== null ? (
+                <div className="mt-4 h-1 rounded-full bg-neutral-100 overflow-hidden">
+                  <motion.div
+                    initial={{ width: 0 }}
+                    animate={{ width: `${card.pct}%` }}
+                    transition={{ duration: 0.8, delay: 0.15 + i * 0.05, ease: [0.16, 1, 0.3, 1] }}
+                    className="h-full rounded-full bg-[#5454e9]"
+                  />
+                </div>
+              ) : (
+                <div className="mt-4 h-1" aria-hidden="true" />
+              )}
+              <p className="text-[12px] text-neutral-400 mt-2 truncate">{card.note}</p>
+            </motion.div>
           ))}
         </div>
 

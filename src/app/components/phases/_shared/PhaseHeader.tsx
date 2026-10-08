@@ -5,7 +5,6 @@ import { motion, AnimatePresence } from 'motion/react';
 import { toast } from 'sonner';
 import { useApp } from '../../../context/AppContext';
 import { useCancelAgent } from '../../../hooks/useCancelAgent';
-import IcesiLogo from '../../brand/IcesiLogo';
 import { PhaseDependencyNotice, usePhaseDependencies } from './PhaseDependencyNotice';
 import PhaseStepper from './PhaseStepper';
 
@@ -98,7 +97,7 @@ export default function PhaseHeader({
   return (
     <>
       <div className="fixed left-[72px] right-0 top-0 z-[70] print:left-0 bg-white/95 backdrop-blur-md border-b border-neutral-200/60 shadow-[0_1px_0_rgba(255,255,255,0.65)] print:hidden">
-        <div className="max-w-full mx-auto px-6 py-3 grid grid-cols-3 items-center gap-4">
+        <div className="max-w-full mx-auto px-6 py-3 flex items-center justify-between gap-4">
           <div className="flex items-center gap-3 min-w-0 justify-start">
             {/* Back button */}
             <button
@@ -130,11 +129,6 @@ export default function PhaseHeader({
                 </>
               )}
             </div>
-          </div>
-
-          {/* Logo en el centro exacto */}
-          <div className="flex justify-center">
-            <IcesiLogo variant="positive" className="brand-logo-mark h-8 w-auto" />
           </div>
 
           <div className="flex items-center gap-2 justify-end print:hidden">

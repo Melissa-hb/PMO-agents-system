@@ -62,7 +62,7 @@ export default function Sidebar() {
         className="w-full px-2 mb-8 flex items-center justify-center"
         title="Universidad Icesi"
       >
-        <IcesiLogo variant="positive" className="brand-logo-mark h-9 max-w-[48px]" />
+        <IcesiLogo variant="mark" className="h-9 w-9" />
       </button>
 
       <nav className="flex flex-col gap-1 flex-1 w-full px-1.5" aria-label="Navegación principal">
