@@ -2,7 +2,7 @@ import { motion } from 'motion/react';
 import { useNavigate } from 'react-router';
 import { Project } from '../../context/AppContext';
 import ProjectActions from './ProjectActions';
-import { getProjectSummary, formatProjectDate, ProgressBar, AuditorAvatars } from './projectDisplay';
+import { getProjectSummary, formatProjectDate, ProgressBar, AuditorAvatars, projectSubtitle } from './projectDisplay';
 
 interface ProjectCardProps {
   project: Project;
@@ -44,13 +44,11 @@ export default function ProjectCard({ project, index }: ProjectCardProps) {
 
       <div className="pr-2">
         {/* Fila 2: descripcion */}
-        <p className="text-neutral-500 text-[12px] truncate">{project.projectName}</p>
+        {projectSubtitle(project) && <p className="text-neutral-500 text-[12px] truncate">{project.projectName}</p>}
 
         {/* Fila 3: fase + estado */}
         {currentPhase && (
           <div className="flex items-center gap-1.5 mt-1.5 min-w-0">
-            <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${meta.dot}`} aria-hidden="true" />
-            <span className="sr-only">{meta.label}.</span>
             <span className={`text-[12px] truncate ${meta.text}`} style={{ fontWeight: 500 }}>
               Fase {currentPhase.number} · {currentPhase.name}
             </span>

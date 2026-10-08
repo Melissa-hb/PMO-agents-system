@@ -15,6 +15,13 @@ export const STATUS_META: Record<PhaseStatus, { label: string; dot: string; text
   error: { label: 'Error', dot: 'bg-rose-500', text: 'text-rose-700', icon: <AlertCircle size={10} className="text-rose-600" /> },
 };
 
+/** Descripcion del proyecto para mostrar bajo el nombre; null si solo repite el nombre de la empresa. */
+export function projectSubtitle(project: Pick<Project, 'companyName' | 'projectName'>): string | null {
+  const norm = (v: string) => (v ?? '').trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  const name = (project.projectName ?? '').trim();
+  return name && norm(name) !== norm(project.companyName) ? name : null;
+}
+
 export function getProjectSummary(project: Project) {
   const completedCount = project.phases.filter(p => p.status === 'completado').length;
   const totalPhases = project.phases.length;

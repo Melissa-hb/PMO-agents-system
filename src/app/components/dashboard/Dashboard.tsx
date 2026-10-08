@@ -218,9 +218,6 @@ export default function Dashboard() {
         {/* Header */}
         <div className="flex flex-col items-stretch gap-5 mb-6 sm:flex-row sm:items-end sm:justify-between sm:gap-6 md:mb-12">
           <div>
-            <p className="text-[12px] text-neutral-400 mb-3" style={{ fontWeight: 500 }}>
-              Panel principal
-            </p>
             <h1 className="text-neutral-900 tracking-tight" style={{ fontWeight: 500, fontSize: 'clamp(1.75rem, 5vw, 2.25rem)', lineHeight: 1.1, letterSpacing: '-0.02em' }}>
               Mis proyectos
             </h1>

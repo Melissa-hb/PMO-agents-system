@@ -1,11 +1,11 @@
 import { useNavigate } from 'react-router';
-import { ArrowUpRight, ArrowUp, ArrowDown, ArrowUpDown } from 'lucide-react';
+import { ArrowUp, ArrowDown, ArrowUpDown } from 'lucide-react';
 import { Project } from '../../context/AppContext';
 import ProjectActions from './ProjectActions';
 import {
   getProjectSummary,
   formatProjectDate,
-  StatusBadge,
+  projectSubtitle,
   PhaseNumber,
   ProgressBar,
   AuditorAvatars,
@@ -68,7 +68,6 @@ export default function ProjectTable({ projects, sortKey, sortDir, onSort }: Pro
         <thead>
           <tr className="border-b border-neutral-100 bg-neutral-50/40">
             <SortHeader label="Proyecto" column="proyecto" sortKey={sortKey} sortDir={sortDir} onSort={onSort} className="pl-5" />
-            <th scope="col" className={TH} style={{ fontWeight: 500 }}>Estado</th>
             <th scope="col" className={TH} style={{ fontWeight: 500 }}>Fase actual</th>
             <SortHeader label="Progreso" column="progreso" sortKey={sortKey} sortDir={sortDir} onSort={onSort} />
             <th scope="col" className={`${TH} ${DESKTOP_ONLY}`} style={{ fontWeight: 500 }}>Auditores</th>
@@ -101,14 +100,11 @@ export default function ProjectTable({ projects, sortKey, sortDir, onSort }: Pro
                   <p className="text-neutral-900 truncate tracking-tight text-[14px]" style={{ fontWeight: 600, letterSpacing: '-0.01em' }} title={project.companyName}>
                     {project.companyName}
                   </p>
-                  <p className="text-neutral-500 text-[12px] truncate mt-0.5" title={project.projectName}>
-                    {project.projectName}
-                  </p>
-                </td>
-
-                {/* Estado */}
-                <td className="px-4 py-2.5">
-                  <StatusBadge meta={meta} />
+                  {projectSubtitle(project) && (
+                    <p className="text-neutral-500 text-[12px] truncate mt-0.5" title={project.projectName}>
+                      {project.projectName}
+                    </p>
+                  )}
                 </td>
 
                 {/* Fase actual */}
@@ -119,7 +115,6 @@ export default function ProjectTable({ projects, sortKey, sortDir, onSort }: Pro
                       <span className={`text-[13px] truncate ${meta.text}`} style={{ fontWeight: 500 }} title={currentPhase.name}>
                         {currentPhase.name}
                       </span>
-                      <span className="flex-shrink-0 hidden lg:inline-flex">{meta.icon}</span>
                     </div>
                   )}
                 </td>
@@ -152,15 +147,6 @@ export default function ProjectTable({ projects, sortKey, sortDir, onSort }: Pro
                 <td className="pl-2 pr-5 py-2.5">
                   <div className="flex items-center justify-end gap-1.5">
                     <ProjectActions project={project} />
-                    <button
-                      type="button"
-                      tabIndex={-1}
-                      aria-hidden="true"
-                      onClick={(e) => { e.stopPropagation(); open(project.id); }}
-                      className="w-9 h-9 rounded-full border border-neutral-200 flex items-center justify-center text-neutral-400 group-hover:bg-[#5454e9] group-hover:border-[#5454e9] group-hover:text-white transition-all duration-300"
-                    >
-                      <ArrowUpRight size={15} strokeWidth={1.75} />
-                    </button>
                   </div>
                 </td>
               </tr>
@@ -182,12 +168,11 @@ export function ProjectTableSkeleton({ rows = 5 }: { rows?: number }) {
             <div className="h-3 w-40 max-w-full bg-neutral-100 rounded" />
             <div className="h-2.5 w-56 max-w-full bg-neutral-100/70 rounded" />
           </div>
-          <div className="h-2.5 w-20 bg-neutral-100 rounded" />
           <div className="h-2.5 w-36 bg-neutral-100 rounded" />
           <div className="h-1 w-32 bg-neutral-100 rounded-full" />
           <div className="hidden lg:block h-6 w-6 bg-neutral-100 rounded-full" />
           <div className="hidden lg:block h-2.5 w-24 bg-neutral-100 rounded" />
-          <div className="h-9 w-9 bg-neutral-100 rounded-full" />
+          <div className="h-8 w-8 bg-neutral-100 rounded-full" />
         </div>
       ))}
     </div>
