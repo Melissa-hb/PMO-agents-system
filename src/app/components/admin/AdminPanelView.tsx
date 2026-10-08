@@ -6,7 +6,6 @@
 import { useState, type ReactNode } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Users, BookOpen, Cpu, GitBranch } from 'lucide-react';
-import IcesiLogo from '../brand/IcesiLogo';
 import { FasesSection } from './admin-panel/FasesSection';
 import { ModelsSection } from './admin-panel/ModelsSection';
 import { QuestionsSection } from './admin-panel/QuestionsSection';
@@ -27,13 +26,8 @@ export default function AdminPanelView() {
       {/* Admin Sidebar */}
       <div className="w-64 bg-white border-r border-gray-200 flex-shrink-0 flex flex-col">
         <div className="px-5 py-5 border-b border-gray-100">
-          <div className="flex items-center gap-2.5">
-            <IcesiLogo variant="positive" className="brand-logo-mark h-9 w-auto" />
-            <div>
-              <p className="text-gray-900 text-sm" style={{ fontWeight: 700 }}>Panel Admin</p>
-              <p className="text-gray-400 text-xs">PMO Intelligence</p>
-            </div>
-          </div>
+          <p className="text-gray-900 text-sm" style={{ fontWeight: 600 }}>Administración</p>
+          <p className="text-gray-400 text-xs mt-0.5">Configuración de la plataforma</p>
         </div>
 
         <nav className="flex-1 p-3 space-y-1">

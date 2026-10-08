@@ -65,7 +65,7 @@ export default function Sidebar() {
         <IcesiLogo variant="mark" className="h-9 w-9" />
       </button>
 
-      <nav className="flex flex-col gap-1 flex-1 w-full px-1.5" aria-label="Navegación principal">
+      <nav className="flex flex-col gap-4 flex-1 w-full px-1.5" aria-label="Navegación principal">
         {items.map(item => {
           const active = isActive(item.path);
           return (
