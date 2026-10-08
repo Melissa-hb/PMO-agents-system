@@ -1,6 +1,6 @@
 import { useState, useMemo, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Search, Plus, ChevronDown, ChevronLeft, ChevronRight, FolderOpen, CheckSquare, SlidersHorizontal, User, Layers, Check, Briefcase, Activity, CheckCircle2, TrendingUp } from 'lucide-react';
+import { Search, Plus, ChevronDown, ChevronLeft, ChevronRight, FolderOpen, CheckSquare, SlidersHorizontal, User, Check, Briefcase, Activity, CheckCircle2, TrendingUp } from 'lucide-react';
 import { toast } from 'sonner';
 import { useApp } from '../../context/AppContext';
 import ProjectCard, { ProjectCardSkeleton } from './ProjectCard';
@@ -115,7 +115,6 @@ export default function Dashboard() {
   const [activeTab, setActiveTab] = useState<Tab>('en_ejecucion');
   const [search, setSearch] = useState('');
   const [filterAuditor, setFilterAuditor] = useState('');
-  const [filterEstado, setFilterEstado] = useState('');
   const [showModal, setShowModal] = useState(false);
   const [sortKey, setSortKey] = useState<SortKey | null>(null);
   const [sortDir, setSortDir] = useState<SortDir>('asc');
@@ -131,10 +130,9 @@ export default function Dashboard() {
       const matchTab = p.status === activeTab;
       const matchSearch = !search || p.companyName.toLowerCase().includes(search.toLowerCase()) || p.projectName.toLowerCase().includes(search.toLowerCase());
       const matchAuditor = !filterAuditor || p.auditors.some(c => c.id === filterAuditor);
-      const matchEstado = !filterEstado || p.status === filterEstado;
-      return matchDeleted && matchTab && matchSearch && matchAuditor && matchEstado;
+      return matchDeleted && matchTab && matchSearch && matchAuditor;
     });
-  }, [projects, activeTab, search, filterAuditor, filterEstado]);
+  }, [projects, activeTab, search, filterAuditor]);
 
   const sortedProjects = useMemo(() => {
     if (!sortKey) return filteredProjects;
@@ -153,7 +151,7 @@ export default function Dashboard() {
   }, [filteredProjects, sortKey, sortDir]);
 
   // Volver a la primera pagina cuando cambian los filtros o el orden.
-  useEffect(() => { setPage(1); }, [activeTab, search, filterAuditor, filterEstado, sortKey, sortDir]);
+  useEffect(() => { setPage(1); }, [activeTab, search, filterAuditor, sortKey, sortDir]);
 
   const pageCount = Math.max(1, Math.ceil(sortedProjects.length / PAGE_SIZE));
   const currentPage = Math.min(page, pageCount);
@@ -213,11 +211,6 @@ export default function Dashboard() {
     }
     return opts;
   }, [projects]);
-
-  const estadoOptions: FilterOption[] = [
-    { value: 'en_ejecucion', label: 'En ejecución' },
-    { value: 'completado', label: 'Completado' },
-  ];
 
   return (
     <div className="min-h-screen bg-[#f7f8ff]">
@@ -359,15 +352,6 @@ export default function Dashboard() {
               placeholder="Auditor"
               icon={<User size={13} strokeWidth={1.75} />}
             />
-
-            <FilterDropdown
-              className="flex-1 md:flex-none"
-              value={filterEstado}
-              onChange={setFilterEstado}
-              options={estadoOptions}
-              placeholder="Estado"
-              icon={<Layers size={13} strokeWidth={1.75} />}
-            />
             </div>
           </div>
         </div>
@@ -383,7 +367,7 @@ export default function Dashboard() {
             </motion.div>
           ) : sortedProjects.length > 0 ? (
             <motion.div
-              key={activeTab + search + filterAuditor + filterEstado}
+              key={activeTab + search + filterAuditor}
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
             >
