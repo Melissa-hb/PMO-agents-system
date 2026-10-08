@@ -105,5 +105,47 @@ export function AuditorAvatars({ auditors, max = 4, size = 'w-6 h-6 text-[10px]'
 }
 
 export function auditorCountLabel(count: number) {
-  return `${count} auditor${count !== 1 ? 'es' : ''}`;
+  return `${count} consultor${count !== 1 ? 'es' : ''}`;
+}
+
+/** Consultores con nombre (los "Sin asignar" no cuentan). */
+export function assignedConsultants(auditors: Auditor[]): Auditor[] {
+  return auditors.filter(a => a.name && a.name !== 'Sin asignar');
+}
+
+/** Nombre del consultor principal y cuantos mas hay ("Ana Perez +1"). */
+export function ConsultantCell({ auditors }: { auditors: Auditor[] }) {
+  const assigned = assignedConsultants(auditors);
+  if (assigned.length === 0) return <span className="text-neutral-400 text-[12px]">Sin asignar</span>;
+  const [first, ...rest] = assigned;
+  return (
+    <span className="flex items-center gap-2 min-w-0" title={assigned.map(a => a.name).join(', ')}>
+      <AuditorAvatars auditors={[first]} max={1} />
+      <span className="text-neutral-700 text-[13px] truncate">{first.name}</span>
+      {rest.length > 0 && <span className="text-neutral-400 text-[12px] flex-shrink-0">+{rest.length}</span>}
+    </span>
+  );
+}
+
+/** Momento de la ultima actividad en lenguaje natural: "Hoy", "Ayer", "Hace 5 días", "Hace 2 meses". */
+export function formatLastActivity(iso: string | null | undefined, now: Date = new Date()): string {
+  if (!iso) return 'Sin actividad';
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return 'Sin actividad';
+  const startOf = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
+  const days = Math.max(0, Math.round((startOf(now) - startOf(date)) / 86_400_000));
+  if (days === 0) return 'Hoy';
+  if (days === 1) return 'Ayer';
+  if (days < 30) return `Hace ${days} días`;
+  const months = Math.floor(days / 30);
+  if (months < 12) return months === 1 ? 'Hace 1 mes' : `Hace ${months} meses`;
+  const years = Math.floor(days / 365);
+  return years <= 1 ? 'Hace 1 año' : `Hace ${years} años`;
+}
+
+/** Fecha completa para el tooltip de la ultima actividad. */
+export function formatFullDate(iso: string | null | undefined): string {
+  if (!iso) return '';
+  const date = new Date(iso);
+  return Number.isNaN(date.getTime()) ? '' : date.toLocaleString('es-CO', { day: 'numeric', month: 'long', year: 'numeric', hour: 'numeric', minute: '2-digit' });
 }

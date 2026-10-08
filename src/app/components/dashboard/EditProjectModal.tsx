@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'motion/react';
 import { X, Save, AlertCircle, Loader2 } from 'lucide-react';
 import type { Project } from '../../context/AppContext';
-import { useAdminUsers } from '../../hooks/useAdmin';
+import { useConsultores } from '../../hooks/useConsultores';
 
 interface EditProjectModalProps {
   open: boolean;
@@ -21,8 +21,7 @@ export default function EditProjectModal({ open, onClose, onSubmit, project }: E
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isLoading, setIsLoading] = useState(false);
 
-  const { users: allUsers, isLoading: loadingAuditors } = useAdminUsers();
-  const auditorList = allUsers.filter(u => u.role === 'auditor');
+  const { consultores: auditorList, isLoading: loadingAuditors } = useConsultores();
 
   useEffect(() => {
     if (project && open) {
@@ -37,7 +36,7 @@ export default function EditProjectModal({ open, onClose, onSubmit, project }: E
     const e: Record<string, string> = {};
     if (!companyName.trim()) e.companyName = 'El nombre de la empresa es requerido.';
     if (!projectName.trim()) e.projectName = 'El nombre del proyecto es requerido.';
-    if (!selectedAuditor) e.auditors = 'Seleccione un auditor.';
+    if (!selectedAuditor) e.auditors = 'Seleccione un consultor.';
     return e;
   };
 
@@ -99,7 +98,7 @@ export default function EditProjectModal({ open, onClose, onSubmit, project }: E
                 <h2 className="text-gray-900" style={{ fontSize: '1.125rem', fontWeight: 600 }}>
                   Editar Proyecto
                 </h2>
-                <p className="text-gray-500 text-sm">Modifique los datos del proyecto de auditoría</p>
+                <p className="text-gray-500 text-sm">Modifique los datos del proyecto de consultoría</p>
               </div>
               <button 
                 onClick={(e) => { e.stopPropagation(); handleClose(); }} 
@@ -147,7 +146,7 @@ export default function EditProjectModal({ open, onClose, onSubmit, project }: E
 
               {/* Auditor */}
               <div className="flex flex-col gap-1.5">
-                <label className="text-gray-700 text-sm" style={{ fontWeight: 500 }}>Auditor asignado *</label>
+                <label className="text-gray-700 text-sm" style={{ fontWeight: 500 }}>Consultor asignado *</label>
                 <div className={`border rounded-lg p-3 min-h-[52px]
                   ${errors.auditors ? 'border-red-400' : 'border-gray-200'}
                 `}>
@@ -156,7 +155,7 @@ export default function EditProjectModal({ open, onClose, onSubmit, project }: E
                       <Loader2 size={12} className="animate-spin" /> Cargando auditores...
                     </div>
                   ) : auditorList.length === 0 ? (
-                    <p className="text-gray-400 text-xs">No hay auditores registrados.</p>
+                    <p className="text-gray-400 text-xs">No hay consultores registrados.</p>
                   ) : (
                     <div className="flex flex-wrap gap-2">
                       {auditorList.map((user, idx) => {

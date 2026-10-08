@@ -2,7 +2,7 @@ import { motion } from 'motion/react';
 import { useNavigate } from 'react-router';
 import { Project } from '../../context/AppContext';
 import ProjectActions from './ProjectActions';
-import { getProjectSummary, formatProjectDate, ProgressBar, AuditorAvatars, projectSubtitle } from './projectDisplay';
+import { getProjectSummary, formatLastActivity, ProgressBar, ConsultantCell, projectSubtitle } from './projectDisplay';
 
 interface ProjectCardProps {
   project: Project;
@@ -59,14 +59,14 @@ export default function ProjectCard({ project, index }: ProjectCardProps) {
         <div className="flex items-center gap-2.5 mt-2">
           <ProgressBar progress={progress} index={index} className="h-[3px]" />
           <span className="text-neutral-500 text-[11px] tabular-nums whitespace-nowrap">
-            <span className="text-neutral-900" style={{ fontWeight: 500 }}>{Math.round(progress)}%</span> · {completedCount}/{totalPhases}
+            {completedCount} de {totalPhases} fases
           </span>
         </div>
 
         {/* Fila 5: auditor + fecha */}
         <div className="flex items-center justify-between gap-2 mt-2">
-          <AuditorAvatars auditors={project.auditors} max={3} size="w-5 h-5 text-[9px]" />
-          <span className="text-neutral-400 text-[11px] tabular-nums">{formatProjectDate(project.startDate)}</span>
+          <ConsultantCell auditors={project.auditors} />
+          <span className="text-neutral-400 text-[11px] whitespace-nowrap">{formatLastActivity(project.lastActivity)}</span>
         </div>
       </div>
     </motion.div>

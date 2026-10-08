@@ -138,7 +138,7 @@ export default function Dashboard() {
     if (!sortKey) return filteredProjects;
     const value = (p: typeof filteredProjects[number]) =>
       sortKey === 'progreso' ? getProjectSummary(p).progress
-      : sortKey === 'fecha' ? p.startDate
+      : sortKey === 'fecha' ? (p.lastActivity ?? p.startDate)
       : p.companyName;
     const dir = sortDir === 'asc' ? 1 : -1;
     return [...filteredProjects].sort((a, b) => {
@@ -346,7 +346,7 @@ export default function Dashboard() {
               value={filterAuditor}
               onChange={setFilterAuditor}
               options={auditorOptions}
-              placeholder="Auditor"
+              placeholder="Consultor"
               icon={<User size={13} strokeWidth={1.75} />}
             />
             </div>

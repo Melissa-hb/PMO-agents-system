@@ -41,6 +41,8 @@ export interface Project {
   phases: Phase[];
   status: 'en_ejecucion' | 'completado';
   isDeleted?: boolean;
+  /** Ultimo cambio en alguna de sus fases (o su creacion), ISO-8601. */
+  lastActivity?: string | null;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { X, Plus, AlertCircle, Loader2 } from 'lucide-react';
 import type { Auditor } from '../../context/AppContext';
-import { useAdminUsers } from '../../hooks/useAdmin';
+import { useConsultores } from '../../hooks/useConsultores';
 
 interface NewProjectModalProps {
   open: boolean;
@@ -24,15 +24,14 @@ export default function NewProjectModal({ open, onClose, onSubmit }: NewProjectM
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isLoading, setIsLoading] = useState(false);
 
-  // Auditores reales desde Supabase
-  const { users: allUsers, isLoading: loadingAuditors } = useAdminUsers();
-  const auditorList = allUsers.filter(u => u.role === 'auditor');
+  // Consultores activos (GET /api/consultores)
+  const { consultores: auditorList, isLoading: loadingAuditors } = useConsultores();
 
   const validate = () => {
     const e: Record<string, string> = {};
     if (!companyName.trim()) e.companyName = 'El nombre de la empresa es requerido.';
     if (!projectName.trim()) e.projectName = 'El nombre del proyecto es requerido.';
-    if (selectedAuditors.length === 0) e.auditors = 'Seleccione al menos un auditor.';
+    if (selectedAuditors.length === 0) e.auditors = 'Seleccione al menos un consultor.';
     if (!startDate) e.startDate = 'La fecha de inicio es requerida.';
     return e;
   };
@@ -98,7 +97,7 @@ export default function NewProjectModal({ open, onClose, onSubmit }: NewProjectM
                 <h2 className="text-gray-900" style={{ fontSize: '1.125rem', fontWeight: 600 }}>
                   Nuevo Proyecto
                 </h2>
-                <p className="text-gray-500 text-sm">Complete los datos para crear un nuevo proyecto de auditoría</p>
+                <p className="text-gray-500 text-sm">Complete los datos para crear un nuevo proyecto de consultoría</p>
               </div>
               <button onClick={handleClose} className="w-8 h-8 rounded-lg hover:bg-gray-100 flex items-center justify-center text-gray-400 hover:text-gray-600 transition-colors">
                 <X size={18} />
@@ -179,7 +178,7 @@ export default function NewProjectModal({ open, onClose, onSubmit }: NewProjectM
 
               {/* Auditores — desde Supabase */}
               <div className="flex flex-col gap-1.5">
-                <label className="text-gray-700 text-sm" style={{ fontWeight: 500 }}>Auditores asignados *</label>
+                <label className="text-gray-700 text-sm" style={{ fontWeight: 500 }}>Consultores asignados *</label>
                 <div className={`border rounded-lg p-3 min-h-[52px]
                   ${errors.auditors ? 'border-red-400' : 'border-gray-200'}
                 `}>
@@ -188,7 +187,7 @@ export default function NewProjectModal({ open, onClose, onSubmit }: NewProjectM
                       <Loader2 size={12} className="animate-spin" /> Cargando auditores...
                     </div>
                   ) : auditorList.length === 0 ? (
-                    <p className="text-gray-400 text-xs">No hay auditores registrados. Crea uno en el Panel de Admin.</p>
+                    <p className="text-gray-400 text-xs">No hay consultores registrados. Un administrador puede crearlos en Administración.</p>
                   ) : (
                     <div className="flex flex-wrap gap-2">
                       {auditorList.map((user, idx) => {
