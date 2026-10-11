@@ -8,9 +8,23 @@ import { resolveApiBaseUrl } from './runtimeUrls';
  */
 const API_BASE_URL = resolveApiBaseUrl();
 
+// getSession() devuelve la sesion cacheada y la refresca si el access_token ya expiro.
 async function authHeaders(): Promise<Record<string, string>> {
   const { data: { session } } = await supabase.auth.getSession();
   return session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {};
+}
+
+// Un solo refresh en vuelo aunque varias peticiones reciban 401 a la vez
+// (los refresh tokens de GoTrue son de un solo uso).
+let refreshInFlight: Promise<string | null> | null = null;
+
+function refreshAccessToken(): Promise<string | null> {
+  if (!refreshInFlight) {
+    refreshInFlight = supabase.auth.refreshSession()
+      .then(({ data, error }) => (error ? null : data.session?.access_token ?? null))
+      .finally(() => { refreshInFlight = null; });
+  }
+  return refreshInFlight;
 }
 
 async function extractErrorMessage(response: Response): Promise<string> {
@@ -38,14 +52,28 @@ async function handle<T>(response: Response): Promise<T> {
 }
 
 async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
-  const headers = await authHeaders();
-  const response = await fetch(`${API_BASE_URL}${path}`, {
+  const send = (auth: Record<string, string>) => fetch(`${API_BASE_URL}${path}`, {
     ...init,
     headers: {
-      ...headers,
+      ...auth,
       ...(init.headers || {}),
     },
   });
+
+  let response = await send(await authHeaders());
+
+  // 401: el token pudo expirar o revocarse entre getSession() y la peticion. Se refresca
+  // una vez y se reintenta; si el refresh falla la sesion ya no es valida y se cierra
+  // (onAuthStateChange -> AuthContext limpia el estado y ProtectedRoute redirige al login).
+  if (response.status === 401 && !path.startsWith('/api/public/')) {
+    const token = await refreshAccessToken();
+    if (token) {
+      response = await send({ Authorization: `Bearer ${token}` });
+    } else {
+      await supabase.auth.signOut({ scope: 'local' });
+    }
+  }
+
   return handle<T>(response);
 }
 
