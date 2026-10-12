@@ -22,7 +22,7 @@ export function ProcessingOverlay({ isReprocessing, pmoType }: ProcessingOverlay
               >
                 <Loader2 size={22} className="text-neutral-700 animate-spin" strokeWidth={1.75} />
               </div>
-              <p className="text-[11px] uppercase tracking-[0.18em] text-[#5454e9] mb-2" style={{ fontWeight: 500 }}>
+              <p className="text-[12px] text-[#5454e9] mb-2" style={{ fontWeight: 500 }}>
                 Procesando
               </p>
               <h2 className="text-neutral-900 tracking-tight" style={{ fontWeight: 500, fontSize: '1.25rem', letterSpacing: '-0.01em' }}>

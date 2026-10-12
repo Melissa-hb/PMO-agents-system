@@ -49,11 +49,11 @@ export function PhaseReportSection({
     >
       <div className="border-b border-slate-200/80 bg-white/78 px-5 py-4">
         {eyebrow ? (
-          <p className="mb-1 text-[11px] font-bold uppercase tracking-[0.16em] text-[#5454e9]">
+          <p className="mb-1 text-[12px] font-semibold text-[#5454e9]">
             {eyebrow}
           </p>
         ) : null}
-        <h2 className="text-lg font-bold text-slate-950">{title}</h2>
+        <h2 className="text-lg font-semibold text-slate-950">{title}</h2>
         {description ? <p className="mt-1 text-sm text-slate-600">{description}</p> : null}
       </div>
       <div className="p-5">{children}</div>

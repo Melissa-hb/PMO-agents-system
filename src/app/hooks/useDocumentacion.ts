@@ -1,4 +1,5 @@
 import { useState, useCallback } from 'react';
+import { isOtrosCategory } from '../lib/phaseConfig';
 import { apiDelete, apiGet, apiPut, apiUpload, getPhaseState, runPhase } from '../lib/api';
 import { toast } from 'sonner';
 
@@ -303,7 +304,7 @@ export function useDocumentacion(projectId: string) {
           try {
             await apiPut(`/api/projects/${projectId}/documentos/${doc.dbId}`, {
               category: doc.category,
-              customCategory: doc.category === 'D16' ? doc.customCategory : '',
+              customCategory: isOtrosCategory(doc.category) ? doc.customCategory : '',
             });
           } catch {
             // no crítico: si falla, seguimos con el documento existente
@@ -323,7 +324,7 @@ export function useDocumentacion(projectId: string) {
           const formData = new FormData();
           formData.append('file', doc.file);
           formData.append('category', doc.category);
-          formData.append('customCategory', doc.category === 'D16' ? doc.customCategory : '');
+          formData.append('customCategory', isOtrosCategory(doc.category) ? doc.customCategory : '');
 
           const created = await apiUpload<DocumentoApiDto>(`/api/projects/${projectId}/documentos`, formData);
 

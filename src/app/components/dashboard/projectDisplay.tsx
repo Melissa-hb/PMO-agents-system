@@ -15,6 +15,13 @@ export const STATUS_META: Record<PhaseStatus, { label: string; dot: string; text
   error: { label: 'Error', dot: 'bg-rose-500', text: 'text-rose-700', icon: <AlertCircle size={10} className="text-rose-600" /> },
 };
 
+/** Descripcion del proyecto para mostrar bajo el nombre; null si solo repite el nombre de la empresa. */
+export function projectSubtitle(project: Pick<Project, 'companyName' | 'projectName'>): string | null {
+  const norm = (v: string) => (v ?? '').trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  const name = (project.projectName ?? '').trim();
+  return name && norm(name) !== norm(project.companyName) ? name : null;
+}
+
 export function getProjectSummary(project: Project) {
   const completedCount = project.phases.filter(p => p.status === 'completado').length;
   const totalPhases = project.phases.length;
@@ -40,7 +47,7 @@ export function StatusBadge({ meta }: { meta: (typeof STATUS_META)[PhaseStatus] 
   return (
     <span className="inline-flex items-center gap-2">
       <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${meta.dot}`} />
-      <span className="text-[11px] uppercase tracking-[0.14em] text-neutral-400 whitespace-nowrap" style={{ fontWeight: 500 }}>
+      <span className="text-[12px] text-neutral-400 whitespace-nowrap" style={{ fontWeight: 500 }}>
         {meta.label}
       </span>
     </span>
@@ -98,5 +105,47 @@ export function AuditorAvatars({ auditors, max = 4, size = 'w-6 h-6 text-[10px]'
 }
 
 export function auditorCountLabel(count: number) {
-  return `${count} auditor${count !== 1 ? 'es' : ''}`;
+  return `${count} consultor${count !== 1 ? 'es' : ''}`;
+}
+
+/** Consultores con nombre (los "Sin asignar" no cuentan). */
+export function assignedConsultants(auditors: Auditor[]): Auditor[] {
+  return auditors.filter(a => a.name && a.name !== 'Sin asignar');
+}
+
+/** Nombre del consultor principal y cuantos mas hay ("Ana Perez +1"). */
+export function ConsultantCell({ auditors }: { auditors: Auditor[] }) {
+  const assigned = assignedConsultants(auditors);
+  if (assigned.length === 0) return <span className="text-neutral-400 text-[12px]">Sin asignar</span>;
+  const [first, ...rest] = assigned;
+  return (
+    <span className="flex items-center gap-2 min-w-0" title={assigned.map(a => a.name).join(', ')}>
+      <AuditorAvatars auditors={[first]} max={1} />
+      <span className="text-neutral-700 text-[13px] truncate">{first.name}</span>
+      {rest.length > 0 && <span className="text-neutral-400 text-[12px] flex-shrink-0">+{rest.length}</span>}
+    </span>
+  );
+}
+
+/** Momento de la ultima actividad en lenguaje natural: "Hoy", "Ayer", "Hace 5 días", "Hace 2 meses". */
+export function formatLastActivity(iso: string | null | undefined, now: Date = new Date()): string {
+  if (!iso) return 'Sin actividad';
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return 'Sin actividad';
+  const startOf = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
+  const days = Math.max(0, Math.round((startOf(now) - startOf(date)) / 86_400_000));
+  if (days === 0) return 'Hoy';
+  if (days === 1) return 'Ayer';
+  if (days < 30) return `Hace ${days} días`;
+  const months = Math.floor(days / 30);
+  if (months < 12) return months === 1 ? 'Hace 1 mes' : `Hace ${months} meses`;
+  const years = Math.floor(days / 365);
+  return years <= 1 ? 'Hace 1 año' : `Hace ${years} años`;
+}
+
+/** Fecha completa para el tooltip de la ultima actividad. */
+export function formatFullDate(iso: string | null | undefined): string {
+  if (!iso) return '';
+  const date = new Date(iso);
+  return Number.isNaN(date.getTime()) ? '' : date.toLocaleString('es-CO', { day: 'numeric', month: 'long', year: 'numeric', hour: 'numeric', minute: '2-digit' });
 }

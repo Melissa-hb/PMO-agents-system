@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { Loader2, MoreVertical, Trash2, Edit2, Square } from 'lucide-react';
 import { Project, useApp } from '../../context/AppContext';
 import { toast } from 'sonner';
-import { supabase } from '../../lib/supabase';
+import { apiPost } from '../../lib/api';
 import EditProjectModal from './EditProjectModal';
 import {
   DropdownMenu,
@@ -33,17 +33,8 @@ export default function ProjectActions({ project }: ProjectActionsProps) {
   const handleStopProcessing = async () => {
     if (!processingPhase) return;
     try {
-      const { error } = await supabase
-        .from('fases_estado')
-        .update({
-          estado_visual: 'disponible',
-          updated_at: new Date().toISOString(),
-        })
-        .eq('proyecto_id', project.id)
-        .eq('numero_fase', processingPhase.number);
-
-      if (error) throw error;
-
+      // El backend deja la fase en 'disponible' y descarta el resultado si el agente termina despues.
+      await apiPost(`/api/projects/${project.id}/phases/${processingPhase.number}/cancel`);
       updatePhaseStatus(project.id, processingPhase.number, 'disponible');
       toast.info('Procesamiento detenido exitosamente');
     } catch (err: any) {

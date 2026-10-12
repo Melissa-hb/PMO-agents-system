@@ -37,7 +37,7 @@ export function KeyValueGrid({ items, columns = 2, className }: KeyValueGridProp
     <dl className={cn('grid gap-3', columnClasses[columns], className)}>
       {items.map((item, index) => (
         <div key={`${item.label}-${index}`} className="rounded-lg border border-slate-200 bg-white px-4 py-3">
-          <dt className="text-[11px] font-bold uppercase tracking-[0.12em] text-slate-500">
+          <dt className="text-[12px] font-semibold text-slate-500">
             {item.label}
           </dt>
           <dd className="mt-1 text-sm font-semibold leading-6 text-slate-900">{item.value}</dd>

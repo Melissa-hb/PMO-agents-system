@@ -44,7 +44,7 @@ function Root() {
 function AuthRoute() {
   const { session, isLoading } = useAuth();
   
-  if (isLoading) return <LoadingRouteState message="Verificando sesion..." />;
+  if (isLoading) return <LoadingRouteState message="Verificando sesión..." />;
   if (session) return <Navigate to="/dashboard" replace />;
   
   return <AuthModule />;

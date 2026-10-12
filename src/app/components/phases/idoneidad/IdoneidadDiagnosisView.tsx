@@ -74,8 +74,8 @@ function CustomRadarTooltip({ active, payload }: any) {
   return (
     <div className="bg-white border border-neutral-200/80 p-3.5 rounded-xl" style={{ boxShadow: '0 4px 24px -6px rgba(0,0,0,0.12)' }}>
       <div className="mb-2.5 pb-2 border-b border-neutral-100">
-        <p className="text-[10px] uppercase tracking-wider text-neutral-400 font-bold mb-0.5">{data.dimension}</p>
-        <p className="text-[12px] text-neutral-900 leading-tight" style={{ fontWeight: 700 }}>{data.fullLabel}</p>
+        <p className="text-[12px] text-neutral-400 font-semibold mb-0.5">{data.dimension}</p>
+        <p className="text-[12px] text-neutral-900 leading-tight" style={{ fontWeight: 600 }}>{data.fullLabel}</p>
       </div>
       {payload.filter((p: any) => p.dataKey === 'Puntaje').map((entry: any, index: number) => (
         <div key={index} className="flex items-center justify-between gap-6">
@@ -83,7 +83,7 @@ function CustomRadarTooltip({ active, payload }: any) {
             <span className="w-2 h-2 rounded-full" style={{ background: entry.color }} />
             {entry.name}
           </span>
-          <span className="text-[13px] tabular-nums font-bold" style={{ color: entry.color }}>{Number(entry.value).toFixed(1)}</span>
+          <span className="text-[13px] tabular-nums font-semibold" style={{ color: entry.color }}>{Number(entry.value).toFixed(1)}</span>
         </div>
       ))}
     </div>
@@ -106,29 +106,29 @@ function ScoreHero({ diagnosis }: { diagnosis: any }) {
                 <Gauge size={18} />
               </div>
               <div>
-                <p className="text-[10px] uppercase tracking-[0.16em] text-white/70" style={{ fontWeight: 800 }}>Agente 3 - Diagnostico de idoneidad</p>
-                <h2 className="text-[22px] tracking-tight" style={{ fontWeight: 850 }}>Idoneidad metodologica consolidada</h2>
+                <p className="text-[12px] text-white/70" style={{ fontWeight: 600 }}>Agente 3 - Diagnóstico de idoneidad</p>
+                <h2 className="text-[22px] tracking-tight" style={{ fontWeight: 600 }}>Idoneidad metodológica consolidada</h2>
               </div>
             </div>
             <p className="text-white/88 text-[14px] leading-relaxed max-w-4xl">{textWithFactorNames(diagnosis.summary)}</p>
           </div>
           <div className="w-24 h-24 rounded-full bg-white/12 border border-white/20 flex flex-col items-center justify-center flex-shrink-0">
-            <span className="text-[26px] tabular-nums tracking-tight" style={{ fontWeight: 850 }}>{score}</span>
+            <span className="text-[26px] tabular-nums tracking-tight" style={{ fontWeight: 600 }}>{score}</span>
             <span className="text-[10px] text-white/70">/10</span>
           </div>
         </div>
       </div>
       <div className={`px-6 py-3 ${toneClass.soft} border-t ${toneClass.border} flex flex-wrap items-center gap-3`}>
-        <span className={`px-2.5 py-1 rounded-full ${toneClass.bg} text-white text-[10px]`} style={{ fontWeight: 850 }}>
+        <span className={`px-2.5 py-1 rounded-full ${toneClass.bg} text-white text-[10px]`} style={{ fontWeight: 600 }}>
           {valueOrEmpty(diagnosis.suitability_level || diagnosis.nivel_idoneidad)}
         </span>
         {zonaGeneral && zonaGeneral !== diagnosis.suitability_level && (
-          <span className={`px-2.5 py-1 rounded-full ${toneClass.soft} ${toneClass.text} border ${toneClass.border} text-[10px]`} style={{ fontWeight: 800 }}>
+          <span className={`px-2.5 py-1 rounded-full ${toneClass.soft} ${toneClass.text} border ${toneClass.border} text-[10px]`} style={{ fontWeight: 600 }}>
             Zona: {valueOrEmpty(zonaGeneral)}
           </span>
         )}
         {formato && (
-          <span className="px-2.5 py-1 rounded-full bg-neutral-100 text-neutral-600 text-[10px] border border-neutral-200" style={{ fontWeight: 800 }}>
+          <span className="px-2.5 py-1 rounded-full bg-neutral-100 text-neutral-600 text-[10px] border border-neutral-200" style={{ fontWeight: 600 }}>
             Entrada: {valueOrEmpty(formato)}
           </span>
         )}
@@ -160,10 +160,10 @@ function DistributionPanel({ diagnosis }: { diagnosis: any }) {
           <article key={dim} className="rounded-2xl border border-neutral-100 bg-white p-4">
             <div className="flex items-start justify-between gap-3 mb-3">
               <div>
-                <p className="text-neutral-950 text-[15px] capitalize" style={{ fontWeight: 850 }}>{dim}</p>
+                <p className="text-neutral-950 text-[15px] capitalize" style={{ fontWeight: 600 }}>{dim}</p>
                 <p className="text-neutral-500 text-[11px] mt-1">Promedio {valueOrEmpty(indicator?.promedio)} - DE {valueOrEmpty(indicator?.desviacion_estandar)}</p>
               </div>
-              <span className={`px-2.5 py-1 rounded-full ${phaseReportToneStyles[zoneTone(indicator?.zona_predominante)].soft} ${phaseReportToneStyles[zoneTone(indicator?.zona_predominante)].text} text-[10px]`} style={{ fontWeight: 800 }}>
+              <span className={`px-2.5 py-1 rounded-full ${phaseReportToneStyles[zoneTone(indicator?.zona_predominante)].soft} ${phaseReportToneStyles[zoneTone(indicator?.zona_predominante)].text} text-[10px]`} style={{ fontWeight: 600 }}>
                 {valueOrEmpty(indicator?.zona_predominante || indicator?.coherencia_interna)}
               </span>
             </div>
@@ -188,11 +188,11 @@ function RadarPanel({ radarData, diagnosis }: { radarData: any[]; diagnosis: any
           <ResponsiveContainer width="100%" height="100%">
             <RadarChart cx="50%" cy="50%" outerRadius="75%" data={radarData}>
               <PolarGrid stroke="#e5e7eb" />
-              <PolarAngleAxis dataKey="subject" tick={{ fill: '#374151', fontSize: 11, fontWeight: 700 }} />
+              <PolarAngleAxis dataKey="subject" tick={{ fill: '#374151', fontSize: 11, fontWeight: 600 }} />
               <PolarRadiusAxis angle={90} domain={[0, 10]} tick={{ fill: '#9ca3af', fontSize: 10 }} axisLine={false} tickCount={6} />
               <Radar name="Zona Predictiva (7-10)" dataKey="PredictiveZone" stroke="#5454e9" strokeWidth={1.5} strokeDasharray="5 3" fill="#5454e9" fillOpacity={0.12} isAnimationActive={false} />
-              <Radar name="Zona de transicion (3.1-6.9)" dataKey="TransitionZone" stroke="#f59e0b" strokeWidth={1.5} strokeDasharray="5 3" fill="#f59e0b" fillOpacity={0.18} isAnimationActive={false} />
-              <Radar name="Zona agil (1-3)" dataKey="AgileZone" stroke="#10b981" strokeWidth={1.5} strokeDasharray="5 3" fill="#10b981" fillOpacity={0.22} isAnimationActive={false} />
+              <Radar name="Zona de transición (3.1-6.9)" dataKey="TransitionZone" stroke="#f59e0b" strokeWidth={1.5} strokeDasharray="5 3" fill="#f59e0b" fillOpacity={0.18} isAnimationActive={false} />
+              <Radar name="Zona ágil (1-3)" dataKey="AgileZone" stroke="#10b981" strokeWidth={1.5} strokeDasharray="5 3" fill="#10b981" fillOpacity={0.22} isAnimationActive={false} />
               <Radar name="Puntaje Real" dataKey="Puntaje" stroke="#5454e9" strokeWidth={3} fill="#5454e9" fillOpacity={0.18} dot={{ r: 4.5, fill: '#5454e9', stroke: '#fff', strokeWidth: 2 }} isAnimationActive={false} />
               <Tooltip content={<CustomRadarTooltip />} />
               <Legend wrapperStyle={{ paddingTop: '20px', fontSize: '11px', fontWeight: 500 }} />
@@ -212,7 +212,7 @@ function DimensionIndicatorCards({ diagnosis }: { diagnosis: any }) {
         const item = diagnosis.indicadores?.[dim];
         return (
           <article key={dim} className="rounded-2xl border border-neutral-100 bg-white p-4">
-            <p className="text-neutral-950 text-[14px] capitalize mb-3" style={{ fontWeight: 850 }}>{dim}</p>
+            <p className="text-neutral-950 text-[14px] capitalize mb-3" style={{ fontWeight: 600 }}>{dim}</p>
             <PhaseReportKeyValueGrid rows={[
               { label: 'Promedio', value: item?.promedio, tone: zoneTone(item?.zona_predominante) },
               { label: 'Desviacion', value: item?.desviacion_estandar, tone: levelTone(item?.desviacion_estandar) },
@@ -231,14 +231,13 @@ function RiskCard({ risk, index }: { risk: any; index: number }) {
   const toneClass = phaseReportToneStyles[tone];
   return (
     <article className={`rounded-2xl border ${toneClass.border} bg-white overflow-hidden`}>
-      <div className={`h-1 ${toneClass.bar}`} />
       <div className="p-4">
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
-            <p className="text-neutral-950 text-[15px]" style={{ fontWeight: 850 }}>{valueOrEmpty(risk.nombre || risk.riesgo)}</p>
-            <p className={`mt-1 text-[11px] uppercase tracking-[0.08em] ${toneClass.text}`} style={{ fontWeight: 800 }}>{valueOrEmpty(risk.nivel || risk.impacto)}</p>
+            <p className="text-neutral-950 text-[15px]" style={{ fontWeight: 600 }}>{valueOrEmpty(risk.nombre || risk.riesgo)}</p>
+            <p className={`mt-1 text-[12px] ${toneClass.text}`} style={{ fontWeight: 600 }}>{valueOrEmpty(risk.nivel || risk.impacto)}</p>
           </div>
-          <span className={`px-2.5 py-1 rounded-full ${toneClass.soft} ${toneClass.text} border ${toneClass.border} text-[10px] flex-shrink-0`} style={{ fontWeight: 800 }}>R-{index + 1}</span>
+          <span className={`px-2.5 py-1 rounded-full ${toneClass.soft} ${toneClass.text} border ${toneClass.border} text-[10px] flex-shrink-0`} style={{ fontWeight: 600 }}>R-{index + 1}</span>
         </div>
         <p className="mt-3 text-neutral-700 text-[13px] leading-relaxed">{textWithFactorNames(risk.descripcion)}</p>
         <div className="mt-3 pt-3 border-t border-neutral-100">
@@ -254,14 +253,13 @@ function TensionCard({ tension, index }: { tension: any; index: number }) {
   const toneClass = phaseReportToneStyles[tone];
   return (
     <article className={`rounded-2xl border ${toneClass.border} bg-white overflow-hidden`}>
-      <div className={`h-1 ${toneClass.bar}`} />
       <div className="p-4">
         <div className="flex items-start justify-between gap-3">
           <div>
-            <p className="text-neutral-950 text-[15px]" style={{ fontWeight: 850 }}>{valueOrEmpty(tension.par_dimensiones)}</p>
-            <p className={`mt-1 text-[11px] uppercase tracking-[0.08em] ${toneClass.text}`} style={{ fontWeight: 800 }}>{valueOrEmpty(tension.clasificacion)}</p>
+            <p className="text-neutral-950 text-[15px]" style={{ fontWeight: 600 }}>{valueOrEmpty(tension.par_dimensiones)}</p>
+            <p className={`mt-1 text-[12px] ${toneClass.text}`} style={{ fontWeight: 600 }}>{valueOrEmpty(tension.clasificacion)}</p>
           </div>
-          <span className="text-[18px] tabular-nums text-neutral-900" style={{ fontWeight: 850 }}>{valueOrEmpty(tension.diferencia_promedios)}</span>
+          <span className="text-[18px] tabular-nums text-neutral-900" style={{ fontWeight: 600 }}>{valueOrEmpty(tension.diferencia_promedios)}</span>
         </div>
         <p className="mt-3 text-neutral-700 text-[13px] leading-relaxed">{textWithFactorNames(tension.interpretacion)}</p>
       </div>
@@ -274,17 +272,16 @@ function ConflictCard({ conflict, index }: { conflict: any; index: number }) {
   const toneClass = phaseReportToneStyles[tone];
   return (
     <article className={`rounded-2xl border ${toneClass.border} bg-white overflow-hidden`}>
-      <div className={`h-1 ${toneClass.bar}`} />
       <div className="p-4">
         <div className="flex items-start justify-between gap-3">
           <div>
-            <p className="text-neutral-950 text-[15px]" style={{ fontWeight: 850 }}>{factorName(conflict.item)}</p>
-            <p className={`mt-1 text-[11px] uppercase tracking-[0.08em] ${toneClass.text}`} style={{ fontWeight: 800 }}>Diferencia {valueOrEmpty(conflict.diferencia)}</p>
+            <p className="text-neutral-950 text-[15px]" style={{ fontWeight: 600 }}>{factorName(conflict.item)}</p>
+            <p className={`mt-1 text-[12px] ${toneClass.text}`} style={{ fontWeight: 600 }}>Diferencia {valueOrEmpty(conflict.diferencia)}</p>
           </div>
           <span className="text-[12px] text-neutral-500 tabular-nums">{valueOrEmpty(conflict.valor_minimo)} - {valueOrEmpty(conflict.valor_maximo)}</span>
         </div>
         <div className="mt-3">
-          <p className="text-[9px] uppercase tracking-[0.14em] text-neutral-400 mb-2" style={{ fontWeight: 800 }}>Cargos involucrados</p>
+          <p className="text-[12px] text-neutral-400 mb-2" style={{ fontWeight: 600 }}>Cargos involucrados</p>
           <PhaseReportBadgeList items={conflict.cargos_involucrados} tone={tone} />
         </div>
       </div>
@@ -297,10 +294,9 @@ function InconsistencyCard({ inconsistency, index }: { inconsistency: any; index
   const toneClass = phaseReportToneStyles[tone];
   return (
     <article className={`rounded-2xl border ${toneClass.border} bg-white overflow-hidden`}>
-      <div className={`h-1 ${toneClass.bar}`} />
       <div className="p-4">
         <div className="flex items-start justify-between gap-3">
-          <p className="text-neutral-950 text-[15px]" style={{ fontWeight: 850 }}>{valueOrEmpty(inconsistency.clasificacion)}</p>
+          <p className="text-neutral-950 text-[15px]" style={{ fontWeight: 600 }}>{valueOrEmpty(inconsistency.clasificacion)}</p>
           <PhaseReportBadgeList items={inconsistency.items_involucrados} tone={tone} mapItem={factorName} />
         </div>
         <p className="mt-3 text-neutral-700 text-[13px] leading-relaxed">{textWithFactorNames(inconsistency.descripcion)}</p>
@@ -320,34 +316,34 @@ function IndicadoresZona({ diagnosis }: { diagnosis: any }) {
     <div className="space-y-4">
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
         <div className="rounded-2xl border border-green-200 bg-green-50/40 p-4">
-          <p className="text-[10px] uppercase tracking-[0.14em] text-green-700 mb-3" style={{ fontWeight: 800 }}>Indicadores agil (≤3.0)</p>
+          <p className="text-[12px] text-green-700 mb-3" style={{ fontWeight: 600 }}>Indicadores ágil (≤3.0)</p>
           <div className="space-y-2">
             {agil.length ? agil.map((x: any, i: number) => (
               <div key={i} className="flex items-center justify-between gap-2">
                 <span className="text-neutral-700 text-[12px]">{factorName(x.item || x.dimension)}</span>
-                <span className="tabular-nums text-green-700 text-[12px]" style={{ fontWeight: 800 }}>{valueOrEmpty(x.promedio)}</span>
+                <span className="tabular-nums text-green-700 text-[12px]" style={{ fontWeight: 600 }}>{valueOrEmpty(x.promedio)}</span>
               </div>
             )) : <p className="text-neutral-400 text-[12px] italic">Sin indicadores</p>}
           </div>
         </div>
         <div className="rounded-2xl border border-amber-200 bg-amber-50/40 p-4">
-          <p className="text-[10px] uppercase tracking-[0.14em] text-amber-700 mb-3" style={{ fontWeight: 800 }}>Indicadores de transicion</p>
+          <p className="text-[12px] text-amber-700 mb-3" style={{ fontWeight: 600 }}>Indicadores de transición</p>
           <div className="space-y-2">
             {hibr.length ? hibr.map((x: any, i: number) => (
               <div key={i} className="flex items-center justify-between gap-2">
                 <span className="text-neutral-700 text-[12px]">{factorName(x.item_o_dimension || x.dimension)}</span>
-                <span className="tabular-nums text-amber-700 text-[12px]" style={{ fontWeight: 800 }}>{valueOrEmpty(x.promedio)}</span>
+                <span className="tabular-nums text-amber-700 text-[12px]" style={{ fontWeight: 600 }}>{valueOrEmpty(x.promedio)}</span>
               </div>
             )) : <p className="text-neutral-400 text-[12px] italic">Sin indicadores</p>}
           </div>
         </div>
         <div className="rounded-2xl border border-red-200 bg-red-50/40 p-4">
-          <p className="text-[10px] uppercase tracking-[0.14em] text-red-700 mb-3" style={{ fontWeight: 800 }}>Indicadores predictivos (≥7.0)</p>
+          <p className="text-[12px] text-red-700 mb-3" style={{ fontWeight: 600 }}>Indicadores predictivos (≥7.0)</p>
           <div className="space-y-2">
             {pred.length ? pred.map((x: any, i: number) => (
               <div key={i} className="flex items-center justify-between gap-2">
                 <span className="text-neutral-700 text-[12px]">{factorName(x.item || x.dimension)}</span>
-                <span className="tabular-nums text-red-700 text-[12px]" style={{ fontWeight: 800 }}>{valueOrEmpty(x.promedio)}</span>
+                <span className="tabular-nums text-red-700 text-[12px]" style={{ fontWeight: 600 }}>{valueOrEmpty(x.promedio)}</span>
               </div>
             )) : <p className="text-neutral-400 text-[12px] italic">Sin indicadores</p>}
           </div>
@@ -355,7 +351,7 @@ function IndicadoresZona({ diagnosis }: { diagnosis: any }) {
       </div>
       {tensiones.length > 0 && (
         <div className="rounded-2xl border border-orange-200 bg-orange-50/40 p-4">
-          <p className="text-[10px] uppercase tracking-[0.14em] text-orange-700 mb-3" style={{ fontWeight: 800 }}>Tensiones criticas (Severa)</p>
+          <p className="text-[12px] text-orange-700 mb-3" style={{ fontWeight: 600 }}>Tensiones criticas (Severa)</p>
           <div className="space-y-2">
             {tensiones.map((t: any, i: number) => (
               <div key={i} className="flex items-start gap-2">
@@ -376,7 +372,7 @@ function FactorsPanel({ diagnosis }: { diagnosis: any }) {
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
       <PhaseReportMiniList title="Alta afinidad predictiva" items={predictive.map((fac: any) => `${factorName(fac.item)} (${valueOrEmpty(fac.promedio)}): ${textWithFactorNames(fac.interpretacion)}`)} tone="red" />
-      <PhaseReportMiniList title="Alta afinidad agil" items={agile.map((fac: any) => `${factorName(fac.item)} (${valueOrEmpty(fac.promedio)}): ${textWithFactorNames(fac.interpretacion)}`)} tone="green" />
+      <PhaseReportMiniList title="Alta afinidad ágil" items={agile.map((fac: any) => `${factorName(fac.item)} (${valueOrEmpty(fac.promedio)}): ${textWithFactorNames(fac.interpretacion)}`)} tone="green" />
     </div>
   );
 }
@@ -389,9 +385,8 @@ function FactorsInterpretation({ diagnosis }: { diagnosis: any }) {
         const tone = (['blue', 'purple', 'green'] as PhaseReportTone[])[index];
         return (
           <article key={dim} className={`rounded-2xl border ${phaseReportToneStyles[tone].border} bg-white overflow-hidden`}>
-            <div className={`h-1 ${phaseReportToneStyles[tone].bar}`} />
             <div className="p-4">
-              <p className="text-neutral-950 text-[15px] capitalize mb-3" style={{ fontWeight: 850 }}>{dim}</p>
+              <p className="text-neutral-950 text-[15px] capitalize mb-3" style={{ fontWeight: 600 }}>{dim}</p>
               <PhaseReportKeyValueGrid rows={Object.entries(data).map(([label, value]) => ({
                 label: label.replace(/_/g, ' '),
                 value: textWithFactorNames(value),
@@ -420,7 +415,7 @@ function TrazabilidadPanel({ diagnosis }: { diagnosis: any }) {
         { label: 'Suma cultura', value: t.suma_promedios_cultura_10_items, tone: 'purple' },
         { label: 'Suma equipo', value: t.suma_promedios_equipo_6_items, tone: 'green' },
         { label: 'Suma proyecto', value: t.suma_promedios_proyecto_5_items, tone: 'amber' },
-        { label: 'Verificacion rango', value: t.verificacion_rango_superada ? 'Superada ✓' : 'No superada ✗', tone: t.verificacion_rango_superada ? 'green' : 'red' },
+        { label: 'Verificación rango', value: t.verificacion_rango_superada ? 'Superada ✓' : 'No superada ✗', tone: t.verificacion_rango_superada ? 'green' : 'red' },
       ]} />
       {itemKeys.length > 0 && (
         <div className="overflow-x-auto rounded-2xl border border-neutral-100">
@@ -439,7 +434,7 @@ function TrazabilidadPanel({ diagnosis }: { diagnosis: any }) {
                   <td className="px-3 py-2 text-neutral-800 font-medium">{factorName(item)}</td>
                   <td className="px-3 py-2 text-right tabular-nums text-neutral-700">{valueOrEmpty(t.suma_por_item?.[item])}</td>
                   <td className="px-3 py-2 text-right tabular-nums text-neutral-700">{valueOrEmpty(t.n_respondentes_por_item?.[item])}</td>
-                  <td className="px-3 py-2 text-right tabular-nums font-bold text-neutral-900">{valueOrEmpty(t.promedio_por_item_sin_redondear?.[item])}</td>
+                  <td className="px-3 py-2 text-right tabular-nums font-semibold text-neutral-900">{valueOrEmpty(t.promedio_por_item_sin_redondear?.[item])}</td>
                 </tr>
               ))}
             </tbody>
@@ -464,7 +459,7 @@ function TrazabilidadPanel({ diagnosis }: { diagnosis: any }) {
                 <tr key={i} className="hover:bg-neutral-50/60">
                   <td className="px-3 py-2 text-neutral-800 font-medium">{valueOrEmpty(r.respondent_id)}</td>
                   <td className="px-3 py-2 text-neutral-600">{valueOrEmpty(r.role)}</td>
-                  <td className="px-3 py-2 text-right tabular-nums font-bold text-neutral-900">{valueOrEmpty(r.promedio_individual)}</td>
+                  <td className="px-3 py-2 text-right tabular-nums font-semibold text-neutral-900">{valueOrEmpty(r.promedio_individual)}</td>
                   {itemKeys.map((item) => (
                     <td key={item} className="px-3 py-2 text-right tabular-nums text-neutral-600">{valueOrEmpty(r.scores?.[item])}</td>
                   ))}
@@ -489,7 +484,7 @@ function ResultsTable({ diagnosis }: { diagnosis: any }) {
         <thead>
           <tr className="border-b border-neutral-100 bg-neutral-50">
             {['Item', 'Dimension', 'Promedio', 'Min', 'Max', 'Desv.', 'Zona', 'Critico'].map((h) => (
-              <th key={h} className="px-3 py-3 text-[10px] uppercase tracking-wider text-neutral-400 font-semibold">{h}</th>
+              <th key={h} className="px-3 py-3 text-[12px] text-neutral-400 font-semibold">{h}</th>
             ))}
           </tr>
         </thead>
@@ -501,13 +496,13 @@ function ResultsTable({ diagnosis }: { diagnosis: any }) {
             const tone = zoneTone(item.zona);
             return (
               <tr key={i} className="hover:bg-neutral-50/60">
-                <td className="px-3 py-3 text-[12px] text-neutral-800" style={{ fontWeight: 700 }}>{displayCode}</td>
+                <td className="px-3 py-3 text-[12px] text-neutral-800" style={{ fontWeight: 600 }}>{displayCode}</td>
                 <td className="px-3 py-3 text-[12px] text-neutral-600">{valueOrEmpty(item.dimension ?? inferIdoneidadDimension(code))}</td>
-                <td className="px-3 py-3 text-[12px] text-neutral-900 tabular-nums" style={{ fontWeight: 800 }}>{valueOrEmpty(getIdoneidadItemScore(item))}</td>
+                <td className="px-3 py-3 text-[12px] text-neutral-900 tabular-nums" style={{ fontWeight: 600 }}>{valueOrEmpty(getIdoneidadItemScore(item))}</td>
                 <td className="px-3 py-3 text-[12px] text-neutral-600 tabular-nums">{valueOrEmpty(item.minimo)}</td>
                 <td className="px-3 py-3 text-[12px] text-neutral-600 tabular-nums">{valueOrEmpty(item.maximo)}</td>
                 <td className="px-3 py-3 text-[12px] text-neutral-600 tabular-nums">{valueOrEmpty(item.desviacion_estandar)}</td>
-                <td className="px-3 py-3"><span className={`inline-flex px-2.5 py-1 rounded-full ${phaseReportToneStyles[tone].soft} ${phaseReportToneStyles[tone].text} text-[10px]`} style={{ fontWeight: 800 }}>{valueOrEmpty(item.zona)}</span></td>
+                <td className="px-3 py-3"><span className={`inline-flex px-2.5 py-1 rounded-full ${phaseReportToneStyles[tone].soft} ${phaseReportToneStyles[tone].text} text-[10px]`} style={{ fontWeight: 600 }}>{valueOrEmpty(item.zona)}</span></td>
                 <td className="px-3 py-3 text-[12px] text-neutral-600">{valueOrEmpty(item.factor_critico)}</td>
               </tr>
             );
@@ -534,7 +529,7 @@ function Agent4Inputs({ diagnosis }: { diagnosis: any }) {
   return (
     <div className="space-y-5">
       <PhaseReportKeyValueGrid rows={[
-        { label: 'Listo para integracion', value: diagnosis?.listo_para_integracion, tone: diagnosis?.listo_para_integracion ? 'green' : 'orange' },
+        { label: 'Listo para integración', value: diagnosis?.listo_para_integracion, tone: diagnosis?.listo_para_integracion ? 'green' : 'orange' },
         { label: 'Nivel confiabilidad', value: inputs?.nivel_confiabilidad, tone: levelTone(inputs?.nivel_confiabilidad) },
         { label: 'Comportamiento general', value: inputs?.comportamiento_general, tone: levelTone(inputs?.comportamiento_general) },
         { label: 'Zona predominante general', value: inputs?.zona_predominante_general || diagnosis?.zona_predominante_general, tone: zoneTone(inputs?.zona_predominante_general || diagnosis?.zona_predominante_general) },
@@ -543,20 +538,20 @@ function Agent4Inputs({ diagnosis }: { diagnosis: any }) {
       ]} />
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <PhaseReportMiniList title="Indicadores predictivos" items={(inputs?.indicadores_predictivos ?? []).map((x: any) => `${factorName(x.item || x.dimension)} (${valueOrEmpty(x.promedio)}): ${textWithFactorNames(x.interpretacion_del_factor)}`)} tone="red" />
-        <PhaseReportMiniList title="Indicadores de transicion" items={(inputs?.indicadores_hibridos ?? []).map((x: any) => `${factorName(x.item_o_dimension)} (${valueOrEmpty(x.promedio)}): ${textWithFactorNames(x.interpretacion_del_factor)}`)} tone="amber" />
+        <PhaseReportMiniList title="Indicadores de transición" items={(inputs?.indicadores_hibridos ?? []).map((x: any) => `${factorName(x.item_o_dimension)} (${valueOrEmpty(x.promedio)}): ${textWithFactorNames(x.interpretacion_del_factor)}`)} tone="amber" />
         <PhaseReportMiniList title="Indicadores agilidad" items={(inputs?.indicadores_agilidad ?? []).map((x: any) => typeof x === 'string' ? x : `${factorName(x.item || x.dimension)} (${valueOrEmpty(x.promedio)})`)} tone="green" />
         <PhaseReportMiniList title="Inconsistencias criticas" items={inputs?.inconsistencias_criticas_resumen} tone="orange" mapItem={textWithFactorNames} />
         <PhaseReportMiniList title="Tensiones criticas" items={inputs?.tensiones_criticas_resumen} tone="orange" mapItem={textWithFactorNames} />
       </div>
       {inputs?.justificacion_preproyecto && (
         <div className="rounded-2xl border border-neutral-100 bg-neutral-50 p-3">
-          <p className="text-[10px] uppercase tracking-[0.14em] text-neutral-400 mb-1" style={{ fontWeight: 800 }}>Justificacion preproyecto</p>
+          <p className="text-[12px] text-neutral-400 mb-1" style={{ fontWeight: 600 }}>Justificacion preproyecto</p>
           <p className="text-neutral-700 text-[13px]">{inputs.justificacion_preproyecto}</p>
         </div>
       )}
       {inputs?.justificacion_postcierre && (
         <div className="rounded-2xl border border-neutral-100 bg-neutral-50 p-3">
-          <p className="text-[10px] uppercase tracking-[0.14em] text-neutral-400 mb-1" style={{ fontWeight: 800 }}>Justificacion postcierre</p>
+          <p className="text-[12px] text-neutral-400 mb-1" style={{ fontWeight: 600 }}>Justificacion postcierre</p>
           <p className="text-neutral-700 text-[13px]">{inputs.justificacion_postcierre}</p>
         </div>
       )}
@@ -573,7 +568,7 @@ export default function IdoneidadDiagnosisView({ diagnosis, radarData, totalResp
         <MetricsStrip diagnosis={diagnosis} totalRespondentCount={totalRespondentCount} completedAt={completedAt} />
       </PhaseReportSection>
 
-      <PhaseReportSection title="Indicadores por zona" eyebrow="Agil - transicion - predictivo" icon={<Zap size={18} />} tone="green">
+      <PhaseReportSection title="Indicadores por zona" eyebrow="Ágil - transición - predictivo" icon={<Zap size={18} />} tone="green">
         <IndicadoresZona diagnosis={diagnosis} />
       </PhaseReportSection>
 
@@ -581,14 +576,14 @@ export default function IdoneidadDiagnosisView({ diagnosis, radarData, totalResp
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           {normalizeList(diagnosis.observations || diagnosis.observaciones).map((obs, i) => (
             <div key={i} className="rounded-2xl border border-[#4cb979]/25 bg-[#4cb979]/10 p-4 flex gap-3">
-              <div className="w-7 h-7 rounded-full bg-[#4cb979] text-white flex items-center justify-center flex-shrink-0 text-[11px]" style={{ fontWeight: 800 }}>{i + 1}</div>
+              <div className="w-7 h-7 rounded-full bg-[#4cb979] text-white flex items-center justify-center flex-shrink-0 text-[11px]" style={{ fontWeight: 600 }}>{i + 1}</div>
               <p className="text-neutral-700 text-[13px] leading-relaxed">{textWithFactorNames(obs)}</p>
             </div>
           ))}
         </div>
       </PhaseReportSection>
 
-      <PhaseReportSection title="Distribucion por zona" eyebrow="Agil - transicion - predictivo" icon={<Target size={18} />} tone="red">
+      <PhaseReportSection title="Distribución por zona" eyebrow="Ágil - transición - predictivo" icon={<Target size={18} />} tone="red">
         <DistributionPanel diagnosis={diagnosis} />
       </PhaseReportSection>
 
@@ -636,11 +631,11 @@ export default function IdoneidadDiagnosisView({ diagnosis, radarData, totalResp
         </div>
       </PhaseReportSection>
 
-      <PhaseReportSection title="Factores criticos" eyebrow="Afinidad metodologica" icon={<TrendingUp size={18} />} tone="red">
+      <PhaseReportSection title="Factores criticos" eyebrow="Afinidad metodológica" icon={<TrendingUp size={18} />} tone="red">
         <FactorsPanel diagnosis={diagnosis} />
       </PhaseReportSection>
 
-      <PhaseReportSection title="Interpretacion por factores" eyebrow="Cultura - equipo - proyecto" icon={<Lightbulb size={18} />} tone="green">
+      <PhaseReportSection title="Interpretación por factores" eyebrow="Cultura - equipo - proyecto" icon={<Lightbulb size={18} />} tone="green">
         <FactorsInterpretation diagnosis={diagnosis} />
       </PhaseReportSection>
 

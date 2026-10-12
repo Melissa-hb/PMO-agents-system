@@ -22,8 +22,8 @@ const INTERPRETATION_MAP_MADUREZ: Record<number, string> = {
 };
 
 function getIdoneidadInterpretation(value: number) {
-  if (value <= 3) return 'Zona agil';
-  if (value <= 6) return 'Zona de transicion';
+  if (value <= 3) return 'Zona ágil';
+  if (value <= 6) return 'Zona de transición';
   return value === 10 ? 'Altamente predictivo' : 'Zona predictiva';
 }
 
@@ -275,7 +275,7 @@ export default function ExternalSurveyView() {
           <div className="flex items-center gap-3 mb-4">
             <IcesiLogo variant="positive" className="brand-logo-mark h-10 w-auto flex-shrink-0" />
             <div>
-              <p className="text-gray-400 text-xs" style={{ fontWeight: 500 }}>Universidad Icesi - PMO Intelligence Platform</p>
+              <p className="text-gray-400 text-xs" style={{ fontWeight: 500 }}>Universidad Icesi · Consultoría en Gestión de Proyectos</p>
               <p className="text-gray-800 text-sm" style={{ fontWeight: 600 }}>Encuesta de {surveyTitle}</p>
             </div>
           </div>

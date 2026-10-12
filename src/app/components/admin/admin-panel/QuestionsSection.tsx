@@ -419,10 +419,13 @@ function QuestionsSection() {
         </div>
         <button
           onClick={addQuestion}
-          className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-white text-sm hover:opacity-90 transition-opacity"
-          style={{ background: '#5454e9', fontWeight: 600 }}
+          className="brand-button-primary group flex items-center justify-center gap-2.5 pl-4 pr-5 py-3 rounded-full text-sm transition-all flex-shrink-0 hover:-translate-y-px"
+          style={{ fontWeight: 500, boxShadow: '0 1px 2px rgba(0,0,0,0.06), 0 8px 24px -8px rgba(84,84,233,0.42)' }}
         >
-          <Plus size={15} />+ Agregar Pregunta
+          <span className="w-5 h-5 rounded-full bg-white/10 flex items-center justify-center transition-colors group-hover:bg-white/15">
+            <Plus size={13} strokeWidth={2.25} />
+          </span>
+          Agregar pregunta
         </button>
       </div>
 

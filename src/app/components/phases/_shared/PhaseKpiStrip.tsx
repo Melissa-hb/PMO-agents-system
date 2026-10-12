@@ -35,10 +35,10 @@ export function PhaseKpiStrip({ items, className }: PhaseKpiStripProps) {
             toneClasses[item.tone ?? 'neutral'],
           )}
         >
-          <p className="text-[11px] font-bold uppercase tracking-[0.14em] opacity-75">
+          <p className="text-[12px] font-semibold opacity-75">
             {item.label}
           </p>
-          <div className="mt-2 text-2xl font-black leading-none text-slate-950">{item.value}</div>
+          <div className="mt-2 text-2xl font-semibold leading-none text-slate-950">{item.value}</div>
           {item.detail ? <div className="mt-2 text-xs font-semibold opacity-80">{item.detail}</div> : null}
         </div>
       ))}

@@ -14,7 +14,7 @@ export function DocumentacionProcessingOverlay({ isProcessing }: DocumentacionPr
           <div className="w-16 h-16 rounded-full border border-neutral-200 bg-white flex items-center justify-center mb-5" style={{ boxShadow: '0 1px 2px rgba(0,0,0,0.04)' }}>
             <Loader2 size={22} className="text-neutral-700 animate-spin" strokeWidth={1.75} />
           </div>
-          <p className="text-[11px] uppercase tracking-[0.18em] text-[#5454e9] mb-2" style={{ fontWeight: 500 }}>Procesando</p>
+          <p className="text-[12px] text-[#5454e9] mb-2" style={{ fontWeight: 500 }}>Procesando</p>
           <h2 className="text-neutral-900 tracking-tight" style={{ fontWeight: 500, fontSize: '1.25rem', letterSpacing: '-0.01em' }}>
             Analizando documentos
           </h2>

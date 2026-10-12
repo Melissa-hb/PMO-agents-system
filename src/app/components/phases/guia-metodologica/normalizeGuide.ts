@@ -157,11 +157,36 @@ function normalizeSection(section: any, index: number) {
 }
 
 /** Format a snake_case/camelCase key into a human-readable title */
+/** Palabras frecuentes en los campos de la guia que llevan tilde (ademas de las terminadas en -cion/-sion). */
+const ACCENTED_WORDS: Record<string, string> = {
+  guia: 'guía', guias: 'guías', politica: 'política', politicas: 'políticas', comite: 'comité', comites: 'comités',
+  proposito: 'propósito', ambito: 'ámbito', parrafo: 'párrafo', especificos: 'específicos', especificas: 'específicas',
+  tecnico: 'técnico', tecnicos: 'técnicos', tecnica: 'técnica', tecnicas: 'técnicas', metodologico: 'metodológico',
+  metodologica: 'metodológica', diagnostico: 'diagnóstico', codigo: 'código', item: 'ítem', items: 'ítems', area: 'área',
+  areas: 'áreas', analisis: 'análisis', critico: 'crítico', criticos: 'críticos', critica: 'crítica', criticas: 'críticas',
+  numero: 'número', metrica: 'métrica', metricas: 'métricas', indice: 'índice', basico: 'básico', maximo: 'máximo',
+  minimo: 'mínimo', unico: 'único', periodo: 'período', practica: 'práctica', practicas: 'prácticas',
+  caracteristicas: 'características', estrategico: 'estratégico', estrategica: 'estratégica', estrategicos: 'estratégicos',
+  economico: 'económico', publico: 'público', tambien: 'también', ultimo: 'último', ultima: 'última', agil: 'ágil',
+  agiles: 'ágiles', hibrido: 'híbrido', hibrida: 'híbrida', rapido: 'rápido', logica: 'lógica', tipico: 'típico',
+};
+
+function accentWord(word: string): string {
+  const lower = word.toLowerCase();
+  if (ACCENTED_WORDS[lower]) return ACCENTED_WORDS[lower];
+  if (/[cs]ion$/.test(lower)) return lower.replace(/ion$/, 'ión');
+  return lower;
+}
+
+/** "temas_de_decision" → "Temas de decisión": titulos legibles y con ortografia a partir de las claves del JSON. */
 function formatFieldKey(key: string): string {
-  return key
-    .replace(/_/g, ' ')
+  const words = key
     .replace(/([a-z])([A-Z])/g, '$1 $2')
-    .replace(/\b\w/g, l => l.toUpperCase());
+    .split(/[_\s]+/)
+    .filter(Boolean)
+    .map(w => (/^[A-Z0-9]{2,}$/.test(w) ? w : accentWord(w)));
+  const text = words.join(' ');
+  return text.charAt(0).toUpperCase() + text.slice(1);
 }
 
 function normalizeSearchText(value: unknown): string {

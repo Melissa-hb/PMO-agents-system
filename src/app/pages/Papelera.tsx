@@ -6,7 +6,6 @@ import { ArrowLeft, Trash2, RefreshCcw, AlertTriangle, CheckCircle2, Loader2 } f
 import { useMemo } from 'react';
 import { useApp } from '../context/AppContext';
 import { supabase } from '../lib/supabase';
-import IcesiLogo from '../components/brand/IcesiLogo';
 
 // Tipo ligero para papelera
 interface TrashedProject {
@@ -90,7 +89,6 @@ export default function Papelera() {
           >
             <ArrowLeft size={12} strokeWidth={1.75} /> Volver al dashboard
           </button>
-          <IcesiLogo variant="positive" className="brand-logo-mark h-9 w-auto" />
         </div>
 
         <div className="mb-10">

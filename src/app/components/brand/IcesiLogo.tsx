@@ -1,8 +1,10 @@
 import positiveLogo from '../../assets/brand/icesi-logo-positive.svg';
 import negativeLogo from '../../assets/brand/icesi-logo-negative.svg';
+import markLogo from '../../assets/brand/icesi-mark.svg';
 
 interface IcesiLogoProps {
-  variant?: 'positive' | 'negative';
+  /** 'mark': solo el simbolo (sin el texto "Universidad Icesi"), para espacios pequenos. */
+  variant?: 'positive' | 'negative' | 'mark';
   className?: string;
   ariaLabel?: string;
 }
@@ -14,7 +16,7 @@ export default function IcesiLogo({
 }: IcesiLogoProps) {
   return (
     <img
-      src={variant === 'negative' ? negativeLogo : positiveLogo}
+      src={variant === 'negative' ? negativeLogo : variant === 'mark' ? markLogo : positiveLogo}
       alt={ariaLabel}
       className={className}
       loading="eager"

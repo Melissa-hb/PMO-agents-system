@@ -278,7 +278,7 @@ export default function SurveyRespondentOverlay({
               </div>
               <div>
                 <p className="text-gray-400 text-xs" style={{ fontWeight: 500 }}>
-                  Universidad Icesi - PMO Intelligence Platform
+                  Universidad Icesi · Consultoría en Gestión de Proyectos
                 </p>
                 <p className="text-gray-800 text-sm" style={{ fontWeight: 600 }}>
                   Encuesta de Madurez — {companyName}

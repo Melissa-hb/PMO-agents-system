@@ -17,6 +17,7 @@ import PhaseHeader from './_shared/PhaseHeader';
 import { usePhaseDependencies, BlockedActionHint } from './_shared/PhaseDependencyNotice';
 import NextPhaseButton from './_shared/NextPhaseButton';
 import type { DocCategory } from './documentacion/documentCategories';
+import { getPhaseConfig, isOtrosCategory } from '../../lib/phaseConfig';
 import { CompletedDiagnosisSection } from './documentacion/module/CompletedDiagnosisSection';
 import { DocumentacionHeaderStats } from './documentacion/module/DocumentacionHeaderStats';
 import { DocumentacionLoadingView } from './documentacion/module/DocumentacionLoadingView';
@@ -30,20 +31,19 @@ type Documento = DocumentoLocal;
 function AgentErrorCard({ error }: { error: AgentErrorPayload }) {
   return (
     <div className="mt-6 rounded-2xl border border-[#ef4444]/25 bg-white overflow-hidden" style={{ boxShadow: '0 18px 44px -30px rgba(239,68,68,0.35)' }}>
-      <div className="h-1.5 bg-[#ef4444]" />
       <div className="p-5 flex gap-4">
         <div className="w-10 h-10 rounded-2xl bg-[#ef4444]/10 text-[#ef4444] border border-[#ef4444]/20 flex items-center justify-center flex-shrink-0">
           <AlertTriangle size={18} />
         </div>
         <div className="min-w-0">
-          <p className="text-[10px] uppercase tracking-[0.16em] text-[#b91c1c] mb-1" style={{ fontWeight: 800 }}>
+          <p className="text-[12px] text-[#b91c1c] mb-1" style={{ fontWeight: 600 }}>
             {error.code ?? 'Error del agente'}
           </p>
-          <p className="text-neutral-950 text-[15px] leading-snug" style={{ fontWeight: 800 }}>{error.message}</p>
+          <p className="text-neutral-950 text-[15px] leading-snug" style={{ fontWeight: 600 }}>{error.message}</p>
           {error.details && <p className="mt-2 text-neutral-600 text-[13px] leading-relaxed">{error.details}</p>}
           {typeof error.retryable === 'boolean' && (
             <p className="mt-3 text-[11px] text-neutral-500">
-              {error.retryable ? 'Puede reintentarse despues de ajustar la entrada.' : 'El agente marco este error como no reintentable.'}
+              {error.retryable ? 'Puede reintentarse después de ajustar la entrada.' : 'El agente marco este error como no reintentable.'}
             </p>
           )}
         </div>
@@ -110,7 +110,7 @@ export default function DocumentacionModule() {
 
     if (data?.estadoVisual === 'procesando') {
       setIsSending(false);
-      toast.info('El Agente 1 sigue en ejecucion.', {
+      toast.info('El Agente 1 sigue en ejecución.', {
         description: 'Seguiremos esperando el resultado guardado en el backend.',
       });
       return true;
@@ -208,7 +208,7 @@ export default function DocumentacionModule() {
   }, []);
 
   const canComplete = documentos.length > 0 && documentos.every(d =>
-    d.category !== 'D16' || d.customCategory.trim() !== ''
+    !isOtrosCategory(d.category) || d.customCategory.trim() !== ''
   );
 
   const handleFiles = useCallback((files: FileList | File[]) => {
@@ -236,7 +236,8 @@ export default function DocumentacionModule() {
           name: file.name,
           size: file.size,
           type: file.type,
-          category: 'D01',
+          // Primera categoria configurada que no sea "Otros" (D01 con la configuracion inicial).
+          category: getPhaseConfig().categoriasDocumento.find(c => !c.esOtros)?.codigo ?? 'D01',
           customCategory: '',
           file,
         };

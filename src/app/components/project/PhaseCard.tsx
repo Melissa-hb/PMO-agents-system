@@ -5,6 +5,7 @@ import { Loader2, Check, AlertTriangle, ArrowUpRight, RotateCcw, Square, Hourgla
 import { Phase } from '../../context/AppContext';
 import { useCancelAgent } from '../../hooks/useCancelAgent';
 import { getPendingDependencies } from '../../lib/phaseDependencies';
+import { usePhaseConfig } from '../../lib/phaseConfig';
 import { PHASE_CATALOG, DEFAULT_PHASE_INFO } from './phaseCatalog';
 
 interface PhaseCardProps {
@@ -113,7 +114,8 @@ export default function PhaseCard({ phase, phases, projectId, onRetry, index = 0
   const navigate = useNavigate();
   const [showResetModal, setShowResetModal] = useState(false);
 
-  const pending = getPendingDependencies(phases, phase.number);
+  const phaseConfig = usePhaseConfig();
+  const pending = getPendingDependencies(phases, phase.number, phaseConfig);
   const state = getCardState(phase, pending.length);
   const meta = CARD_STATE[state];
   const { icon: Icon, description } = PHASE_CATALOG[phase.number] ?? DEFAULT_PHASE_INFO;

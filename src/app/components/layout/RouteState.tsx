@@ -49,7 +49,7 @@ export function LoadingRouteState({ message = 'Cargando datos de la pantalla...'
 
 export function MissingProjectState({
   title = 'Proyecto no disponible',
-  description = 'No pudimos cargar este proyecto. Puede haber sido eliminado, no tienes acceso o la sesion necesita refrescarse.',
+  description = 'No pudimos cargar este proyecto. Puede haber sido eliminado, no tienes acceso o la sesión necesita refrescarse.',
 }: {
   title?: string;
   description?: string;
