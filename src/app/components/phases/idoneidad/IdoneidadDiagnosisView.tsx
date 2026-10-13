@@ -190,9 +190,9 @@ function RadarPanel({ radarData, diagnosis }: { radarData: any[]; diagnosis: any
               <PolarGrid stroke="#e5e7eb" />
               <PolarAngleAxis dataKey="subject" tick={{ fill: '#374151', fontSize: 11, fontWeight: 600 }} />
               <PolarRadiusAxis angle={90} domain={[0, 10]} tick={{ fill: '#9ca3af', fontSize: 10 }} axisLine={false} tickCount={6} />
-              <Radar name="Zona Predictiva (7-10)" dataKey="PredictiveZone" stroke="#5454e9" strokeWidth={1.5} strokeDasharray="5 3" fill="#5454e9" fillOpacity={0.12} isAnimationActive={false} />
-              <Radar name="Zona de transición (3.1-6.9)" dataKey="TransitionZone" stroke="#f59e0b" strokeWidth={1.5} strokeDasharray="5 3" fill="#f59e0b" fillOpacity={0.18} isAnimationActive={false} />
-              <Radar name="Zona ágil (1-3)" dataKey="AgileZone" stroke="#10b981" strokeWidth={1.5} strokeDasharray="5 3" fill="#10b981" fillOpacity={0.22} isAnimationActive={false} />
+              <Radar name="Zona predictiva (7.1-10)" dataKey="PredictiveZone" stroke="#5454e9" strokeWidth={1.5} strokeDasharray="5 3" fill="#5454e9" fillOpacity={0.12} isAnimationActive={false} />
+              <Radar name="Zona híbrida (4.1-7)" dataKey="TransitionZone" stroke="#f59e0b" strokeWidth={1.5} strokeDasharray="5 3" fill="#f59e0b" fillOpacity={0.18} isAnimationActive={false} />
+              <Radar name="Zona ágil (1-4)" dataKey="AgileZone" stroke="#10b981" strokeWidth={1.5} strokeDasharray="5 3" fill="#10b981" fillOpacity={0.22} isAnimationActive={false} />
               <Radar name="Puntaje Real" dataKey="Puntaje" stroke="#5454e9" strokeWidth={3} fill="#5454e9" fillOpacity={0.18} dot={{ r: 4.5, fill: '#5454e9', stroke: '#fff', strokeWidth: 2 }} isAnimationActive={false} />
               <Tooltip content={<CustomRadarTooltip />} />
               <Legend wrapperStyle={{ paddingTop: '20px', fontSize: '11px', fontWeight: 500 }} />
@@ -316,7 +316,7 @@ function IndicadoresZona({ diagnosis }: { diagnosis: any }) {
     <div className="space-y-4">
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
         <div className="rounded-2xl border border-green-200 bg-green-50/40 p-4">
-          <p className="text-[12px] text-green-700 mb-3" style={{ fontWeight: 600 }}>Indicadores ágil (≤3.0)</p>
+          <p className="text-[12px] text-green-700 mb-3" style={{ fontWeight: 600 }}>Indicadores ágiles (≤4.0)</p>
           <div className="space-y-2">
             {agil.length ? agil.map((x: any, i: number) => (
               <div key={i} className="flex items-center justify-between gap-2">
@@ -338,7 +338,7 @@ function IndicadoresZona({ diagnosis }: { diagnosis: any }) {
           </div>
         </div>
         <div className="rounded-2xl border border-red-200 bg-red-50/40 p-4">
-          <p className="text-[12px] text-red-700 mb-3" style={{ fontWeight: 600 }}>Indicadores predictivos (≥7.0)</p>
+          <p className="text-[12px] text-red-700 mb-3" style={{ fontWeight: 600 }}>Indicadores predictivos (&gt;7.0)</p>
           <div className="space-y-2">
             {pred.length ? pred.map((x: any, i: number) => (
               <div key={i} className="flex items-center justify-between gap-2">

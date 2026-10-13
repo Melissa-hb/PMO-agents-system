@@ -21,6 +21,7 @@ import { getPhaseState } from '../../lib/api';
 import PhaseHeader from './_shared/PhaseHeader';
 import { usePhaseDependencies, BlockedActionHint } from './_shared/PhaseDependencyNotice';
 import NextPhaseButton from './_shared/NextPhaseButton';
+import { ApprovedPhaseNotice, ConsultantReviewPanel } from './_shared/ConsultantReviewPanel';
 import EntrevistasDiagnosisView from './entrevistas/EntrevistasDiagnosisView';
 import { ConfirmModal, DetailPanel, EmptyStatePanel, FormPanel, type PanelMode } from './entrevistas/EntrevistasPanels';
 import { LoadingRouteState, MissingProjectState } from '../layout/RouteState';
@@ -95,9 +96,14 @@ export default function EntrevistasModule() {
   const [registeredExpanded, setRegisteredExpanded] = useState(false);
   const bulkInputRef = useRef<HTMLInputElement>(null);
   const [isBulkUploading, setIsBulkUploading] = useState(false);
+  const [isReprocessing, setIsReprocessing] = useState(false);
+  const [lastComment, setLastComment] = useState<string | null>(null);
   const visibleDiagnosis = liveDiagnosis ?? diagnosis;
   const hasDiagnosis = Boolean(visibleDiagnosis);
   const isCompleted = hasDiagnosis;
+  // El análisis solo avanza a la Fase 3 cuando el consultor lo aprueba.
+  const isApproved = isCompleted && phase?.status === 'completado';
+  const iteration = Number((phase?.agentData as any)?.metadata?.iteration) || 1;
   const isPhaseProcessing = !hasDiagnosis && !agentError && (phase?.status === 'procesando' || isProcessing || isSending);
 
   useEffect(() => {
@@ -402,9 +408,8 @@ export default function EntrevistasModule() {
       const result = await processPhase();
       if (result) {
         setLiveDiagnosis(result);
-        updatePhaseStatus(projectId!, 2, 'completado', 'Análisis consolidado de entrevistas completado.');
-        playPhaseComplete();
-        toast.success('¡Fase 2 completada!', { description: 'El Agente ha finalizado el análisis de entrevistas.' });
+        updatePhaseStatus(projectId!, 2, 'disponible', 'Análisis consolidado de entrevistas completado.');
+        toast.success('Análisis de entrevistas listo', { description: 'Revise el resultado del Agente 2 y apruébelo para continuar.' });
         await fetchInitialData();
       }
     } catch {
@@ -414,6 +419,32 @@ export default function EntrevistasModule() {
     } finally {
       setIsSending(false);
     }
+  };
+
+  const handleReprocessWithComment = async (comment: string) => {
+    setIsReprocessing(true);
+    try {
+      await reprocessPhase(projectId!, 2);
+      setLiveDiagnosis(null);
+      updatePhaseStatus(projectId!, 2, 'procesando');
+      const result = await processPhase({ iteration: iteration + 1, comments: comment });
+      setLiveDiagnosis(result);
+      setLastComment(comment);
+      updatePhaseStatus(projectId!, 2, 'disponible', 'Análisis consolidado de entrevistas completado.');
+      toast.success('Análisis reprocesado', { description: 'El Agente 2 incorporó el comentario del consultor.' });
+    } catch {
+      if (await keepProcessingIfAgentStarted()) return;
+      updatePhaseStatus(projectId!, 2, 'disponible');
+      playProcessError();
+    } finally {
+      setIsReprocessing(false);
+    }
+  };
+
+  const handleApprove = () => {
+    updatePhaseStatus(projectId!, 2, 'completado', 'Análisis consolidado de entrevistas completado.');
+    playPhaseComplete();
+    toast.success('¡Fase 2 aprobada!', { description: 'Ya puede continuar con la encuesta de idoneidad.' });
   };
 
   if (!project) {
@@ -441,7 +472,7 @@ export default function EntrevistasModule() {
         companyName={project.companyName}
         phaseNumber={2}
         phaseName="Registro de Entrevistas"
-        eyebrow={isCompleted ? 'Completada' : `${entrevistas.length} entrevistas`}
+        eyebrow={isApproved ? 'Completada' : isCompleted ? 'En revisión' : `${entrevistas.length} entrevistas`}
         onReprocessed={async () => {
           await reprocessPhase(projectId!, 2);
           setLiveDiagnosis(null);
@@ -502,9 +533,9 @@ export default function EntrevistasModule() {
             <div className="bg-white px-5 py-4">
               <p className="text-[12px] text-neutral-400" style={{ fontWeight: 500 }}>Estado</p>
               <div className="mt-1.5 flex items-center gap-2">
-                <span className={`w-1.5 h-1.5 rounded-full ${isCompleted ? 'bg-emerald-500' : 'bg-neutral-900'}`} />
+                <span className={`w-1.5 h-1.5 rounded-full ${isApproved ? 'bg-emerald-500' : 'bg-neutral-900'}`} />
                 <p className="text-neutral-900 text-[13px]" style={{ fontWeight: 500 }}>
-                  {isCompleted ? 'Completada' : 'En curso'}
+                  {isApproved ? 'Completada' : isCompleted ? 'En revisión' : 'En curso'}
                 </p>
               </div>
             </div>
@@ -525,6 +556,19 @@ export default function EntrevistasModule() {
               {/* Agent diagnosis */}
               {visibleDiagnosis && <EntrevistasDiagnosisView diagnosis={visibleDiagnosis} />}
               {agentError && <AgentErrorCard error={agentError} />}
+              {isApproved ? (
+                <ApprovedPhaseNotice completedAt={phase?.completedAt} />
+              ) : (
+                <ConsultantReviewPanel
+                  phaseNumber={2}
+                  agentLabel="el Agente 2 (análisis de entrevistas)"
+                  nextPhaseLabel="la Fase 3"
+                  lastComment={lastComment}
+                  isReprocessing={isReprocessing}
+                  onReprocess={handleReprocessWithComment}
+                  onApprove={handleApprove}
+                />
+              )}
               {/* Read-only accordion list */}
               <div className="bg-white rounded-2xl border border-neutral-200/70 overflow-hidden" style={{ boxShadow: '0 1px 2px rgba(0,0,0,0.02)' }}>
                 <div className={`px-6 py-4 flex items-center justify-between gap-4 hover:bg-neutral-50 transition-colors ${registeredExpanded ? 'border-b border-neutral-100' : ''}`}>
@@ -790,7 +834,7 @@ export default function EntrevistasModule() {
         isLoading={isSending}
       />
 
-      <NextPhaseButton projectId={projectId!} nextPhase={3} prevPhase={1} show={isCompleted} />
+      <NextPhaseButton projectId={projectId!} nextPhase={3} prevPhase={1} show={isApproved} />
     </div>
   );
 }

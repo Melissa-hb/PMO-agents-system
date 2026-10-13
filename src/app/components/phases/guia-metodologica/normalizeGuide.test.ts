@@ -101,3 +101,49 @@ describe('titulos generados a partir de las claves de la guia', () => {
     expect(tabla?.headers).toEqual(['Comité', 'Temas de decisión']);
   });
 });
+
+describe('secciones del Asistente 7.2 (flujos, indicadores y documentos)', () => {
+  it('los flujos de procesos muestran una tabla de actividades por fase con los puntos de decisión', () => {
+    const [capitulo] = normalizeChapters({ guide_content: [{
+      section_id: 'S10',
+      section_key: 'S10_flujos_de_procesos',
+      section_title: 'Flujos de procesos',
+      contenido: {
+        introduccion_seccion: 'Flujos de Acme',
+        fases: [{
+          nombre_fase: 'Inicio',
+          introduccion_fase: 'Arranque del proyecto',
+          enfoque_aplicado: 'predictivo',
+          actividades: [
+            { orden: 1, actividad: 'Elaborar acta', es_punto_decision: false, descripcion: 'Redactar el acta', responsable: 'Director PMO', participantes: ['Sponsor', 'Lider'], entrada: 'Caso de negocio', salida: 'Acta', artefacto_relacionado: 'Acta de constitución' },
+            { orden: 2, actividad: 'Aprobar acta', es_punto_decision: true, descripcion: 'Revisión', responsable: 'Sponsor', participantes: [], entrada: 'Acta', salida: 'Acta aprobada', artefacto_relacionado: '' },
+          ],
+          puntos_decision: [{ actividad_referencia: 'Aprobar acta', decision: '¿Se aprueba el acta?', criterio_aprobacion: 'Alcance claro', ruta_aprobado: 'Pasa a planeación', ruta_rechazado: 'Se ajusta el acta', responsable_decision: 'Sponsor', comite_si_aplica: '' }],
+          criterios_salida_fase: ['Acta firmada'],
+        }],
+      },
+    }] });
+
+    expect(capitulo.title).toBe('Flujos de procesos');
+    expect(capitulo.intro).toBe('Flujos de Acme');
+    const [fase, decisiones, salida] = capitulo.subsections;
+    expect(fase.title).toBe('Inicio');
+    expect(fase.content).toContain('Arranque del proyecto');
+    expect(fase.table?.headers).toEqual(['Actividad', 'Descripción', 'Responsable', 'Participantes', 'Entrada', 'Salida', 'Artefacto relacionado']);
+    expect(fase.table?.rows[0][3]).toBe('Sponsor, Lider');
+    expect(fase.table?.rows[1][0]).toBe('⬦ Aprobar acta');
+    expect(decisiones.table?.rows[0]).toEqual(['⬦ ¿Se aprueba el acta?', 'Alcance claro', 'Pasa a planeación', 'Se ajusta el acta', 'Sponsor']);
+    expect(salida.items).toEqual(['Acta firmada']);
+  });
+
+  it('las secciones S10-S12 van después de los comités', () => {
+    const capitulos = normalizeChapters({ guide_content: [
+      seccion('S12', 'Documentos generados', { artefactos: [{ artefacto: 'Acta', fase: 'Inicio' }] }),
+      seccion('S9', 'Comités'),
+      seccion('S11', 'Indicadores de gestión', { indicadores: [{ nombre_indicador: 'SPI', formula: 'EV/PV', herramienta_requerida: true }] }),
+    ] });
+
+    expect(capitulos.map(c => c.title)).toEqual(['Comités', 'Indicadores de gestión', 'Documentos generados']);
+    expect(capitulos[1].subsections[0].table?.rows[0]).toEqual(['SPI', 'EV/PV', 'Sí']);
+  });
+});

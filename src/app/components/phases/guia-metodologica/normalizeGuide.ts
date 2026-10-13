@@ -40,7 +40,12 @@ const INTRO_CONTENT_KEYS = new Set([
   'enfoque_propuesto',
   'enfoque_adoptado',
   'descripcion_del_modelo',
+  'introduccion_seccion',
 ]);
+/** Titulos de campos que no salen bien de la clave JSON. */
+const FIELD_TITLES: Record<string, string> = {
+  cierre_seccion: 'Consideraciones finales',
+};
 const GUIDE_SECTION_ORDER = [
   { number: 1, matches: ['introduccion', 's1_introduccion'] },
   { number: 2, matches: ['objetivo', 's2_objetivo'] },
@@ -119,7 +124,8 @@ function titleFromObject(value: Record<string, any>, fallback: string) {
 function stringifyDeep(value: any): string {
   if (value === undefined || value === null) return '';
   if (typeof value === 'string') return value;
-  if (typeof value === 'number' || typeof value === 'boolean') return String(value);
+  if (typeof value === 'boolean') return value ? 'Sí' : 'No';
+  if (typeof value === 'number') return String(value);
   if (Array.isArray(value)) {
     return value
       .map((item, index) => {
@@ -180,6 +186,7 @@ function accentWord(word: string): string {
 
 /** "temas_de_decision" → "Temas de decisión": titulos legibles y con ortografia a partir de las claves del JSON. */
 function formatFieldKey(key: string): string {
+  if (FIELD_TITLES[key]) return FIELD_TITLES[key];
   const words = key
     .replace(/([a-z])([A-Z])/g, '$1 $2')
     .split(/[_\s]+/)
@@ -386,6 +393,75 @@ function contenidoToSubsections(contenido: any): GuideChapter['subsections'] {
     .filter(Boolean) as GuideChapter['subsections'];
 }
 
+function textOf(value: any): string {
+  return stringifyDeep(value).trim();
+}
+
+/**
+ * S10 Flujos de procesos (Asistente 7.2): por cada fase del ciclo de vida, su introducción, la
+ * tabla de actividades (los puntos de decisión llevan ⬦), las rutas de aprobado/rechazado de cada
+ * decisión y los criterios de entrada y salida, como lo describe el documento de la metodología.
+ */
+function processFlowSubsections(contenido: any): GuideSubsection[] {
+  const fases = Array.isArray(contenido?.fases) ? contenido.fases : [];
+  return fases.flatMap((fase: any, index: number) => {
+    const nombre = textOf(fase?.nombre_fase) || `Fase ${index + 1}`;
+    const propio = textOf(fase?.nombre_propio_organizacion);
+    const title = propio && normalizeSearchText(propio) !== normalizeSearchText(nombre) ? `${nombre} (${propio})` : nombre;
+    const contexto = [
+      textOf(fase?.enfoque_aplicado) && `Enfoque: ${textOf(fase.enfoque_aplicado)}`,
+      textOf(fase?.nivel_madurez_fase) && `Nivel de madurez: ${textOf(fase.nivel_madurez_fase)}`,
+    ].filter(Boolean).join(' · ');
+
+    const actividades = Array.isArray(fase?.actividades) ? fase.actividades : [];
+    const subsections: GuideSubsection[] = [{
+      title,
+      content: [textOf(fase?.introduccion_fase), contexto].filter(Boolean).join('\n\n'),
+      table: actividades.length > 0 ? {
+        headers: ['Actividad', 'Descripción', 'Responsable', 'Participantes', 'Entrada', 'Salida', 'Artefacto relacionado'],
+        rows: actividades.map((a: any) => [
+          `${a?.es_punto_decision ? '⬦ ' : ''}${textOf(a?.actividad)}`,
+          textOf(a?.descripcion),
+          textOf(a?.responsable),
+          Array.isArray(a?.participantes) ? a.participantes.map(textOf).join(', ') : textOf(a?.participantes),
+          textOf(a?.entrada),
+          textOf(a?.salida),
+          textOf(a?.artefacto_relacionado),
+        ]),
+      } : undefined,
+    }];
+
+    const decisiones = Array.isArray(fase?.puntos_decision) ? fase.puntos_decision.filter((d: any) => textOf(d?.decision) || textOf(d?.actividad_referencia)) : [];
+    if (decisiones.length > 0) {
+      subsections.push({
+        title: `${nombre} - Puntos de decisión`,
+        content: '',
+        table: {
+          headers: ['Decisión', 'Criterio de aprobación', '→ Aprobado', '→ Rechazado / Observaciones', 'Responsable'],
+          rows: decisiones.map((d: any) => [
+            `⬦ ${textOf(d?.decision) || textOf(d?.actividad_referencia)}`,
+            textOf(d?.criterio_aprobacion),
+            textOf(d?.ruta_aprobado),
+            textOf(d?.ruta_rechazado),
+            [textOf(d?.responsable_decision), textOf(d?.comite_si_aplica)].filter(Boolean).join(' · '),
+          ]),
+        },
+      });
+    }
+
+    const entrada = Array.isArray(fase?.criterios_entrada_fase) ? fase.criterios_entrada_fase.map(textOf).filter(Boolean) : [];
+    const salida = Array.isArray(fase?.criterios_salida_fase) ? fase.criterios_salida_fase.map(textOf).filter(Boolean) : [];
+    if (entrada.length > 0) subsections.push({ title: `${nombre} - Criterios de entrada`, content: '', items: entrada });
+    if (salida.length > 0) subsections.push({ title: `${nombre} - Criterios de salida`, content: '', items: salida });
+    return subsections;
+  });
+}
+
+function isProcessFlowSection(section: any) {
+  return /^s0?10\b|^s10_/i.test(String(section?.section_key ?? section?.section_id ?? ''))
+    && Array.isArray(section?.contenido?.fases);
+}
+
 /**
  * Normalizes the Gemini Agent 7 guide_content format (sections S01-S16)
  * into GuideChapter objects for the DocumentRenderer.
@@ -404,7 +480,7 @@ function normalizeGuideContent(guideContent: any[]): GuideChapter[] {
 
   return sections.map((section: any, index: number) => {
     const contenido = section.contenido ?? {};
-    const subsections = contenidoToSubsections(contenido);
+    const subsections = isProcessFlowSection(section) ? processFlowSubsections(contenido) : contenidoToSubsections(contenido);
 
     // Extract a meaningful intro from common summary fields
     const intro = stringifyContent(
@@ -414,6 +490,7 @@ function normalizeGuideContent(guideContent: any[]): GuideChapter[] {
       contenido?.enfoque_propuesto ??
       contenido?.enfoque_adoptado ??
       contenido?.descripcion_del_modelo ??
+      contenido?.introduccion_seccion ??
       contenido?.analisis_integrado?.coherencia_entre_fuentes ??
       ''
     );

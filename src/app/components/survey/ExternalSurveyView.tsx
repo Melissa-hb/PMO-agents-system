@@ -22,8 +22,8 @@ const INTERPRETATION_MAP_MADUREZ: Record<number, string> = {
 };
 
 function getIdoneidadInterpretation(value: number) {
-  if (value <= 3) return 'Zona ágil';
-  if (value <= 6) return 'Zona de transición';
+  if (value <= 4) return 'Zona ágil';
+  if (value <= 7) return 'Zona de transición';
   return value === 10 ? 'Altamente predictivo' : 'Zona predictiva';
 }
 

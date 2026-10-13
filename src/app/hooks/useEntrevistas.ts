@@ -294,12 +294,13 @@ export function useEntrevistas(projectId: string) {
     }
   };
 
-  const processPhase = useCallback(async () => {
+  /** Ejecuta el Agente 2; con iteration > 1 y comments reprocesa con la retroalimentación del consultor. */
+  const processPhase = useCallback(async (options?: { iteration?: number; comments?: string | null }) => {
     setIsProcessing(true);
     setDiagnosis(null);
     setAgentError(null);
     try {
-      const result = await runPhase(projectId, 2, { iteration: 1, comments: null });
+      const result = await runPhase(projectId, 2, { iteration: options?.iteration ?? 1, comments: options?.comments ?? null });
 
       if (result?.success === false) {
         throw new Error(result.error ?? 'Error desconocido en el agente');

@@ -4,8 +4,8 @@ import type { GuideChapter, PmoType, ProcessingStep } from './types';
 const PROCESSING_STEPS: ProcessingStep[] = [
   { id: 1, label: 'Recibiendo JSON aprobado de la Fase 6', detail: 'Enfoque metodológico + puntos débiles + instrucciones...', durationMs: 1400 },
   { id: 2, label: 'Analizando estructura de la guía', detail: 'Determinando capítulos, secciones y plantillas requeridas...', durationMs: 1600 },
-  { id: 3, label: 'Generando contenido especializado', detail: 'Redactando marcos, procesos y directrices por capítulo...', durationMs: 2800 },
-  { id: 4, label: 'Compilando plantillas y artefactos', detail: 'Integrando actas, tableros de métricas y árbol de decisión...', durationMs: 2200 },
+  { id: 3, label: 'Asistente 7.1: redactando los fundamentos', detail: 'Introducción, alcance, marco conceptual, políticas, roles y comités...', durationMs: 2800 },
+  { id: 4, label: 'Asistente 7.2: flujos, indicadores y documentos', detail: 'Actividades por fase con puntos de decisión, KPIs y documentos generados...', durationMs: 2200 },
   { id: 5, label: 'Verificando coherencia metodológica', detail: 'Validando consistencia entre capítulos y métricas...', durationMs: 1400 },
   { id: 6, label: 'Formateando documento final', detail: 'Aplicando estilos, índice de contenidos y portada...', durationMs: 1200 },
 ];

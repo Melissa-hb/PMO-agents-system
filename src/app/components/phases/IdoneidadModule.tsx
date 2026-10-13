@@ -12,6 +12,7 @@ import { useSoundManager } from '../../hooks/useSoundManager';
 import PhaseHeader from './_shared/PhaseHeader';
 import { usePhaseDependencies, BlockedActionHint } from './_shared/PhaseDependencyNotice';
 import NextPhaseButton from './_shared/NextPhaseButton';
+import { ApprovedPhaseNotice, ConsultantReviewPanel } from './_shared/ConsultantReviewPanel';
 import IdoneidadDiagnosisView from './idoneidad/IdoneidadDiagnosisView';
 import { LoadingRouteState, MissingProjectState } from '../layout/RouteState';
 import {
@@ -132,8 +133,8 @@ export default function IdoneidadModule() {
           fullLabel: `Dimensión General: ${key}`,
           dimension: key,
           Puntaje: typeof data.promedio === 'number' ? Number(data.promedio.toFixed(1)) : 0,
-          AgileZone: 3,
-          TransitionZone: 6.9,
+          AgileZone: 4,
+          TransitionZone: 7,
           PredictiveZone: 10,
         };
       });
@@ -150,8 +151,8 @@ export default function IdoneidadModule() {
         fullLabel: factorInfo ? `${itemLabel} - ${factorInfo.name}` : itemLabel,
         dimension: res.dimension ?? inferIdoneidadDimension(itemLabel),
         Puntaje: score,
-        AgileZone: 3,
-        TransitionZone: 6.9,
+        AgileZone: 4,
+        TransitionZone: 7,
         PredictiveZone: 10,
       };
     });
@@ -165,6 +166,8 @@ export default function IdoneidadModule() {
   const [showConfirm, setShowConfirm] = useState(false);
   const [isSending, setIsSending] = useState(false);
   const [linkCopied, setLinkCopied] = useState(false);
+  const [isReprocessing, setIsReprocessing] = useState(false);
+  const [lastComment, setLastComment] = useState<string | null>(null);
 
   const diagnosisRespondentCount = Number(visibleDiagnosis?.numero_encuestados) || 0;
   const externalRespondentCount = existingFileUrl && diagnosisRespondentCount > responses.length
@@ -173,6 +176,9 @@ export default function IdoneidadModule() {
   const totalRespondentCount = responses.length + externalRespondentCount;
   const hasDiagnosis = Boolean(visibleDiagnosis);
   const isCompleted = hasDiagnosis;
+  // El diagnóstico solo habilita la Fase 4 cuando el consultor lo aprueba.
+  const isApproved = isCompleted && phase?.status === 'completado';
+  const iteration = Number((phase?.agentData as any)?.metadata?.iteration) || 1;
 
   // Cargar datos iniciales
   useEffect(() => {
@@ -235,10 +241,9 @@ export default function IdoneidadModule() {
       const parsed = normalizeIdoneidadDiagnosis(result);
       if (!parsed) throw new Error('El Agente aun no devolvio un diagnóstico de idoneidad valido.');
       setLiveDiagnosis(parsed);
-      updatePhaseStatus(projectId!, 3, 'completado', 'Diagnóstico generado.');
+      updatePhaseStatus(projectId!, 3, 'disponible', 'Diagnóstico generado.');
       setModuleState('completed');
-      playPhaseComplete();
-      toast.success('¡Fase 3 completada!', { description: 'El Agente ha finalizado el diagnóstico.' });
+      toast.success('Diagnóstico de idoneidad listo', { description: 'Revise el resultado del Agente 3 y apruébelo para continuar.' });
       await fetchInitialData(); // Refrescar los datos para ver el diagnóstico
     } catch (err: any) {
       toast.error('Error procesando fase', { description: err.message });
@@ -271,6 +276,38 @@ export default function IdoneidadModule() {
       updatePhaseStatus(projectId!, 3, 'disponible');
       playProcessError();
     }
+  };
+
+  const handleReprocessWithComment = async (comment: string) => {
+    setIsReprocessing(true);
+    setIsSending(true);
+    try {
+      await reprocessPhase(projectId!, 3);
+      setLiveDiagnosis(null);
+      updatePhaseStatus(projectId!, 3, 'procesando');
+      const result = await processPhase({ iteration: iteration + 1, comments: comment });
+      const parsed = normalizeIdoneidadDiagnosis(result);
+      if (!parsed) throw new Error('El Agente aun no devolvio un diagnóstico de idoneidad valido.');
+      setLiveDiagnosis(parsed);
+      setLastComment(comment);
+      setModuleState('completed');
+      updatePhaseStatus(projectId!, 3, 'disponible', 'Diagnóstico generado.');
+      toast.success('Diagnóstico reprocesado', { description: 'El Agente 3 incorporó el comentario del consultor.' });
+    } catch (err: any) {
+      toast.error('Error reprocesando la fase', { description: err?.message });
+      updatePhaseStatus(projectId!, 3, 'disponible');
+      playProcessError();
+    } finally {
+      setIsSending(false);
+      setIsReprocessing(false);
+    }
+  };
+
+  const handleApprove = () => {
+    // Al aprobar la Fase 3 (con la 1 y la 2 ya aprobadas) el backend lanza la clasificación de la Fase 4.
+    updatePhaseStatus(projectId!, 3, 'completado', 'Diagnóstico generado.');
+    playPhaseComplete();
+    toast.success('¡Fase 3 aprobada!', { description: 'La Fase 4 integrará los diagnósticos de las fases 1, 2 y 3.' });
   };
 
   const handleDownloadCSV = () => {
@@ -338,7 +375,7 @@ export default function IdoneidadModule() {
         companyName={project.companyName}
         phaseNumber={3}
         phaseName="Diagnóstico de Idoneidad"
-        eyebrow={isCompleted ? 'Completada' : 'Activa'}
+        eyebrow={isApproved ? 'Completada' : isCompleted ? 'En revisión' : 'Activa'}
         onReprocessed={handleReprocess}
       />
 
@@ -553,6 +590,19 @@ export default function IdoneidadModule() {
                   completedAt={phase?.completedAt}
                 />
               )}
+              {isApproved ? (
+                <ApprovedPhaseNotice completedAt={phase?.completedAt} />
+              ) : (
+                <ConsultantReviewPanel
+                  phaseNumber={3}
+                  agentLabel="el Agente 3 (análisis de la encuesta de idoneidad)"
+                  nextPhaseLabel="la Fase 4"
+                  lastComment={lastComment}
+                  isReprocessing={isReprocessing}
+                  onReprocess={handleReprocessWithComment}
+                  onApprove={handleApprove}
+                />
+              )}
                 {/* Data summary */}
                 <div className="bg-white rounded-2xl border border-neutral-200/70 p-6" style={{ boxShadow: '0 1px 2px rgba(0,0,0,0.02)' }}>
                   <div className="flex items-center justify-between mb-4">
@@ -612,7 +662,7 @@ export default function IdoneidadModule() {
         isLoading={isSending}
       />
 
-      <NextPhaseButton projectId={projectId!} nextPhase={4} prevPhase={2} show={isCompleted} />
+      <NextPhaseButton projectId={projectId!} nextPhase={4} prevPhase={2} show={isApproved} />
     </div>
   );
 }

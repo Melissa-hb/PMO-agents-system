@@ -16,6 +16,7 @@ import { getPhaseState, runPhase, updatePhaseState } from '../../lib/api';
 import PhaseHeader from './_shared/PhaseHeader';
 import { usePhaseDependencies, BlockedActionHint } from './_shared/PhaseDependencyNotice';
 import NextPhaseButton from './_shared/NextPhaseButton';
+import { ApprovedPhaseNotice, ConsultantReviewPanel } from './_shared/ConsultantReviewPanel';
 import type { DocCategory } from './documentacion/documentCategories';
 import { getPhaseConfig, isOtrosCategory } from '../../lib/phaseConfig';
 import { CompletedDiagnosisSection } from './documentacion/module/CompletedDiagnosisSection';
@@ -61,12 +62,14 @@ export default function DocumentacionModule() {
   const project = getProject(projectId!);
   const phase = project?.phases.find(p => p.number === 1);
 
-  const { isProcessing: hookIsProcessing, isLoadingData, agentError, diagnosis, documentos, setDocumentos, processPhase, fetchInitialData, deleteDocument } = useDocumentacion(projectId!);
+  const { isProcessing: hookIsProcessing, isLoadingData, agentError, diagnosis, documentos, setDocumentos, processPhase, runAgent, fetchInitialData, deleteDocument } = useDocumentacion(projectId!);
 
   const [liveDiagnosis, setLiveDiagnosis] = useState<AgentDiagnosis | null>(null);
   const [dragActive, setDragActive] = useState(false);
   const [isSending, setIsSending] = useState(false);
   const [documentsExpanded, setDocumentsExpanded] = useState(false);
+  const [isReprocessing, setIsReprocessing] = useState(false);
+  const [lastComment, setLastComment] = useState<string | null>(null);
 
   const [agent9Data, setAgent9Data] = useState<any>(null);
   const [agent9Status, setAgent9Status] = useState<'idle' | 'processing' | 'done' | 'error'>('idle');
@@ -77,6 +80,9 @@ export default function DocumentacionModule() {
   const visibleDiagnosis = liveDiagnosis ?? diagnosis;
   const hasDiagnosis = Boolean(visibleDiagnosis);
   const isCompleted = hasDiagnosis;
+  // El diagnóstico solo avanza a la Fase 2 cuando el consultor lo aprueba.
+  const isApproved = isCompleted && phase?.status === 'completado';
+  const iteration = Number((phase?.agentData as any)?.metadata?.iteration) || 1;
   const isProcessing = !hasDiagnosis && !agentError && (phase?.status === 'procesando' || hookIsProcessing || isSending);
 
   useEffect(() => {
@@ -293,9 +299,8 @@ export default function DocumentacionModule() {
       if (result) {
         setLiveDiagnosis(result);
         const summary = result.summary ?? `${documentos.length} documentos analizados.`;
-        updatePhaseStatus(projectId!, 1, 'completado', summary);
-        playPhaseComplete();
-        toast.success('¡Fase 1 completada!', { description: 'El Agente  finalizó el análisis documental.' });
+        updatePhaseStatus(projectId!, 1, 'disponible', summary);
+        toast.success('Diagnóstico documental listo', { description: 'Revise el resultado del Agente 1 y apruébelo para continuar.' });
         await fetchInitialData();
       }
     } catch {
@@ -306,6 +311,36 @@ export default function DocumentacionModule() {
     } finally {
       setIsSending(false);
     }
+  };
+
+  const handleReprocessWithComment = async (comment: string) => {
+    setIsReprocessing(true);
+    try {
+      // Invalida lo que dependa de la Fase 1 y vuelve a ejecutar el agente con el comentario.
+      await reprocessPhase(projectId!, 1);
+      setLiveDiagnosis(null);
+      setAgent9Data(null);
+      setAgent9Status('idle');
+      if (agent9PollRef.current) clearInterval(agent9PollRef.current);
+      updatePhaseStatus(projectId!, 1, 'procesando');
+      const result = await runAgent(iteration + 1, comment);
+      setLiveDiagnosis(result);
+      setLastComment(comment);
+      updatePhaseStatus(projectId!, 1, 'disponible', result.summary ?? undefined);
+      toast.success('Diagnóstico reprocesado', { description: 'El Agente 1 incorporó el comentario del consultor.' });
+    } catch {
+      if (await keepProcessingIfAgentStarted()) return;
+      updatePhaseStatus(projectId!, 1, 'disponible');
+      playProcessError();
+    } finally {
+      setIsReprocessing(false);
+    }
+  };
+
+  const handleApprove = () => {
+    updatePhaseStatus(projectId!, 1, 'completado', visibleDiagnosis?.summary ?? `${documentos.length} documentos analizados.`);
+    playPhaseComplete();
+    toast.success('¡Fase 1 aprobada!', { description: 'Ya puede continuar con el registro de entrevistas.' });
   };
 
   if (!project) {
@@ -325,7 +360,7 @@ export default function DocumentacionModule() {
         companyName={project.companyName}
         phaseNumber={1}
         phaseName="Gestión Documental"
-        eyebrow={isCompleted ? 'Completada' : 'Activa'}
+        eyebrow={isApproved ? 'Completada' : isCompleted ? 'En revisión' : 'Activa'}
         onReprocessed={async () => {
           await reprocessPhase(projectId!, 1);
           setLiveDiagnosis(null);
@@ -391,9 +426,27 @@ export default function DocumentacionModule() {
             triggerAgent9={triggerAgent9}
           />
         )}
+
+        {isCompleted && (
+          <div className="mt-6">
+            {isApproved ? (
+              <ApprovedPhaseNotice completedAt={phase?.completedAt} />
+            ) : (
+              <ConsultantReviewPanel
+                phaseNumber={1}
+                agentLabel="el Agente 1 (diagnóstico documental)"
+                nextPhaseLabel="la Fase 2"
+                lastComment={lastComment}
+                isReprocessing={isReprocessing}
+                onReprocess={handleReprocessWithComment}
+                onApprove={handleApprove}
+              />
+            )}
+          </div>
+        )}
       </div>
 
-      <NextPhaseButton projectId={projectId!} nextPhase={2} show={isCompleted} />
+      <NextPhaseButton projectId={projectId!} nextPhase={2} show={isApproved} />
     </div>
   );
 }

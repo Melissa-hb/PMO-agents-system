@@ -181,8 +181,8 @@ export default function TipoProyectosModule() {
           fullLabel: `Dimensión General: ${key}`,
           dimension: key,
           Puntaje: typeof data.promedio === 'number' ? Number(data.promedio.toFixed(1)) : 0,
-          AgileZone: 3,
-          TransitionZone: 6.9,
+          AgileZone: 4,
+          TransitionZone: 7,
           PredictiveZone: 10,
         };
       });
@@ -198,8 +198,8 @@ export default function TipoProyectosModule() {
         fullLabel: factorInfo ? `${itemLabel} - ${factorInfo.name}` : itemLabel,
         dimension: res.dimension ?? inferIdoneidadDimension(itemLabel),
         Puntaje: score,
-        AgileZone: 3,
-        TransitionZone: 6.9,
+        AgileZone: 4,
+        TransitionZone: 7,
         PredictiveZone: 10,
       };
     });
