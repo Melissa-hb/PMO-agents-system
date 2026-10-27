@@ -42,7 +42,7 @@ export default function ProjectActions({ project }: ProjectActionsProps) {
     }
   };
 
-  const handleEditProject = async (data: { companyName: string; projectName: string; auditorId: string }) => {
+  const handleEditProject = async (data: { companyName: string; projectName: string; auditorId: string; sector: string }) => {
     try {
       await editProject(project.id, data);
       toast.success('Proyecto actualizado exitosamente');

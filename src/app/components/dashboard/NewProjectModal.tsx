@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import SectorField from './SectorField';
 import { motion, AnimatePresence } from 'motion/react';
 import { X, Plus, AlertCircle, Loader2 } from 'lucide-react';
 import type { Auditor } from '../../context/AppContext';
@@ -7,7 +8,7 @@ import { useConsultores } from '../../hooks/useConsultores';
 interface NewProjectModalProps {
   open: boolean;
   onClose: () => void;
-  onSubmit: (data: { companyName: string; projectName: string; auditors: Auditor[]; startDate: string; tamano?: string; mision?: string; vision?: string }) => void;
+  onSubmit: (data: { companyName: string; projectName: string; auditors: Auditor[]; startDate: string; tamano?: string; sector?: string; mision?: string; vision?: string }) => void;
 }
 
 // Paleta de colores para los avatares de auditores
@@ -17,6 +18,7 @@ export default function NewProjectModal({ open, onClose, onSubmit }: NewProjectM
   const [companyName, setCompanyName] = useState('');
   const [projectName, setProjectName] = useState('');
   const [tamano, setTamano] = useState('');
+  const [sector, setSector] = useState('');
   const [mision, setMision] = useState('');
   const [vision, setVision] = useState('');
   const [selectedAuditors, setSelectedAuditors] = useState<string[]>([]);
@@ -60,13 +62,13 @@ export default function NewProjectModal({ open, onClose, onSubmit }: NewProjectM
         color: AVATAR_COLORS[idx % AVATAR_COLORS.length],
       }));
 
-    onSubmit({ companyName, projectName, auditors, startDate, tamano, mision, vision });
+    onSubmit({ companyName, projectName, auditors, startDate, tamano, sector, mision, vision });
     setIsLoading(false);
     handleClose();
   };
 
   const handleClose = () => {
-    setCompanyName(''); setProjectName(''); setTamano(''); setMision(''); setVision(''); setSelectedAuditors([]); setStartDate(''); setErrors({});
+    setCompanyName(''); setProjectName(''); setTamano(''); setSector(''); setMision(''); setVision(''); setSelectedAuditors([]); setStartDate(''); setErrors({});
     onClose();
   };
 
@@ -139,6 +141,8 @@ export default function NewProjectModal({ open, onClose, onSubmit }: NewProjectM
                   <p className="text-red-500 text-xs flex items-center gap-1"><AlertCircle size={12} /> {errors.projectName}</p>
                 )}
               </div>
+
+              <SectorField value={sector} onChange={setSector} />
 
               <div className="flex flex-col gap-1.5">
                 <label className="text-gray-700 text-sm" style={{ fontWeight: 500 }}>Tamaño de la organización</label>

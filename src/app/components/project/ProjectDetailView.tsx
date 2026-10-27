@@ -7,6 +7,8 @@ import { useApp } from '../../context/AppContext';
 import { apiPost } from '../../lib/api';
 import PhaseCard from './PhaseCard';
 import ExecutiveOverview from './ExecutiveOverview';
+import TrazabilidadSection from './TrazabilidadSection';
+import AlineacionSection from './AlineacionSection';
 import { usePhaseConfig } from '../../lib/phaseConfig';
 import EditProjectModal from '../dashboard/EditProjectModal';
 import { LoadingRouteState, MissingProjectState } from '../layout/RouteState';
@@ -70,7 +72,7 @@ export default function ProjectDetailView() {
     }
   };
 
-  const handleEditProject = async (data: { companyName: string; projectName: string; auditorId: string }) => {
+  const handleEditProject = async (data: { companyName: string; projectName: string; auditorId: string; sector: string }) => {
     try {
       await editProject(project.id, data);
       toast.success('Proyecto actualizado exitosamente');
@@ -245,6 +247,10 @@ export default function ProjectDetailView() {
             ))}
           </div>
         </section>
+
+        <AlineacionSection projectId={project.id} phases={project.phases} />
+
+        <TrazabilidadSection projectId={project.id} phases={project.phases} />
       </div>
 
       {/* Delete Confirmation Modal */}

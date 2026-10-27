@@ -167,7 +167,7 @@ export default function Dashboard() {
     }
   };
 
-  const handleNewProject = async (data: { companyName: string; projectName: string; auditors: any[]; startDate: string; tamano?: string; mision?: string; vision?: string }) => {
+  const handleNewProject = async (data: { companyName: string; projectName: string; auditors: any[]; startDate: string; tamano?: string; sector?: string; mision?: string; vision?: string }) => {
     try {
       await addProject(data);
       toast.success('Proyecto creado exitosamente', {

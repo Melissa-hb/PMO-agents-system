@@ -1,5 +1,6 @@
 import IcesiLogo from '../../brand/IcesiLogo';
 import { CONSULTORA, documentStatusLabel, LINEA_SERVICIO, NOTA_ELABORACION } from './guideBranding';
+import { figureNumbers, svgWidth } from './flowchart';
 import type { DocVersion, GuideChapter, PmoType } from './types';
 
 function InlineFormattedText({ text }: { text: string }) {
@@ -90,6 +91,17 @@ function tableColumnPercent(headers: string[], rows: string[][], columnIndex: nu
   return `${(tableColumnWidth(headers, rows, columnIndex) / tableWidth(headers, rows)) * 100}%`;
 }
 
+/** Abre un diagrama de la guía en una pestaña nueva, a tamaño completo. */
+function openDiagram(svg: string, caption?: string) {
+  const title = (caption ?? 'Diagrama').replace(/[<>&]/g, '');
+  const html = `<!doctype html><html lang="es"><head><meta charset="utf-8"><title>${title}</title>`
+    + '<style>body{margin:0;padding:24px;background:#f3f4f6}svg{width:auto;max-width:none;height:auto;background:#fff;display:block;margin:0 auto}</style>'
+    + `</head><body>${svg.replace('width="100%"', '')}</body></html>`;
+  const url = URL.createObjectURL(new Blob([html], { type: 'text/html' }));
+  window.open(url, '_blank', 'noopener');
+  setTimeout(() => URL.revokeObjectURL(url), 60_000);
+}
+
 function DocumentRenderer({ chapters, org, pmoType, version, approved = false, preparedBy }: {
   chapters: GuideChapter[]; org: string; pmoType: PmoType; version: DocVersion;
   /** La guia ya fue aprobada (fase 7 completada). */
@@ -99,6 +111,7 @@ function DocumentRenderer({ chapters, org, pmoType, version, approved = false, p
 }) {
   const fmt = new Date(version.generatedAt).toLocaleDateString('es-CO', { day: '2-digit', month: 'long', year: 'numeric' });
   const accent = '#5454e9';
+  const figures = figureNumbers(chapters);
 
   return (
     <div className="bg-white shadow-2xl mx-auto print:shadow-none print:w-full print:max-w-none" style={{ width: 'min(794px, 100%)' }}>
@@ -258,6 +271,32 @@ function DocumentRenderer({ chapters, org, pmoType, version, approved = false, p
                         </tbody>
                       </table>
                     </div>
+                  )}
+
+                  {sec.diagram && (
+                    <figure className="mb-3 print:break-inside-avoid">
+                      {/* SVG generado en flowchart.ts a partir de los datos de la guía (textos escapados). */}
+                      {/* En pantalla se ve a ~80 % de su tamaño natural, con desplazamiento horizontal; al imprimir ocupa el ancho de la página. */}
+                      <div className="rounded-xl border border-gray-200 overflow-x-auto print:overflow-visible print:border-0">
+                        <div
+                          className="print:!min-w-0"
+                          style={{ minWidth: Math.max(640, Math.round(svgWidth(sec.diagram.svg) * 0.8)) }}
+                          dangerouslySetInnerHTML={{ __html: sec.diagram.svg }}
+                        />
+                      </div>
+                      <div className="flex items-center justify-between gap-3 mt-1.5">
+                        <figcaption className="text-[11px] text-gray-500 italic print:text-[9px] print:w-full print:text-center">
+                          {sec.diagram.caption && <>Figura {figures.get(sec)}. {sec.diagram.caption}</>}
+                        </figcaption>
+                        <button
+                          type="button"
+                          onClick={() => openDiagram(sec.diagram!.svg, sec.diagram!.caption)}
+                          className="text-[11px] text-[#5454e9] hover:underline underline-offset-2 whitespace-nowrap print:hidden"
+                        >
+                          Ver en tamaño completo
+                        </button>
+                      </div>
+                    </figure>
                   )}
                 </div>
               ))}

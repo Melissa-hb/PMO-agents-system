@@ -1,4 +1,5 @@
 import { CONSULTORA, LINEA_SERVICIO, NOTA_ELABORACION } from './guideBranding';
+import { figureNumbers } from './flowchart';
 import type { DocVersion, GuideChapter, PmoType } from './types';
 
 function escapeHtml(value: unknown): string {
@@ -34,6 +35,7 @@ function generateDownloadHTML(
   const fmt = (iso: string) =>
     new Date(iso).toLocaleDateString('es-CO', { day: '2-digit', month: 'long', year: 'numeric' });
 
+  const figures = figureNumbers(chapters);
   const chapHtml = chapters.map(ch => {
     const secHtml = ch.subsections.map(s => {
       const listHtml = htmlList(s.items);
@@ -41,7 +43,10 @@ function generateDownloadHTML(
         ? `<div class="table-wrap"><table class="cols-${tableColumnCount(s.table)}"><thead><tr>${s.table.headers.map(h => `<th>${formatInlineMarkdown(h)}</th>`).join('')}</tr></thead>
            <tbody>${s.table.rows.map(r => `<tr>${s.table!.headers.map((_, index) => `<td>${formatInlineMarkdown(r[index] ?? '').replace(/\n/g, '<br>')}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`
         : '';
-      return `<h3>${escapeHtml(s.title)}</h3>${htmlParagraphs(s.content)}${listHtml}${tblHtml}`;
+      const figHtml = s.diagram
+        ? `<figure class="diagram">${s.diagram.svg}${s.diagram.caption ? `<figcaption>Figura ${figures.get(s)}. ${escapeHtml(s.diagram.caption)}</figcaption>` : ''}</figure>`
+        : '';
+      return `<h3>${escapeHtml(s.title)}</h3>${htmlParagraphs(s.content)}${listHtml}${tblHtml}${figHtml}`;
     }).join('');
     return `<div class="chapter"><h2>${ch.number}. ${escapeHtml(ch.title)}</h2><div class="intro">${htmlParagraphs(ch.intro)}</div>${secHtml}</div>`;
   }).join('');
@@ -76,6 +81,9 @@ function generateDownloadHTML(
   th { background: #5454e9; color: #fff; padding: 8px 12px; text-align: left; }
   td { border: 1px solid #e5e7eb; padding: 7px 12px; vertical-align: top; white-space: normal; overflow-wrap: anywhere; word-break: break-word; }
   tr:nth-child(even) td { background: #f9fafb; }
+  figure.diagram { margin: 16px 0; break-inside: avoid; }
+  figure.diagram svg { width: 100%; height: auto; display: block; }
+  figcaption { font-size: 0.78em; color: #6b7280; text-align: center; margin-top: 6px; font-style: italic; }
   .footer { text-align: center; color: #9ca3af; font-size: 0.8em; margin-top: 60px; padding-top: 20px; border-top: 1px solid #e5e7eb; }
   @media print {
     body { font-size: 10.5px; line-height: 1.45; }

@@ -35,6 +35,8 @@ export interface Project {
   projectName: string;
   startDate: string;
   tamano?: string;
+  /** Perfil de la industria (línea base del PMO Value Ring). */
+  sector?: string | null;
   mision?: string;
   vision?: string;
   auditors: Auditor[];
@@ -150,6 +152,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       projectName: data.projectName,
       startDate: data.startDate,
       tamano: data.tamano,
+      sector: data.sector,
       mision: data.mision,
       vision: data.vision,
       auditorId: data.auditors && data.auditors.length > 0 ? data.auditors[0].id : undefined,
@@ -158,11 +161,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }, [fetchProjects]);
 
   // ── Editar proyecto ────────────────────────────────────────────────────────
-  const editProject = useCallback(async (id: string, data: { companyName: string; projectName: string; auditorId?: string }) => {
+  const editProject = useCallback(async (id: string, data: { companyName: string; projectName: string; auditorId?: string; sector?: string }) => {
     await apiPut(`/api/projects/${id}`, {
       companyName: data.companyName,
       projectName: data.projectName,
       auditorId: data.auditorId,
+      sector: data.sector,
     });
     await fetchProjects();
   }, [fetchProjects]);

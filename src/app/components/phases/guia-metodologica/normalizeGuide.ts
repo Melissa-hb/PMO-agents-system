@@ -1,4 +1,5 @@
 import type { ElementType } from 'react';
+import { buildFlowchartSvg, buildLegendSvg, buildLifecycleSvg, flowPhaseFrom, formatElemento } from './flowchart';
 import { BookOpen, Shield, BarChart2, Users, Lightbulb, GitCommitHorizontal } from 'lucide-react';
 import type { DocVersion, GuideChapter, GuideSubsection } from './types';
 
@@ -45,6 +46,12 @@ const INTRO_CONTENT_KEYS = new Set([
 /** Titulos de campos que no salen bien de la clave JSON. */
 const FIELD_TITLES: Record<string, string> = {
   cierre_seccion: 'Consideraciones finales',
+  mandato_pmo: 'Mandato de la PMO',
+  proposito: 'Propósito',
+  autoridad: 'Autoridad',
+  alineacion_estrategica: 'Alineación estratégica',
+  servicios_prioritarios: 'Servicios prioritarios',
+  criterios_de_exito: 'Criterios de éxito',
 };
 const GUIDE_SECTION_ORDER = [
   { number: 1, matches: ['introduccion', 's1_introduccion'] },
@@ -99,13 +106,28 @@ function isTechnicalKey(key: string) {
   return TECHNICAL_KEYS.has(key) || key.startsWith('_');
 }
 
+/** Orden del mandato de la PMO: la base (jsonb) reordena las claves y lo dejaría antes del objetivo. */
+const MANDATO_FIELD_ORDER = ['proposito', 'autoridad', 'alineacion_estrategica', 'servicios_prioritarios', 'criterios_de_exito'];
+
+function orderMandatoEntries(entries: [string, any][]): [string, any][] {
+  const keys = new Set(entries.map(([key]) => key));
+  if (keys.has('mandato_pmo')) {
+    return [...entries.filter(([key]) => key !== 'mandato_pmo'), ...entries.filter(([key]) => key === 'mandato_pmo')];
+  }
+  if (MANDATO_FIELD_ORDER.every(key => keys.has(key))) {
+    const rank = (key: string) => (MANDATO_FIELD_ORDER.includes(key) ? MANDATO_FIELD_ORDER.indexOf(key) : MANDATO_FIELD_ORDER.length);
+    return [...entries].sort(([a], [b]) => rank(a) - rank(b));
+  }
+  return entries;
+}
+
 function meaningfulEntries(value: Record<string, any>) {
-  return Object.entries(value).filter(([key, val]) => {
+  return orderMandatoEntries(Object.entries(value).filter(([key, val]) => {
     if (isTechnicalKey(key)) return false;
     if (val === null || val === undefined || val === '') return false;
     if (Array.isArray(val) && val.length === 0) return false;
     return true;
-  });
+  }));
 }
 
 function asArray(value: any): any[] {
@@ -404,37 +426,89 @@ function textOf(value: any): string {
  */
 function processFlowSubsections(contenido: any): GuideSubsection[] {
   const fases = Array.isArray(contenido?.fases) ? contenido.fases : [];
-  return fases.flatMap((fase: any, index: number) => {
+  const list = (value: unknown) => (Array.isArray(value) ? value.map(textOf).filter(Boolean) : [textOf(value)].filter(Boolean));
+
+  // Como en las guías de referencia: ciclo de vida general y simbología antes de las etapas.
+  const overview: GuideSubsection[] = [];
+  const lifecycle = buildLifecycleSvg(fases.map((fase: any, index: number) => ({
+    numero: Number(fase?.numero_fase) || index + 1,
+    nombre: textOf(fase?.nombre_fase) || `Fase ${index + 1}`,
+    nombrePropio: textOf(fase?.nombre_propio_organizacion),
+  })));
+  if (lifecycle) {
+    overview.push({ title: 'Ciclo de vida del proyecto', content: '', diagram: { svg: lifecycle, caption: 'Ciclo de vida del proyecto y etapas de la guía' } });
+    overview.push({
+      title: 'Simbología de los flujogramas',
+      content: 'Cada etapa se presenta con su ficha (entrada, salida, regla de decisión y registros), sus actividades y su flujograma. El número de cada actividad es el mismo en la tabla y en el flujograma, y cada carril corresponde al rol responsable.',
+      diagram: { svg: buildLegendSvg(), caption: 'Simbología de los flujogramas' },
+    });
+  }
+
+  return [...overview, ...fases.flatMap((fase: any, index: number) => {
+    const numero = Number(fase?.numero_fase) || index + 1;
     const nombre = textOf(fase?.nombre_fase) || `Fase ${index + 1}`;
     const propio = textOf(fase?.nombre_propio_organizacion);
-    const title = propio && normalizeSearchText(propio) !== normalizeSearchText(nombre) ? `${nombre} (${propio})` : nombre;
+    const title = `Etapa ${numero}. ${nombre}${propio && normalizeSearchText(propio) !== normalizeSearchText(nombre) ? ` (${propio})` : ''}`;
     const contexto = [
       textOf(fase?.enfoque_aplicado) && `Enfoque: ${textOf(fase.enfoque_aplicado)}`,
       textOf(fase?.nivel_madurez_fase) && `Nivel de madurez: ${textOf(fase.nivel_madurez_fase)}`,
     ].filter(Boolean).join(' · ');
 
     const actividades = Array.isArray(fase?.actividades) ? fase.actividades : [];
+    const decisiones = Array.isArray(fase?.puntos_decision) ? fase.puntos_decision.filter((d: any) => textOf(d?.decision) || textOf(d?.actividad_referencia)) : [];
+    const registros = [...new Set(actividades.map((a: any) => textOf(a?.artefacto_relacionado)).filter(Boolean))] as string[];
+    const bullets = (values: string[]) => values.map(v => (values.length > 1 ? `• ${v}` : v)).join('\n');
+
+    // Ficha de la etapa: entrada, salida, regla de decisión y registros.
+    const ficha: string[][] = [
+      ['Entrada', bullets(list(fase?.criterios_entrada_fase))],
+      ['Salida', bullets(list(fase?.criterios_salida_fase))],
+      ['Regla de decisión', decisiones.map((d: any) => {
+        const pregunta = textOf(d?.decision) || textOf(d?.actividad_referencia);
+        return [pregunta, textOf(d?.ruta_aprobado) && `Sí: ${textOf(d.ruta_aprobado)}`, textOf(d?.ruta_rechazado) && `No: ${textOf(d.ruta_rechazado)}`]
+          .filter(Boolean).join(' ');
+      }).join('\n')],
+      ['Registros', registros.join(' · ')],
+    ].filter(([, value]) => value);
+
     const subsections: GuideSubsection[] = [{
       title,
       content: [textOf(fase?.introduccion_fase), contexto].filter(Boolean).join('\n\n'),
-      table: actividades.length > 0 ? {
-        headers: ['Actividad', 'Descripción', 'Responsable', 'Participantes', 'Entrada', 'Salida', 'Artefacto relacionado'],
-        rows: actividades.map((a: any) => [
-          `${a?.es_punto_decision ? '⬦ ' : ''}${textOf(a?.actividad)}`,
-          textOf(a?.descripcion),
-          textOf(a?.responsable),
-          Array.isArray(a?.participantes) ? a.participantes.map(textOf).join(', ') : textOf(a?.participantes),
-          textOf(a?.entrada),
-          textOf(a?.salida),
-          textOf(a?.artefacto_relacionado),
-        ]),
-      } : undefined,
+      table: ficha.length > 0 ? { headers: ['Ficha de la etapa', 'Detalle'], rows: ficha } : undefined,
     }];
 
-    const decisiones = Array.isArray(fase?.puntos_decision) ? fase.puntos_decision.filter((d: any) => textOf(d?.decision) || textOf(d?.actividad_referencia)) : [];
+    if (actividades.length > 0) {
+      subsections.push({
+        title: `Etapa ${numero} - Actividades`,
+        content: '',
+        table: {
+          headers: ['N.°', 'Actividad', 'Descripción', 'Responsable', 'Participantes', 'Entrada', 'Salida', 'Registro'],
+          rows: actividades.map((a: any, i: number) => [
+            `${numero}.${Number(a?.orden) || i + 1}`,
+            `${a?.es_punto_decision ? '⬦ ' : ''}${textOf(a?.actividad).replace(/^⬦\s*/, '')}`,
+            textOf(a?.descripcion),
+            textOf(a?.responsable),
+            Array.isArray(a?.participantes) ? a.participantes.map(textOf).join(', ') : textOf(a?.participantes),
+            textOf(a?.entrada),
+            textOf(a?.salida),
+            textOf(a?.artefacto_relacionado),
+          ]),
+        },
+      });
+    }
+
+    const flow = flowPhaseFrom(fase, index);
+    if (flow) {
+      subsections.push({
+        title: `Etapa ${numero} - Flujograma`,
+        content: '',
+        diagram: { svg: buildFlowchartSvg(flow), caption: `Flujograma de la etapa ${numero}: ${nombre.toLowerCase()}` },
+      });
+    }
+
     if (decisiones.length > 0) {
       subsections.push({
-        title: `${nombre} - Puntos de decisión`,
+        title: `Etapa ${numero} - Puntos de decisión`,
         content: '',
         table: {
           headers: ['Decisión', 'Criterio de aprobación', '→ Aprobado', '→ Rechazado / Observaciones', 'Responsable'],
@@ -448,13 +522,8 @@ function processFlowSubsections(contenido: any): GuideSubsection[] {
         },
       });
     }
-
-    const entrada = Array.isArray(fase?.criterios_entrada_fase) ? fase.criterios_entrada_fase.map(textOf).filter(Boolean) : [];
-    const salida = Array.isArray(fase?.criterios_salida_fase) ? fase.criterios_salida_fase.map(textOf).filter(Boolean) : [];
-    if (entrada.length > 0) subsections.push({ title: `${nombre} - Criterios de entrada`, content: '', items: entrada });
-    if (salida.length > 0) subsections.push({ title: `${nombre} - Criterios de salida`, content: '', items: salida });
     return subsections;
-  });
+  })];
 }
 
 function isProcessFlowSection(section: any) {
@@ -509,6 +578,48 @@ function normalizeGuideContent(guideContent: any[]): GuideChapter[] {
 
 
 
+/**
+ * Capítulo final de trazabilidad entre el diagnóstico y la guía (como el anexo de las guías de
+ * referencia): cada hallazgo de la Exploración con las decisiones de la guía que lo atienden. Sale de
+ * trazabilidad_hallazgos y del registro de hallazgos que el backend guarda con la guía; si la guía
+ * no tiene el registro (versiones anteriores), se listan las decisiones con sus códigos.
+ */
+function traceabilityChapter(diagnosis: any, number: number): GuideChapter | null {
+  const trace = Array.isArray(diagnosis?.trazabilidad_hallazgos) ? diagnosis.trazabilidad_hallazgos : [];
+  if (trace.length === 0) return null;
+  const registry = Array.isArray(diagnosis?.registro_hallazgos) ? diagnosis.registro_hallazgos : [];
+  const elemento = (e: any) => formatElemento(textOf(e?.elemento));
+
+  const rows: string[][] = registry
+    .map((h: any) => {
+      const id = textOf(h?.id);
+      const respuestas = trace
+        .filter((e: any) => Array.isArray(e?.hallazgos_origen) && e.hallazgos_origen.map(textOf).includes(id))
+        .map((e: any) => `• ${elemento(e)}: ${textOf(e?.decision)}`);
+      return respuestas.length > 0 ? [`${id}. ${textOf(h?.texto)}`, `Fase ${textOf(h?.fase)} · ${textOf(h?.tipo)}`, respuestas.join('\n')] : null;
+    })
+    .filter(Boolean);
+
+  const subsection: GuideSubsection = rows.length > 0
+    ? { title: 'Hallazgos del diagnóstico y respuesta de la guía', content: '', table: { headers: ['Hallazgo del diagnóstico', 'Origen', 'Respuesta de la guía'], rows } }
+    : {
+      title: 'Decisiones de la guía y hallazgos que las sustentan',
+      content: '',
+      table: {
+        headers: ['Elemento de la guía', 'Decisión', 'Hallazgos de origen'],
+        rows: trace.map((e: any) => [elemento(e), textOf(e?.decision), Array.isArray(e?.hallazgos_origen) ? e.hallazgos_origen.map(textOf).join(', ') : '']),
+      },
+    };
+
+  return {
+    number,
+    icon: CHAPTER_ICONS[(number - 1) % CHAPTER_ICONS.length],
+    title: 'Trazabilidad entre el diagnóstico y la guía',
+    intro: 'Relación entre los hallazgos del diagnóstico (registro documental, entrevistas, encuesta de idoneidad y diagnóstico de madurez) y los elementos de la guía que los atienden. Cada hallazgo conserva el código con el que se registró en la plataforma.',
+    subsections: [subsection],
+  };
+}
+
 function normalizeChapters(raw: any): GuideChapter[] {
   const parsed = parseJsonIfString(raw);
 
@@ -519,7 +630,9 @@ function normalizeChapters(raw: any): GuideChapter[] {
     parsed?.diagnosis?.guideContent ??
     parsed?.guideContent;
   if (Array.isArray(guideContent) && guideContent.length > 0) {
-    return normalizeGuideContent(guideContent);
+    const chapters = normalizeGuideContent(guideContent);
+    const annex = traceabilityChapter(parsed?.diagnosis ?? parsed, chapters.length + 1);
+    return annex ? [...chapters, annex] : chapters;
   }
 
   // ── Priority 2: Classic chapters/capitulos format ──────────────────────────

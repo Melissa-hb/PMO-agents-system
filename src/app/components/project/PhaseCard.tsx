@@ -118,7 +118,7 @@ export default function PhaseCard({ phase, phases, projectId, onRetry, index = 0
   const pending = getPendingDependencies(phases, phase.number, phaseConfig);
   const state = getCardState(phase, pending.length);
   const meta = CARD_STATE[state];
-  const { icon: Icon, description } = PHASE_CATALOG[phase.number] ?? DEFAULT_PHASE_INFO;
+  const { icon: Icon, description, valueRing } = PHASE_CATALOG[phase.number] ?? DEFAULT_PHASE_INFO;
 
   const open = () => navigate(`/dashboard/project/${projectId}/phase/${phase.number}`);
 
@@ -164,6 +164,14 @@ export default function PhaseCard({ phase, phases, projectId, onRetry, index = 0
       <p className="text-[12px] text-neutral-500 leading-relaxed line-clamp-2">
         {description}
       </p>
+      {valueRing && (
+        <p
+          className="text-[11px] text-neutral-400 mt-2"
+          title={`PMO Value Ring: etapa de ${valueRing.etapa}, paso ${valueRing.paso} del flywheel (${valueRing.pasoNombre})`}
+        >
+          Value Ring · {valueRing.etapa} · Paso {valueRing.paso}: {valueRing.pasoNombre}
+        </p>
+      )}
 
       {pending.length > 0 && (
         <p className="text-[11px] text-amber-700 mt-2.5" style={{ fontWeight: 500 }}>

@@ -4,11 +4,12 @@ import { motion, AnimatePresence } from 'motion/react';
 import { X, Save, AlertCircle, Loader2 } from 'lucide-react';
 import type { Project } from '../../context/AppContext';
 import { useConsultores } from '../../hooks/useConsultores';
+import SectorField from './SectorField';
 
 interface EditProjectModalProps {
   open: boolean;
   onClose: () => void;
-  onSubmit: (data: { companyName: string; projectName: string; auditorId: string }) => void;
+  onSubmit: (data: { companyName: string; projectName: string; auditorId: string; sector: string }) => void;
   project: Project | null;
 }
 
@@ -17,6 +18,7 @@ const AVATAR_COLORS = ['#5454e9', '#059669', '#7c3aed', '#dc2626', '#d97706', '#
 export default function EditProjectModal({ open, onClose, onSubmit, project }: EditProjectModalProps) {
   const [companyName, setCompanyName] = useState('');
   const [projectName, setProjectName] = useState('');
+  const [sector, setSector] = useState('');
   const [selectedAuditor, setSelectedAuditor] = useState<string>('');
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isLoading, setIsLoading] = useState(false);
@@ -27,6 +29,7 @@ export default function EditProjectModal({ open, onClose, onSubmit, project }: E
     if (project && open) {
       setCompanyName(project.companyName || '');
       setProjectName(project.projectName || '');
+      setSector(project.sector || '');
       setSelectedAuditor(project.auditors?.[0]?.id || '');
       setErrors({});
     }
@@ -46,7 +49,7 @@ export default function EditProjectModal({ open, onClose, onSubmit, project }: E
     if (Object.keys(e2).length > 0) { setErrors(e2); return; }
 
     setIsLoading(true);
-    onSubmit({ companyName, projectName, auditorId: selectedAuditor });
+    onSubmit({ companyName, projectName, auditorId: selectedAuditor, sector });
     setIsLoading(false);
     handleClose();
   };
@@ -143,6 +146,8 @@ export default function EditProjectModal({ open, onClose, onSubmit, project }: E
                   <p className="text-red-500 text-xs flex items-center gap-1"><AlertCircle size={12} /> {errors.projectName}</p>
                 )}
               </div>
+
+              <SectorField value={sector} onChange={setSector} />
 
               {/* Auditor */}
               <div className="flex flex-col gap-1.5">

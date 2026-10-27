@@ -23,6 +23,50 @@ describe('capitulos de la guia metodologica (fase 7)', () => {
     expect(capitulos[0].intro).toBe('Contexto de Acme');
   });
 
+  it('muestra el mandato de la PMO despues del objetivo y con sus campos en orden', () => {
+    // Asi lo devuelve la base (jsonb ordena las claves por longitud).
+    const [capitulo] = normalizeChapters({ guide_content: [seccion('S2', 'Objetivo y mandato de la PMO', {
+      mandato_pmo: { autoridad: 'Aprueba actas', proposito: 'Alinear proyectos', criterios_de_exito: ['A'], alineacion_estrategica: 'Mision', servicios_prioritarios: ['B'] },
+      objetivo_general: 'Estandarizar la gestion',
+    })] });
+
+    expect(capitulo.subsections.map(s => s.title)).toEqual([
+      'Objetivo general',
+      'Mandato de la PMO - Propósito',
+      'Mandato de la PMO - Autoridad',
+      'Mandato de la PMO - Alineación estratégica',
+      'Mandato de la PMO - Servicios prioritarios',
+      'Mandato de la PMO - Criterios de éxito',
+    ]);
+  });
+
+  it('agrega al final la trazabilidad entre el diagnóstico y la guía', () => {
+    const capitulos = normalizeChapters({ diagnosis: {
+      guide_content: [seccion('S7', 'Políticas', { descripcion_general: 'Reglas' })],
+      registro_hallazgos: [
+        { id: 'H1-01', fase: 1, tipo: 'Hallazgo documental', texto: 'Sin actas de inicio' },
+        { id: 'H2-01', fase: 2, tipo: 'Hallazgo de entrevistas', texto: 'Nadie usa la guía' },
+      ],
+      trazabilidad_hallazgos: [
+        { elemento: 'S7 · Políticas', decision: 'Exigir acta de inicio', hallazgos_origen: ['H1-01'] },
+        { elemento: 'S10_flujos_de_procesos', decision: 'Etapa de inicio formal', hallazgos_origen: ['H1-01'] },
+      ],
+    } });
+
+    const anexo = capitulos[capitulos.length - 1];
+    expect(anexo.title).toBe('Trazabilidad entre el diagnóstico y la guía');
+    expect(anexo.number).toBe(2);
+    expect(anexo.subsections[0].table?.rows).toEqual([[
+      'H1-01. Sin actas de inicio',
+      'Fase 1 · Hallazgo documental',
+      '• S7 · Políticas: Exigir acta de inicio\n• S10 · Flujos de procesos: Etapa de inicio formal',
+    ]]);
+  });
+
+  it('sin trazabilidad la guía no tiene anexo', () => {
+    expect(normalizeChapters({ guide_content: [seccion('S7', 'Políticas', { descripcion_general: 'Reglas' })] })).toHaveLength(1);
+  });
+
   it('una seccion sin contenido muestra un texto de respaldo', () => {
     const [capitulo] = normalizeChapters({ guide_content: [seccion('S03', 'Alcance')] });
 
@@ -103,7 +147,7 @@ describe('titulos generados a partir de las claves de la guia', () => {
 });
 
 describe('secciones del Asistente 7.2 (flujos, indicadores y documentos)', () => {
-  it('los flujos de procesos muestran una tabla de actividades por fase con los puntos de decisión', () => {
+  it('los flujos muestran ciclo de vida, simbología y por etapa su ficha, actividades numeradas, flujograma y decisiones', () => {
     const [capitulo] = normalizeChapters({ guide_content: [{
       section_id: 'S10',
       section_key: 'S10_flujos_de_procesos',
@@ -119,6 +163,7 @@ describe('secciones del Asistente 7.2 (flujos, indicadores y documentos)', () =>
             { orden: 2, actividad: 'Aprobar acta', es_punto_decision: true, descripcion: 'Revisión', responsable: 'Sponsor', participantes: [], entrada: 'Acta', salida: 'Acta aprobada', artefacto_relacionado: '' },
           ],
           puntos_decision: [{ actividad_referencia: 'Aprobar acta', decision: '¿Se aprueba el acta?', criterio_aprobacion: 'Alcance claro', ruta_aprobado: 'Pasa a planeación', ruta_rechazado: 'Se ajusta el acta', responsable_decision: 'Sponsor', comite_si_aplica: '' }],
+          criterios_entrada_fase: ['Caso de negocio aprobado'],
           criterios_salida_fase: ['Acta firmada'],
         }],
       },
@@ -126,14 +171,29 @@ describe('secciones del Asistente 7.2 (flujos, indicadores y documentos)', () =>
 
     expect(capitulo.title).toBe('Flujos de procesos');
     expect(capitulo.intro).toBe('Flujos de Acme');
-    const [fase, decisiones, salida] = capitulo.subsections;
-    expect(fase.title).toBe('Inicio');
-    expect(fase.content).toContain('Arranque del proyecto');
-    expect(fase.table?.headers).toEqual(['Actividad', 'Descripción', 'Responsable', 'Participantes', 'Entrada', 'Salida', 'Artefacto relacionado']);
-    expect(fase.table?.rows[0][3]).toBe('Sponsor, Lider');
-    expect(fase.table?.rows[1][0]).toBe('⬦ Aprobar acta');
+    expect(capitulo.subsections.map(s => s.title)).toEqual([
+      'Ciclo de vida del proyecto',
+      'Simbología de los flujogramas',
+      'Etapa 1. Inicio',
+      'Etapa 1 - Actividades',
+      'Etapa 1 - Flujograma',
+      'Etapa 1 - Puntos de decisión',
+    ]);
+    const [ciclo, , ficha, actividades, flujograma, decisiones] = capitulo.subsections;
+    expect(ciclo.diagram?.svg).toContain('<svg');
+    expect(ficha.content).toContain('Arranque del proyecto');
+    expect(ficha.table?.rows).toEqual([
+      ['Entrada', 'Caso de negocio aprobado'],
+      ['Salida', 'Acta firmada'],
+      ['Regla de decisión', '¿Se aprueba el acta? Sí: Pasa a planeación No: Se ajusta el acta'],
+      ['Registros', 'Acta de constitución'],
+    ]);
+    expect(actividades.table?.headers).toEqual(['N.°', 'Actividad', 'Descripción', 'Responsable', 'Participantes', 'Entrada', 'Salida', 'Registro']);
+    expect(actividades.table?.rows.map(r => r.slice(0, 2))).toEqual([['1.1', 'Elaborar acta'], ['1.2', '⬦ Aprobar acta']]);
+    expect(actividades.table?.rows[0][4]).toBe('Sponsor, Lider');
+    expect(flujograma.diagram?.caption).toBe('Flujograma de la etapa 1: inicio');
+    expect(flujograma.diagram?.svg).toContain('DIRECTOR PMO');
     expect(decisiones.table?.rows[0]).toEqual(['⬦ ¿Se aprueba el acta?', 'Alcance claro', 'Pasa a planeación', 'Se ajusta el acta', 'Sponsor']);
-    expect(salida.items).toEqual(['Acta firmada']);
   });
 
   it('las secciones S10-S12 van después de los comités', () => {

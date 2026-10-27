@@ -28,6 +28,8 @@ interface GuideChapter {
     content: string;
     items?: string[];
     table?: { headers: string[]; rows: string[][] };
+    /** Diagrama SVG generado en código (flujogramas, ciclo de vida, simbología). */
+    diagram?: { svg: string; caption?: string };
   }[];
 }
 
